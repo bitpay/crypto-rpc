@@ -43,13 +43,11 @@ class EthRPC {
       let accounts = await this.web3.eth.getAccounts();
       let account = accounts[0];
       const unlocked = await this.isUnlocked();
-      promptly.password('> ', async (err, phrase) => {
-        if (err) { return cb(err); }
-        await this.web3.eth.personal.unlockAccount(account, phrase, time);
-        cb(null, this.walletLock);
-        // await this.walletLock();
-      });
+      const phrase = await promptly.password('> ');
+      await this.web3.eth.personal.unlockAccount(account, phrase, time);
+      return cb(null, this.walletLock.bind(this));
     } catch (e) {
+      console.error(e);
       return cb(e);
     }
   }
@@ -85,7 +83,7 @@ class EthRPC {
         from: accounts[0],
         to: address,
         value: amount
-      }).then(cb);
+      }).then((tx) => cb(null, tx));
     } catch (e) {
       return cb(e);
     }
@@ -95,6 +93,9 @@ class EthRPC {
     let accounts = await this.web3.eth.getAccounts();
     let account = accounts[0];
     await this.web3.eth.personal.lockAccount(account);
+    if(cb) {
+      return cb();
+    }
   }
 }
 module.exports = EthRPC;
