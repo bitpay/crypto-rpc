@@ -1,0 +1,42 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const CryptoRPC = require('../rpcs');
+const constants = require('../constants');
+const util = require('util');
+
+try{
+  program
+    .option('--node <node>')
+    .option('--chain <chain>')
+    .option('--address <address>')
+    .parse(process.argv);
+} catch (e) {
+  console.log(e.message);
+  return program.help()
+}
+
+async function main() {
+  const { node, chain, address } = program;
+  const rpcHost = constants[node];
+  if(rpcHost) {
+    const { host, rpcPort, protocol, user, pass } = rpcHost;
+    const currencyConfig = rpcHost.currencies[chain] || {};
+    let rpcs = new CryptoRPC({
+      host,
+      rpcPort,
+      user,
+      pass,
+      protocol,
+    }, currencyConfig);
+
+    rpcs.getBalance(chain, address, (err, balance) => {
+      if(err) console.error(err);
+      console.log(`${chain} ${util.inspect(balance)}`)
+    });
+  } else {
+    console.error('ERROR: ');
+  }
+}
+
+main();
