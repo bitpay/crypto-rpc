@@ -2,7 +2,7 @@
 
 const program = require('commander');
 const CryptoRPC = require('../rpcs');
-const constants = require('../constants');
+const config = require('../config');
 const util = require('util');
 
 try{
@@ -18,7 +18,7 @@ try{
 
 async function main() {
   const { node, chain, address } = program;
-  const rpcHost = constants[node];
+  const rpcHost = config[node];
   if(rpcHost) {
     const { host, rpcPort, protocol, user, pass } = rpcHost;
     const currencyConfig = rpcHost.currencies[chain] || {};

@@ -21,4 +21,4 @@ npm-debug.log
 dist
 src/vendor
 src/dist
-constants.js
+config.js
