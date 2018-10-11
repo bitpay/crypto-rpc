@@ -49,7 +49,7 @@ const BalanceProgram = {
           console.log(`${currency} ${util.inspect(balance)}`)
         });
       } else {
-        console.error('ERROR: ');
+        console.error('ERROR: Node is not in the config');
       }
     }
     main();
