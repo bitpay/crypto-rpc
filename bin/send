@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+const program = require('commander');
+program
+  .option('--node <node>')
+  .option('--currency <currency>')
+  .option('--address <address>')
+  .option('--amount <amount>')
 
 /**
  * SendProgram
@@ -19,54 +25,53 @@
  *}
  * @returns {undefined}
  */
-function SendProgram(config) {
-  const program = require('commander');
-  const CryptoRPC = require('../rpcs');
-  const util = require('util');
+const SendProgram = {
+  program,
+  start: (config, program) => {
+    const CryptoRPC = require('../rpcs');
+    const util = require('util');
 
-  try{
-    program
-      .option('--node <node>')
-      .option('--currency <currency>')
-      .option('--address <address>')
-      .option('--amount <amount>')
-      .parse(process.argv);
-  } catch (e) {
-    console.log(e.message);
-    return program.help()
-  }
 
-  async function main() {
-    const { node, currency, address, amount } = program;
-    const rpcHost = config[node];
-    if(rpcHost) {
-      const { host, rpcPort, protocol, user, pass } = rpcHost;
-      const currencyConfig = rpcHost.currencies[currency] || {};
-      let rpcs = new CryptoRPC({
-        host,
-        rpcPort,
-        user,
-        pass,
-        protocol,
-      }, currencyConfig);
+    async function main() {
+      const { node, currency, address, amount } = program;
+      const rpcHost = config[node];
+      if(rpcHost) {
+        const { host, rpcPort, protocol, user, pass } = rpcHost;
+        const currencyConfig = rpcHost.currencies[currency] || {};
+        let rpcs = new CryptoRPC({
+          host,
+          rpcPort,
+          user,
+          pass,
+          protocol,
+        }, currencyConfig);
 
-      rpcs.cmdlineUnlock(currency, 10000, (err, lockFn) => {
-        rpcs.sendToAddress(currency, address, amount, (err, tx) => {
-          if(err) console.error(err);
-          console.log(tx);
-          lockFn();
+        rpcs.cmdlineUnlock(currency, 10000, (err, lockFn) => {
+          rpcs.sendToAddress(currency, address, amount, (err, tx) => {
+            if(err) console.error(err);
+            console.log(tx);
+            lockFn();
+          });
         });
-      });
-    } else {
-      console.error('ERROR: ');
+      } else {
+        console.error('ERROR: Node is not in the config');
+      }
+    }
+    main();
+  }
+};
+
+
+  if (require.main === module) {
+    const config = require('../config');
+    try{
+      program.parse(process.argv);
+      SendProgram.start(config);
+    } catch (e) {
+      console.log(e.message);
+      return program.help()
     }
   }
-  main();
-}
 
-if (require.main === module) {
-  const config = require('../config');
-  BalanceProgram(config);
-}
 
-module.exports = BalanceProgram;
+  module.exports = SendProgram;
