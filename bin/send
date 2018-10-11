@@ -62,16 +62,16 @@ const SendProgram = {
 };
 
 
-  if (require.main === module) {
-    const config = require('../config');
-    try{
-      program.parse(process.argv);
-      SendProgram.start(config);
-    } catch (e) {
-      console.log(e.message);
-      return program.help()
-    }
+if (require.main === module) {
+  const config = require('../config');
+  try{
+    program.parse(process.argv);
+    SendProgram.start(config);
+  } catch (e) {
+    console.log(e.message);
+    return program.help()
   }
+}
 
 
-  module.exports = SendProgram;
+module.exports = SendProgram;
