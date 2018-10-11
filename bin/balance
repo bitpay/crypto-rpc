@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
+const program = require('commander');
+program
+  .option('--node <node>')
+  .option('--currency <currency>')
+  .option('--address <address>')
+
 /**
- * BalanceProgram
+ * BalanceProgram.start
  *
  * @param config
  * ETHNode: {
@@ -18,50 +24,48 @@
  *  }
  *}
  */
-function BalanceProgram(config) {
-  const program = require('commander');
-  const CryptoRPC = require('../rpcs');
-  const util = require('util');
+const BalanceProgram = {
+  program,
+  start: (config, program) => {
+    const CryptoRPC = require('../rpcs');
+    const util = require('util');
 
+    async function main() {
+      const { node, currency, address } = program;
+      const rpcHost = config[node];
+      if(rpcHost) {
+        const { host, rpcPort, protocol, user, pass } = rpcHost;
+        const currencyConfig = rpcHost.currencies[currency] || {};
+        let rpcs = new CryptoRPC({
+          host,
+          rpcPort,
+          user,
+          pass,
+          protocol,
+        }, currencyConfig);
+
+        rpcs.getBalance(currency, address, (err, balance) => {
+          if(err) console.error(err);
+          console.log(`${currency} ${util.inspect(balance)}`)
+        });
+      } else {
+        console.error('ERROR: ');
+      }
+    }
+    main();
+  }
+};
+
+if (require.main === module) {
+  const config = require('../config');
   try{
-    program
-      .option('--node <node>')
-      .option('--currency <currency>')
-      .option('--address <address>')
-      .parse(process.argv);
+    program.parse(process.argv);
+    BalanceProgram.start(config, program);
   } catch (e) {
     console.log(e.message);
     return program.help()
   }
-
-  async function main() {
-    const { node, currency, address } = program;
-    const rpcHost = config[node];
-    if(rpcHost) {
-      const { host, rpcPort, protocol, user, pass } = rpcHost;
-      const currencyConfig = rpcHost.currencies[currency] || {};
-      let rpcs = new CryptoRPC({
-        host,
-        rpcPort,
-        user,
-        pass,
-        protocol,
-      }, currencyConfig);
-
-      rpcs.getBalance(currency, address, (err, balance) => {
-        if(err) console.error(err);
-        console.log(`${currency} ${util.inspect(balance)}`)
-      });
-    } else {
-      console.error('ERROR: ');
-    }
-  }
-  main();
 }
 
-if (require.main === module) {
-  const config = require('../config');
-  BalanceProgram(config);
-}
 
 module.exports = BalanceProgram;
