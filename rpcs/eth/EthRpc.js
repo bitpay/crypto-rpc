@@ -5,6 +5,7 @@ class EthRPC {
   constructor(config) {
     this.config = config;
     this.web3 = this.getWeb3(config);
+    this.account = config.currencyConfig.account;
   }
 
   getWeb3(web3Config) {
@@ -26,38 +27,33 @@ class EthRPC {
     return new Web3(new Provider(connectionString));
   }
 
-
   async isUnlocked() {
-    let accounts = await this.web3.eth.getAccounts();
-    const address = accounts[0];
     try {
-      await this.web3.eth.sign('', address);
-    } catch (e) {
+      await this.web3.eth.sign('',  this.account);
+    } catch (err) {
       return false;
     }
     return true;
   }
 
-  async cmdlineUnlock(time, cb) {
+  async cmdlineUnlock(time, callback) {
     try {
-      let accounts = await this.web3.eth.getAccounts();
-      let account = accounts[0];
       const unlocked = await this.isUnlocked();
       const phrase = await promptly.password('> ');
-      await this.web3.eth.personal.unlockAccount(account, phrase, time);
-      return cb(null, this.walletLock.bind(this));
-    } catch (e) {
-      console.error(e);
-      return cb(e);
+      await this.web3.eth.personal.unlockAccount(this.account, phrase, time);
+      return callback(null, this.walletLock.bind(this));
+    } catch (err) {
+      console.error(err);
+      return callback(err);
     }
   }
 
 
-  async getBalance(address, cb) {
+  async getBalance(address, callback) {
     if(address) {
       const balance = await this.web3.eth.getBalance(address);
-      if(cb){
-        return cb(null, balance);
+      if(callback){
+        return callback(null, balance);
       } else {
         return balance;
       }
@@ -68,33 +64,31 @@ class EthRPC {
         const balance = await this.web3.eth.getBalance(account);
         balances.push({ account,  balance });
       }
-      if(cb) {
-        return cb(null, balances);
+      if(callback) {
+        return callback(null, balances);
       } else {
         return balances;
       }
     }
   }
 
-  async sendToAddress(address, amount, cb) {
+  async sendToAddress(address, amount, callback) {
     try {
-      const accounts = await this.web3.eth.getAccounts();
-      return this.web3.eth.sendTransaction({
-        from: accounts[0],
+      const tx = await this.web3.eth.sendTransaction({
+        from: this.account,
         to: address,
         value: amount
-      }).then((tx) => cb(null, tx));
-    } catch (e) {
-      return cb(e);
+      });
+      return callback(null, { result: tx.transactionHash });
+    } catch (err) {
+      return callback(err);
     }
   }
 
-  async walletLock(cb) {
-    let accounts = await this.web3.eth.getAccounts();
-    let account = accounts[0];
-    await this.web3.eth.personal.lockAccount(account);
-    if(cb) {
-      return cb();
+  async walletLock(callback) {
+    await this.web3.eth.personal.lockAccount(this.account);
+    if(callback) {
+      return callback();
     }
   }
 }

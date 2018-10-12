@@ -11,10 +11,9 @@ class Erc20RPC extends EthRPC {
   async sendToAddress(address, amount, callback) {
     const decimals = await this.erc20Contract.methods.decimals().call();
     const scaledAmount = Math.round(Math.pow(10, decimals) * amount);
-    const accounts = await this.web3.eth.getAccounts();
     this.erc20Contract.methods
       .transfer(address, scaledAmount)
-      .send({ from: accounts[0] })
+      .send({ from: this.account})
       .then(function(tx) {
         callback(null, { result: tx.transactionHash });
       });
