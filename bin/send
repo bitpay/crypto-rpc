@@ -23,7 +23,6 @@ program
  *    }
  *  }
  *}
- * @returns {undefined}
  */
 const SendProgram = {
   program,
