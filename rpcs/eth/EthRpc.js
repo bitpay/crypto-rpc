@@ -40,10 +40,10 @@ class EthRPC {
     try {
       promptly.password('> ', async (err, phrase) => {
         if (err) { return callback(err); }
-        await this.web3.eth.personal.unlockAccount(this.config.account, phrase, time);
-        console.log('wallet unlocked for ' + time + ' seconds');
+        await this.web3.eth.personal.unlockAccount(this.account, phrase, time);
+        console.log(this.account, ' unlocked for ' + time + ' seconds');
         return callback(null, (doneLocking) => {
-          this.walletLock(function(err) {
+          this.walletLock((err) => {
             if (err) {
               console.log(err.message);
             } else {
@@ -61,9 +61,9 @@ class EthRPC {
 
   async getBalance(address, callback) {
     try {
-      if(address) {
+      if (address) {
         const balance = await this.web3.eth.getBalance(address);
-        if(callback){
+        if (callback) {
           return callback(null, balance);
         } else {
           return balance;
@@ -71,24 +71,26 @@ class EthRPC {
       } else {
         const accounts = await this.web3.eth.getAccounts();
         const balances = [];
-        for(let account of accounts) {
+        for (let account of accounts) {
           const balance = await this.web3.eth.getBalance(account);
           balances.push({ account,  balance });
         }
-        if(callback) {
+        if (callback) {
           return callback(null, balances);
         } else {
           return balances;
         }
       }
     } catch (err) {
-      return callback(err);
+      if (callback) {
+        return callback(err);
+      }
     }
   }
 
   sendToAddress(address, amount, callback) {
     this.web3.eth.sendTransaction({
-      from: this.config.account,
+      from: this.account,
       to: address,
       value: amount
     }, (err, result) => {
@@ -98,12 +100,13 @@ class EthRPC {
 
   async walletLock(callback) {
     try {
-      await this.web3.eth.personal.lockAccount(this.config.account);
+      await this.web3.eth.personal.lockAccount(this.account);
       return callback();
     } catch (err) {
-      return callback(err);
+      if (callback) {
+        return callback(err);
+      }
     }
   }
-
 }
 module.exports = EthRPC;
