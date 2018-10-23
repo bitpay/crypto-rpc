@@ -9,36 +9,46 @@ class Erc20RPC extends EthRPC {
 
   // this will only work on ERC20 tokens with decimals
   async sendToAddress(address, amount, callback) {
-    const decimals = await this.erc20Contract.methods.decimals().call();
-    const scaledAmount = Math.round(Math.pow(10, decimals) * amount);
-    this.erc20Contract.methods
-      .transfer(address, scaledAmount)
-      .send({ from: this.account})
-      .then(function(tx) {
-        callback(null, { result: tx.transactionHash });
-      });
+    try {
+      const decimals = await this.erc20Contract.methods.decimals().call();
+      const scaledAmount = Math.round(Math.pow(10, decimals) * amount);
+      this.erc20Contract.methods
+        .transfer(address, scaledAmount)
+        .send({ from: this.account }, (err, result) => {
+          callback(err, { result });
+        });
+    } catch (err) {
+      if (callback) {
+        return callback(err);
+      }
+    }
   }
 
-
-  async getBalance(address, cb) {
-    if(address) {
-      const balance = await this.erc20Contract.methods.balanceOf(address).call();
-      if(cb) {
-        return cb(null, balance);
+  async getBalance(address, callback) {
+    try {
+      if (address) {
+        const balance = await this.erc20Contract.methods.balanceOf(address).call();
+        if (callback) {
+          return callback(null, balance);
+        } else {
+          return balance;
+        }
       } else {
-        return balance;
+        const accounts = await this.web3.eth.getAccounts();
+        const balances = [];
+        for (let account of accounts) {
+          const balance = await this.getBalance(account);
+          balances.push({ account,  balance });
+        }
+        if (callback) {
+          return callback(null, balances);
+        } else {
+          return balances;
+        }
       }
-    } else {
-      const accounts = await this.web3.eth.getAccounts();
-      const balances = [];
-      for(let account of accounts) {
-        const balance = await this.getBalance(account);
-        balances.push({ account,  balance });
-      }
-      if(cb) {
-        return cb(null, balances);
-      } else {
-        return balances;
+    } catch (err) {
+      if (callback) {
+        return callback(err);
       }
     }
   }

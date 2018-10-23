@@ -12,12 +12,11 @@ class CryptoRpcProvider {
       USDC: Erc20RPC
     };
 
-
     this.config = {
       host: rpcConfig.host,
       port: rpcConfig.rpcPort,
-      user: rpcConfig.user,
-      pass: rpcConfig.pass,
+      user: rpcConfig.rpcUser,
+      pass: rpcConfig.rpcPass,
       protocol: rpcConfig.protocol,
       currencyConfig
     };

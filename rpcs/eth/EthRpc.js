@@ -38,57 +38,74 @@ class EthRPC {
 
   async cmdlineUnlock(time, callback) {
     try {
-      const unlocked = await this.isUnlocked();
-      const phrase = await promptly.password('> ');
-      await this.web3.eth.personal.unlockAccount(this.account, phrase, time);
-      return callback(null, this.walletLock.bind(this));
-    } catch (err) {
-      console.error(err);
-      return callback(err);
+      promptly.password('> ', async (err, phrase) => {
+        if (err) { return callback(err); }
+        await this.web3.eth.personal.unlockAccount(this.account, phrase, time);
+        console.log(this.account, ' unlocked for ' + time + ' seconds');
+        return callback(null, (doneLocking) => {
+          this.walletLock((err) => {
+            if (err) {
+              console.log(err.message);
+            } else {
+              console.log('wallet locked');
+            }
+            doneLocking && doneLocking();
+          });
+        });
+      });
+    } catch (e) {
+      return callback(e);
     }
   }
 
 
   async getBalance(address, callback) {
-    if(address) {
-      const balance = await this.web3.eth.getBalance(address);
-      if(callback){
-        return callback(null, balance);
+    try {
+      if (address) {
+        const balance = await this.web3.eth.getBalance(address);
+        if (callback) {
+          return callback(null, balance);
+        } else {
+          return balance;
+        }
       } else {
-        return balance;
+        const accounts = await this.web3.eth.getAccounts();
+        const balances = [];
+        for (let account of accounts) {
+          const balance = await this.web3.eth.getBalance(account);
+          balances.push({ account,  balance });
+        }
+        if (callback) {
+          return callback(null, balances);
+        } else {
+          return balances;
+        }
       }
-    } else {
-      const accounts = await this.web3.eth.getAccounts();
-      const balances = [];
-      for(let account of accounts) {
-        const balance = await this.web3.eth.getBalance(account);
-        balances.push({ account,  balance });
-      }
-      if(callback) {
-        return callback(null, balances);
-      } else {
-        return balances;
+    } catch (err) {
+      if (callback) {
+        return callback(err);
       }
     }
   }
 
-  async sendToAddress(address, amount, callback) {
-    try {
-      const tx = await this.web3.eth.sendTransaction({
-        from: this.account,
-        to: address,
-        value: amount
-      });
-      return callback(null, { result: tx.transactionHash });
-    } catch (err) {
-      return callback(err);
-    }
+  sendToAddress(address, amount, callback) {
+    this.web3.eth.sendTransaction({
+      from: this.account,
+      to: address,
+      value: amount
+    }, (err, result) => {
+      callback(err, { result });
+    });
   }
 
   async walletLock(callback) {
-    await this.web3.eth.personal.lockAccount(this.account);
-    if(callback) {
+    try {
+      await this.web3.eth.personal.lockAccount(this.account);
       return callback();
+    } catch (err) {
+      if (callback) {
+        return callback(err);
+      }
     }
   }
 }
