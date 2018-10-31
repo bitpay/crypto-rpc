@@ -92,10 +92,28 @@ class EthRPC {
     this.web3.eth.sendTransaction({
       from: this.account,
       to: address,
-      value: amount
+      value: amount,
+      gasPrice: this.estimateGasPrice()
     }, (err, result) => {
       callback(err, { result });
     });
+  }
+
+  estimateGasPrice() {
+    var bestBlock = web3.eth.blockNumber;
+    var gasPrices = [];
+    for(var i = bestBlock; i > bestBlock - 4; i--) {
+      var block = web3.eth.getBlock(i);
+      var txs = block.transactions.map(function(txid) {
+        return web3.eth.getTransaction(txid);
+      });
+      var blockGasPrices = txs.map(function(tx) { return tx.gasPrice });
+      gasPrices.push(blockGasPrices[blockGasPrices.length - 2]);
+    }
+    var estimate = gasPrices.reduce(function(a, b) {
+      return Math.max(a, b);
+    });
+    return estimate;
   }
 
   async walletLock(callback) {
