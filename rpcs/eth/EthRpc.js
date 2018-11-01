@@ -110,7 +110,11 @@ class EthRPC {
       var blockGasPrices = txs.map(function(tx) { return tx.gasPrice });
       // sort gas prices in descending order
       blockGasPrices = blockGasPrices.sort(function(a, b) { return b - b });
-      gasPrices.push(blockGasPrices[blockGasPrices.length - 2]);
+      var txCount = txs.length;
+      var lowGasPriceIndex = txCount > 1 ? txCount - 2 : 0;
+      if(txCount > 0) {
+        gasPrices.push(blockGasPrices[lowGasPriceIndex]);
+      }
     }
     var estimate = gasPrices.reduce(function(a, b) {
       return Math.max(a, b);
