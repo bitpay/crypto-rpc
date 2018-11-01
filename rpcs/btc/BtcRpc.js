@@ -21,6 +21,5 @@ class BtcRpc {
     this.rpc.getWalletInfo(cb);
   }
 }
-;
 
 module.exports = BtcRpc;

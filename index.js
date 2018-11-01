@@ -1,5 +1,5 @@
 module.exports = {
   BalanceProgram: require('./bin/balance'),
   SendProgram: require('./bin/send'),
-  rpcs: require('./rpcs')
+  CryptoRpc: require('./rpcs')
 };

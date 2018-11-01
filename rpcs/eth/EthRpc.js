@@ -108,6 +108,8 @@ class EthRPC {
         return this.web3.eth.getTransaction(txid);
       });
       var blockGasPrices = txs.map(function(tx) { return tx.gasPrice });
+      // sort gas prices in descending order
+      blockGasPrices = blockGasPrices.sort(function(a, b) { return b - b });
       gasPrices.push(blockGasPrices[blockGasPrices.length - 2]);
     }
     var estimate = gasPrices.reduce(function(a, b) {
