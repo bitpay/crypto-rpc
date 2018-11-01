@@ -1,11 +1,4 @@
 #!/usr/bin/env node
-const program = require('commander');
-program
-  .option('--node <node>')
-  .option('--currency <currency>')
-  .option('--address <address>')
-  .option('--amount <amount>')
-
 /**
  * SendProgram
  *
@@ -25,7 +18,6 @@ program
  *}
  */
 const SendProgram = {
-  program,
   start: (config, program) => {
     const CryptoRPC = require('../rpcs');
     const util = require('util');
@@ -63,7 +55,14 @@ const SendProgram = {
 
 if (require.main === module) {
   const config = require('../config');
+  const program = require('commander');
   try{
+    program
+      .option('--node <node>')
+      .option('--currency <currency>')
+      .option('--address <address>')
+      .option('--amount <amount>')
+
     program.parse(process.argv);
     SendProgram.start(config, program);
   } catch (e) {

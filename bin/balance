@@ -1,11 +1,4 @@
 #!/usr/bin/env node
-
-const program = require('commander');
-program
-  .option('--node <node>')
-  .option('--currency <currency>')
-  .option('--address <address>')
-
 /**
  * BalanceProgram.start
  *
@@ -25,7 +18,6 @@ program
  *}
  */
 const BalanceProgram = {
-  program,
   start: (config, program) => {
     const CryptoRPC = require('../rpcs');
     const util = require('util');
@@ -58,7 +50,13 @@ const BalanceProgram = {
 
 if (require.main === module) {
   const config = require('../config');
+  const program = require('commander');
   try{
+    program
+      .option('--node <node>')
+      .option('--currency <currency>')
+      .option('--address <address>')
+
     program.parse(process.argv);
     BalanceProgram.start(config, program);
   } catch (e) {
