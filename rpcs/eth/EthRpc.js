@@ -88,36 +88,37 @@ class EthRPC {
     }
   }
 
-  sendToAddress(address, amount, callback) {
+  async sendToAddress(address, amount, callback) {
+    const gasPrice = await this.estimateGasPrice();
     this.web3.eth.sendTransaction({
       from: this.account,
       to: address,
       value: amount,
-      gasPrice: this.estimateGasPrice()
+      gasPrice
     }, (err, result) => {
       callback(err, { result });
     });
   }
 
-  estimateGasPrice() {
-    var bestBlock = this.web3.eth.blockNumber;
-    var gasPrices = [];
-    for(var i = bestBlock; i > bestBlock - 4; i--) {
-      var block = this.web3.eth.getBlock(i);
-      var txs = block.transactions.map(function(txid) {
+  async estimateGasPrice() {
+    const bestBlock = this.web3.eth.blockNumber;
+    const gasPrices = [];
+    for(let i = bestBlock; i > bestBlock - 4; i--) {
+      const block = this.web3.eth.getBlock(i);
+      const txs = block.transactions.map((txid) => {
         return this.web3.eth.getTransaction(txid);
       });
-      var blockGasPrices = txs.map(function(tx) { return tx.gasPrice });
+      var blockGasPrices = txs.map((tx) => { return tx.gasPrice });
       // sort gas prices in descending order
-      blockGasPrices = blockGasPrices.sort(function(a, b) { return b - a });
+      blockGasPrices = blockGasPrices.sort((a, b) => { return b - a });
       var txCount = txs.length;
       var lowGasPriceIndex = txCount > 1 ? txCount - 2 : 0;
       if(txCount > 0) {
         gasPrices.push(blockGasPrices[lowGasPriceIndex]);
       }
     }
-    var gethGasPrice = this.web3.eth.gasPrice;
-    var estimate = gasPrices.reduce(function(a, b) {
+    var gethGasPrice = await this.web3.eth.getGasPrice();
+    var estimate = gasPrices.reduce((a, b) => {
       return Math.max(a, b);
     }, gethGasPrice);
     console.log('Using gasPrice', estimate, '...Geth estimate was', gethGasPrice);

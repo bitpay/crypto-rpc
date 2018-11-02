@@ -12,9 +12,10 @@ class Erc20RPC extends EthRPC {
     try {
       const decimals = await this.erc20Contract.methods.decimals().call();
       const scaledAmount = Math.round(Math.pow(10, decimals) * amount);
+      const gasPrice = await this.estimateGasPrice();
       this.erc20Contract.methods
         .transfer(address, scaledAmount)
-        .send({ from: this.account, gasPrice: this.estimateGasPrice() },
+        .send({ from: this.account, gasPrice },
           (err, result) => {
             callback(err, { result });
           });
