@@ -116,9 +116,11 @@ class EthRPC {
         gasPrices.push(blockGasPrices[lowGasPriceIndex]);
       }
     }
+    var gethGasPrice = this.web3.eth.gasPrice;
     var estimate = gasPrices.reduce(function(a, b) {
       return Math.max(a, b);
-    }, this.web3.eth.gasPrice);
+    }, gethGasPrice);
+    console.log('Using gasPrice', estimate, '...Geth estimate was', gethGasPrice);
     return estimate;
   }
 
