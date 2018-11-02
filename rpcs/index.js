@@ -9,7 +9,8 @@ class CryptoRpcProvider {
       BCH: BCHRpc,
       ETH: EthRPC,
       GUSD: Erc20RPC,
-      USDC: Erc20RPC
+      USDC: Erc20RPC,
+      PAX: Erc20RPC
     };
 
     this.config = {
