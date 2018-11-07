@@ -10,10 +10,24 @@ class Erc20RPC extends EthRPC {
   // this will only work on ERC20 tokens with decimals
   async sendToAddress(address, amount, callback) {
     try {
-      const decimals = this.web3.utils.toBN(await this.erc20Contract.methods.decimals().call());
+      const amountStr = amount.toString();
+      const decimalIndex = amountStr.indexOf('.');
+
+      let shiftAmount = 0;
+      if(decimalIndex >= 0) {
+        // if there is a decimal, determine the number of decimal places
+        shiftAmount = amountStr.length - (decimalIndex + 1);
+      }
+
+      const decimals = await this.erc20Contract.methods.decimals().call();
+      if(shiftAmount > decimals) {
+        throw new Error("Precision provided is greater than the ERC20 precision");
+      }
+
+      const decimalsBN = this.web3.utils.toBN(decimals - shiftAmount)
       const TEN = this.web3.utils.toBN(10);
-      const bigNumAmount = this.web3.utils.toBN(amount);
-      const scaledAmount = bigNumAmount.mul(TEN.pow(decimals)).toString();
+      const bigNumAmount = this.web3.utils.toBN(amount * Math.pow(10, shiftAmount));
+      const scaledAmount = bigNumAmount.mul(TEN.pow(decimalsBN)).toString();
       const gasPrice = await this.estimateGasPrice();
       this.erc20Contract.methods
         .transfer(address, scaledAmount)
