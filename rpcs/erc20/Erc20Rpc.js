@@ -13,20 +13,27 @@ class Erc20RPC extends EthRPC {
       const amountStr = amount.toString();
       const decimalIndex = amountStr.indexOf('.');
 
-      let shiftAmount = 0;
+      let precision = 0;
       if(decimalIndex >= 0) {
         // if there is a decimal, determine the number of decimal places
-        shiftAmount = amountStr.length - (decimalIndex + 1);
+        precision = amountStr.length - (decimalIndex + 1);
       }
 
       const decimals = await this.erc20Contract.methods.decimals().call();
-      if(shiftAmount > decimals) {
+      if(precision > decimals) {
         throw new Error("Precision provided is greater than the ERC20 precision");
       }
+      if(precision > 20) {
+        throw new Error("Precision provided is too high for this library");
+      }
 
-      const decimalsBN = this.web3.utils.toBN(decimals - shiftAmount)
+      const decimalsBN = this.web3.utils.toBN(decimals - precision)
       const TEN = this.web3.utils.toBN(10);
-      const bigNumAmount = this.web3.utils.toBN(amount * Math.pow(10, shiftAmount));
+
+      // This line is why we can't handle a shift amount > 20
+      // BigNum can't handle scientific notation,
+      // or floats, so we must convert amount into an integer
+      const bigNumAmount = this.web3.utils.toBN(amount * Math.pow(10, precision));
       const scaledAmount = bigNumAmount.mul(TEN.pow(decimalsBN)).toString();
       const gasPrice = await this.estimateGasPrice();
       this.erc20Contract.methods
