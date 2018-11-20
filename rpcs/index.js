@@ -8,6 +8,7 @@ class CryptoRpcProvider {
       BTC: BTCRpc,
       BCH: BCHRpc,
       ETH: EthRPC,
+      ERC20: Erc20RPC,
       GUSD: Erc20RPC,
       USDC: Erc20RPC,
       PAX: Erc20RPC
