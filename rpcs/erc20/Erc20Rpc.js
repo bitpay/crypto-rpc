@@ -49,8 +49,7 @@ class Erc20RPC extends EthRPC {
           .transfer(address, scaledAmount).encodeABI();
         this.web3.eth.personal
           .sendTransaction({ from: this.account, gasPrice, data: contractData, to: this.tokenContractAddress },
-            passphrase,
-            (err, result) => {
+            passphrase, (err, result) => {
               callback(err, { result });
             });
       }
