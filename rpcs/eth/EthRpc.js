@@ -37,10 +37,11 @@ class EthRPC {
   }
 
   async cmdlineUnlock(time, callback) {
+    const timeHex = this.web3.utils.toHex(time);
     try {
       promptly.password('> ', async (err, phrase) => {
         if (err) { return callback(err); }
-        await this.web3.eth.personal.unlockAccount(this.account, phrase, time);
+        await this.web3.eth.personal.unlockAccount(this.account, phrase, timeHex);
         console.log(this.account, ' unlocked for ' + time + ' seconds');
         return callback(null, (doneLocking) => {
           this.walletLock((err) => {

@@ -8,7 +8,7 @@ class Erc20RPC extends EthRPC {
   }
 
   // this will only work on ERC20 tokens with decimals
-  async sendToAddress(address, amount, callback) {
+  async sendToAddress(address, amount, callback, passphrase) {
     try {
       const amountStr = amount.toString();
       const decimalIndex = amountStr.indexOf('.');
@@ -36,12 +36,24 @@ class Erc20RPC extends EthRPC {
       const bigNumAmount = this.web3.utils.toBN(amount * Math.pow(10, precision));
       const scaledAmount = bigNumAmount.mul(TEN.pow(decimalsBN)).toString();
       const gasPrice = await this.estimateGasPrice();
-      this.erc20Contract.methods
-        .transfer(address, scaledAmount)
-        .send({ from: this.account, gasPrice },
-          (err, result) => {
-            callback(err, { result });
-          });
+      if(passphrase === undefined) {
+        this.erc20Contract.methods
+          .transfer(address, scaledAmount)
+          .send({ from: this.account, gasPrice },
+            (err, result) => {
+              callback(err, { result });
+            });
+      } else {
+        console.log('Unlocking for a single transaction. PARITY ONLY');
+        const contractData = this.erc20Contract.methods
+          .transfer(address, scaledAmount).encodeABI();
+        this.web3.eth.personal
+          .sendTransaction({ from: this.account, gasPrice, data: contractData, to: this.tokenContractAddress },
+            passphrase,
+            (err, result) => {
+              callback(err, { result });
+            });
+      }
     } catch (err) {
       if (callback) {
         return callback(err);

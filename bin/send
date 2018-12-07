@@ -21,13 +21,14 @@ const SendProgram = {
   start: (config, program) => {
     const CryptoRPC = require('../rpcs');
     const util = require('util');
+    var promptly = require('promptly');
 
 
     async function main() {
-      const { node, currency, address, amount } = program;
+      const { node, currency, address, amount, parity } = program;
       const rpcHost = config[node];
       if(rpcHost) {
-        const { host, rpcPort, protocol, user, pass } = rpcHost;
+        const { host, rpcPort, protocol, user, pass, type } = rpcHost;
         const currencyConfig = rpcHost.currencies[currency] || {};
         let rpcs = new CryptoRPC({
           host,
@@ -37,13 +38,24 @@ const SendProgram = {
           protocol,
         }, currencyConfig);
 
-        rpcs.cmdlineUnlock(currency, 10000, (err, lockFn) => {
-          rpcs.sendToAddress(currency, address, amount, (err, tx) => {
-            if(err) console.error(err);
-            console.log(tx);
-            lockFn();
+        if(type === 'geth') {
+          rpcs.cmdlineUnlock(currency, 10000, (err, lockFn) => {
+            rpcs.sendToAddress(currency, address, amount, (err, tx) => {
+              if(err) console.error(err);
+              console.log(tx);
+              lockFn();
+            });
           });
-        });
+        }
+        else {
+          promptly.password('> ', async (err, phrase) => {
+            if (err) { return callback(err); }
+            rpcs.sendToAddress(currency, address, amount, (err, tx) => {
+              if(err) console.error(err);
+              console.log(tx);
+            }, phrase);
+          })
+        }
       } else {
         console.error('ERROR: Node is not in the config');
       }
@@ -62,6 +74,7 @@ if (require.main === module) {
       .option('--currency <currency>')
       .option('--address <address>')
       .option('--amount <amount>')
+      .option('--parity')
 
     program.parse(process.argv);
     SendProgram.start(config, program);

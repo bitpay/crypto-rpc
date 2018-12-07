@@ -41,8 +41,8 @@ class CryptoRpcProvider {
     this.get(currency).getBalance(address, cb);
   }
 
-  sendToAddress(currency, address, amount, cb) {
-    this.get(currency).sendToAddress(address, amount, cb);
+  sendToAddress(currency, address, amount, cb, passphrase) {
+    this.get(currency).sendToAddress(address, amount, cb, passphrase);
   }
 
   walletLock(currency, cb) {
