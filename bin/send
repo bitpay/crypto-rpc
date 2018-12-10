@@ -25,7 +25,7 @@ const SendProgram = {
 
 
     async function main() {
-      const { node, currency, address, amount, parity } = program;
+      const { node, currency, address, amount } = program;
       const rpcHost = config[node];
       if(rpcHost) {
         const { host, rpcPort, protocol, user, pass, type } = rpcHost;
@@ -74,7 +74,6 @@ if (require.main === module) {
       .option('--currency <currency>')
       .option('--address <address>')
       .option('--amount <amount>')
-      .option('--parity')
 
     program.parse(process.argv);
     SendProgram.start(config, program);
