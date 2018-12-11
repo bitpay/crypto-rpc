@@ -11,7 +11,6 @@ module.exports = {
   },
   BCHNode: {},
   ETHNode: {
-    type: 'parity',
     host: 'localhost',
     rpcPort: '8545',
     protocol: 'http',

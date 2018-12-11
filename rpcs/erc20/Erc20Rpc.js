@@ -36,23 +36,15 @@ class Erc20RPC extends EthRPC {
       const bigNumAmount = this.web3.utils.toBN(amount * Math.pow(10, precision));
       const scaledAmount = bigNumAmount.mul(TEN.pow(decimalsBN)).toString();
       const gasPrice = await this.estimateGasPrice();
-      if(passphrase === undefined) {
-        this.erc20Contract.methods
-          .transfer(address, scaledAmount)
-          .send({ from: this.account, gasPrice },
-            (err, result) => {
-              callback(err, { result });
-            });
-      } else {
-        console.log('Unlocking for a single transaction. PARITY ONLY');
-        const contractData = this.erc20Contract.methods
-          .transfer(address, scaledAmount).encodeABI();
-        this.web3.eth.personal
-          .sendTransaction({ from: this.account, gasPrice, data: contractData, to: this.tokenContractAddress },
-            passphrase, (err, result) => {
-              callback(err, { result });
-            });
-      }
+      const contractData = this.erc20Contract.methods
+        .transfer(address, scaledAmount).encodeABI();
+      console.log('Unlocking for a single transaction.');
+      this.web3.eth.personal
+        .sendTransaction({ from: this.account, gasPrice, data: contractData, to: this.tokenContractAddress },
+          passphrase, (err, result) => {
+            callback(err, { result });
+          });
+
     } catch (err) {
       if (callback) {
         return callback(err);

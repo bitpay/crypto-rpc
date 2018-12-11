@@ -91,17 +91,6 @@ class EthRPC {
 
   async sendToAddress(address, amount, callback, passphrase) {
     const gasPrice = await this.estimateGasPrice();
-    if(passphrase === undefined) {
-      this.web3.eth.sendTransaction({
-        from: this.account,
-        to: address,
-        value: amount,
-        gasPrice
-      }, (err, result) => {
-        callback(err, { result });
-      });
-
-    } else {
       this.web3.eth.personal.sendTransaction({
         from: this.account,
         to: address,
@@ -110,7 +99,6 @@ class EthRPC {
       }, passphrase, (err, result) => {
           callback(err, { result });
         });
-    }
   }
 
   async estimateGasPrice() {
