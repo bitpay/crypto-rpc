@@ -28,7 +28,7 @@ const SendProgram = {
       const { node, currency, address, amount } = program;
       const rpcHost = config[node];
       if(rpcHost) {
-        const { host, rpcPort, protocol, user, pass, type } = rpcHost;
+        const { host, rpcPort, protocol, user, pass } = rpcHost;
         const currencyConfig = rpcHost.currencies[currency] || {};
         let rpcs = new CryptoRPC({
           host,
@@ -38,24 +38,13 @@ const SendProgram = {
           protocol,
         }, currencyConfig);
 
-        if(type === 'geth') {
-          rpcs.cmdlineUnlock(currency, 10000, (err, lockFn) => {
-            rpcs.sendToAddress(currency, address, amount, (err, tx) => {
-              if(err) console.error(err);
-              console.log(tx);
-              lockFn();
-            });
-          });
-        }
-        else {
-          promptly.password('> ', async (err, phrase) => {
-            if (err) { return callback(err); }
-            rpcs.sendToAddress(currency, address, amount, (err, tx) => {
-              if(err) console.error(err);
-              console.log(tx);
-            }, phrase);
-          })
-        }
+        promptly.password('> ', async (err, phrase) => {
+          if (err) { return callback(err); }
+          rpcs.sendToAddress(currency, address, amount, (err, tx) => {
+            if(err) console.error(err);
+            console.log(tx);
+          }, phrase);
+        })
       } else {
         console.error('ERROR: Node is not in the config');
       }
