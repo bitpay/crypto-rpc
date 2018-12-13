@@ -90,15 +90,36 @@ class EthRPC {
   }
 
   async sendToAddress(address, amount, callback, passphrase) {
-    const gasPrice = await this.estimateGasPrice();
+    try {
+      const gasPrice = await this.estimateGasPrice();
+      console.log('Unlocking for a single transaction.');
       this.web3.eth.personal.sendTransaction({
         from: this.account,
         to: address,
         value: amount,
         gasPrice
       }, passphrase, (err, result) => {
-          callback(err, { result });
+        callback(err, { result });
+      });
+    } catch(e) {
+      return callback(e);
+    }
+  }
+
+  async unlockAndSendToAddress(address, amount, callback, passphrase) {
+    try {
+      if(!passphrase) {
+        promptly.password('> ', async (err, phrase) => {
+          this.sendToAddress(address, amount, callback, passphrase);
         });
+      } else {
+        this.sendToAddress(address, amount, callback, passphrase);
+      }
+    } catch (err) {
+      if (callback) {
+        return callback(err);
+      }
+    }
   }
 
   async estimateGasPrice() {

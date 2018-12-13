@@ -17,8 +17,8 @@ class CryptoRpcProvider {
     this.config = {
       host: rpcConfig.host,
       port: rpcConfig.rpcPort,
-      user: rpcConfig.rpcUser,
-      pass: rpcConfig.rpcPass,
+      user: rpcConfig.user || rpcConfig.rpcUser,
+      pass: rpcConfig.pass || rpcConfig.rpcPass,
       protocol: rpcConfig.protocol,
       currencyConfig
     };
@@ -47,6 +47,10 @@ class CryptoRpcProvider {
 
   walletLock(currency, cb) {
     this.get(currency).walletLock(cb);
+  }
+
+  unlockAndSendToAddress(currency, address, amount, callback, passphrase) {
+    this.get(currency).unlockAndSendToAddress(address, amount, callback, passphrase);
   }
 }
 

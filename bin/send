@@ -21,8 +21,6 @@ const SendProgram = {
   start: (config, program) => {
     const CryptoRPC = require('../rpcs');
     const util = require('util');
-    var promptly = require('promptly');
-
 
     async function main() {
       const { node, currency, address, amount } = program;
@@ -38,13 +36,10 @@ const SendProgram = {
           protocol,
         }, currencyConfig);
 
-        promptly.password('> ', async (err, phrase) => {
-          if (err) { return callback(err); }
-          rpcs.sendToAddress(currency, address, amount, (err, tx) => {
-            if(err) console.error(err);
-            console.log(tx);
-          }, phrase);
-        })
+        rpcs.unlockAndSendToAddress(currency, address, amount, (err, tx) => {
+          if(err) console.error(err);
+          console.log(tx);
+        });
       } else {
         console.error('ERROR: Node is not in the config');
       }
