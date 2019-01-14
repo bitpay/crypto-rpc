@@ -110,7 +110,7 @@ class EthRPC {
     try {
       if(!passphrase) {
         promptly.password('> ', async (err, phrase) => {
-          this.sendToAddress(address, amount, callback, passphrase);
+          this.sendToAddress(address, amount, callback, phrase);
         });
       } else {
         this.sendToAddress(address, amount, callback, passphrase);
