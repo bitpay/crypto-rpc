@@ -15,12 +15,14 @@ class BtcRpc {
 
   async unlockAndSendToAddress(address, amount, callback, passphrase) {
     this.cmdlineUnlock(10, (err, lock) => {
+      if(err) return callback(err);
       this.sendToAddress(address, amount, (err, tx) => {
+        if(err) return callback(err);
         this.walletLock((lockErr) => {
           if(lockErr) {
             console.error('Unable to lock wallet');
           } else {
-            console.log("Wallet locked");
+            console.log('Wallet locked');
           }
           callback(err, tx);
         });
