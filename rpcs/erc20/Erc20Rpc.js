@@ -37,7 +37,6 @@ class Erc20RPC extends EthRPC {
     const gasPrice = await this.estimateGasPrice();
     const contractData = this.erc20Contract.methods
       .transfer(address, scaledAmount).encodeABI();
-    console.log('Unlocking for a single transaction.');
     this.web3.eth.personal
       .sendTransaction({ from: this.account, gasPrice, data: contractData, to: this.tokenContractAddress },
         passphrase, (err, result) => {
