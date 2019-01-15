@@ -1,4 +1,3 @@
-var promptly = require('promptly');
 const EthRPC = require('../eth/EthRpc');
 const erc20 = require('./erc20.json');
 class Erc20RPC extends EthRPC {
@@ -45,23 +44,6 @@ class Erc20RPC extends EthRPC {
           callback(err, { result });
         });
   };
-
-  async unlockAndSendToAddress(address, amount, callback, passphrase) {
-    try {
-      if(!passphrase) {
-        promptly.password('> ', async (err, phrase) => {
-          await this.sendToAddress(address, amount, callback, passphrase);
-        });
-      } else {
-        await this.sendToAddress(address, amount, callback, passphrase);
-      }
-    } catch (err) {
-      if (callback) {
-        return callback(err);
-      }
-    }
-  }
-
 
   async getBalance(address, callback) {
     try {
