@@ -35,6 +35,10 @@ class BtcRpc {
     this.rpc.walletLock(cb);
   }
 
+  estimateFee(nBlocks, cb) {
+    this.rpc.estimateSmartFee(nBlocks, cb);
+  }
+
   getBalance(address, cb) {
     this.rpc.getWalletInfo(cb);
   }
