@@ -52,6 +52,10 @@ class CryptoRpcProvider {
   unlockAndSendToAddress(currency, address, amount, callback, passphrase) {
     this.get(currency).unlockAndSendToAddress(address, amount, callback, passphrase);
   }
+
+  estimateFee(currency, nBlocks, cb) {
+    this.get(currency).estimateFee(nBlocks, cb);
+  }
 }
 
 module.exports = CryptoRpcProvider;

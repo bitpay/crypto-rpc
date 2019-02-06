@@ -125,10 +125,18 @@ class EthRPC {
     }
   }
 
-  async estimateGasPrice() {
+  estimateFee(nBlocks, cb) {
+    this.estimateGasPrice(nBlocks).then((value) => {
+      cb(null, value);
+    }).catch((err) => {
+      cb(err);
+    });
+  }
+
+  async estimateGasPrice(nBlocks) {
     const bestBlock = this.web3.eth.blockNumber;
     const gasPrices = [];
-    for(let i = bestBlock; i > bestBlock - 4; i--) {
+    for(let i = bestBlock; i > bestBlock - nBlocks; i--) {
       const block = this.web3.eth.getBlock(i);
       const txs = block.transactions.map((txid) => {
         return this.web3.eth.getTransaction(txid);
