@@ -5,12 +5,26 @@ class BtcRpc {
     this.rpc = new BitcoinRPC(config);
   }
 
-  cmdlineUnlock(time, cb) {
-    this.rpc.cmdlineUnlock(time, cb);
+  asyncCall(method, args, cb) {
+    return new Promise((resolve, reject) => {
+      this.rpc[method](...args, (err, resp) => {
+        if(err || (resp && resp.result && resp.result.errors)){
+          reject(err);
+          if(cb) return cb(err);
+        } else {
+          resolve(resp);
+          if(cb) return cb(null, resp);
+        }
+      });
+    });
   }
 
-  sendToAddress(address, amount, cb) {
-    this.rpc.sendToAddress(address, amount, cb);
+  async cmdlineUnlock(time, cb) {
+    return this.asyncCall("cmdlineUnlock", [time], cb);
+  }
+
+  async sendToAddress(address, amount, cb) {
+    return this.asyncCall("sendToAddress", [address, amount], cb);
   }
 
   async unlockAndSendToAddress(address, amount, callback, passphrase) {
@@ -31,16 +45,17 @@ class BtcRpc {
   }
 
 
-  walletLock(cb) {
-    this.rpc.walletLock(cb);
+  async walletLock(cb) {
+    return this.asyncCall("walletLock", [], cb);
   }
 
-  estimateFee(nBlocks, cb) {
-    this.rpc.estimateSmartFee(nBlocks, cb);
+  async estimateFee(nBlocks, cb) {
+    return this.asyncCall("estimateSmartFee", [nBlocks], cb);
   }
 
-  getBalance(address, cb) {
-    this.rpc.getWalletInfo(cb);
+  async getBalance(address, cb) {
+    const balanceInfo = await this.asyncCall("getWalletInfo", [], cb);
+    return balanceInfo.result.balance;
   }
 }
 
