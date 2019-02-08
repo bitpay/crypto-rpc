@@ -57,12 +57,11 @@ class BtcRpc {
     const balanceInfo = await this.asyncCall("getWalletInfo", [], cb);
     return balanceInfo.result.balance;
   }
-  
-  getBestBlockHash(cb) {
-    this.rpc.getBestBlockHash(cb);
+
+  async getBestBlockHash(cb) {
+    return this.asyncCall("getBestBlockHash", [], cb);
   }
 
-  }
 }
 
 module.exports = BtcRpc;

@@ -128,8 +128,9 @@ class EthRPC {
   async getBestBlockHash(callback) {
     const bestBlock = await this.web3.eth.blockNumber;
     const blockHash = await this.web3.eth.getBlock(bestBlock).hash;
-    
-    return callback(null, blockHash);
+
+    if(callback) callback(null, blockHash);
+    return blockHash
   }
 
   estimateFee(nBlocks, cb) {
