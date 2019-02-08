@@ -39,6 +39,10 @@ class BtcRpc {
     this.rpc.estimateSmartFee(nBlocks, cb);
   }
 
+  getBestBlockHash(cb) {
+    this.rpc.getBestBlockHash(cb);
+  }
+
   getBalance(address, cb) {
     this.rpc.getWalletInfo(cb);
   }
