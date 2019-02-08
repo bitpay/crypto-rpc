@@ -56,6 +56,10 @@ class CryptoRpcProvider {
   estimateFee(currency, nBlocks, cb) {
     return this.get(currency).estimateFee(nBlocks, cb);
   }
+
+  getBestBlockHash(currency, cb) {
+    this.get(currency).getBestBlockHash(cb);
+  }
 }
 
 module.exports = CryptoRpcProvider;

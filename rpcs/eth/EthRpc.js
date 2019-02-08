@@ -125,6 +125,13 @@ class EthRPC {
     }
   }
 
+  async getBestBlockHash(callback) {
+    const bestBlock = await this.web3.eth.blockNumber;
+    const blockHash = await this.web3.eth.getBlock(bestBlock).hash;
+    
+    return callback(null, blockHash);
+  }
+
   estimateFee(nBlocks, cb) {
     return this.estimateGasPrice(nBlocks).then((value) => {
       if(cb) cb(null, value);
