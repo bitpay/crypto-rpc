@@ -58,7 +58,11 @@ class CryptoRpcProvider {
   }
 
   getBestBlockHash(currency, cb) {
-    this.get(currency).getBestBlockHash(cb);
+    return this.get(currency).getBestBlockHash(cb);
+  }
+
+  getTransaction(currency, txid, cb) {
+    return this.get(currency).getTransaction(txid, cb);
   }
 }
 

@@ -62,6 +62,9 @@ class BtcRpc {
     return this.asyncCall("getBestBlockHash", [], cb);
   }
 
+  async getTransaction(txid, cb) {
+    return this.asyncCall("getTransaction", [txid], cb);
+  }
 }
 
 module.exports = BtcRpc;

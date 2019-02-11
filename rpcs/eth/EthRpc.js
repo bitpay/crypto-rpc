@@ -125,13 +125,6 @@ class EthRPC {
     }
   }
 
-  async getBestBlockHash(callback) {
-    const bestBlock = await this.web3.eth.blockNumber;
-    const blockHash = await this.web3.eth.getBlock(bestBlock).hash;
-
-    if(callback) callback(null, blockHash);
-    return blockHash
-  }
 
   estimateFee(nBlocks, cb) {
     return this.estimateGasPrice(nBlocks).then((value) => {
@@ -167,6 +160,14 @@ class EthRPC {
     return estimate;
   }
 
+  async getBestBlockHash(callback) {
+    const bestBlock = await this.web3.eth.blockNumber;
+    const blockHash = await this.web3.eth.getBlock(bestBlock).hash;
+
+    if(callback) callback(null, blockHash);
+    return blockHash
+  }
+
   async walletLock(callback) {
     try {
       await this.web3.eth.personal.lockAccount(this.account);
@@ -177,5 +178,11 @@ class EthRPC {
       }
     }
   }
+
+
+  async getTransaction(txid, callback) {
+    return this.web3.eth.getTransaction(txid, callback)
+  }
+
 }
 module.exports = EthRPC;
