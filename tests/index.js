@@ -27,6 +27,7 @@ describe('ETH Tests', () => {
 
 
 describe('BTC Tests', () => {
+  let txid = '';
   const rpc = new CryptoRpc({
     host: 'localhost',
     protocol: 'http',
@@ -44,8 +45,15 @@ describe('BTC Tests', () => {
   it('should be able to send a transaction', (done) => {
     rpc.unlockAndSendToAddress('BTC', '2NGFWyW3LBPr6StDuDSNFzQF3Jouuup1rua', '1', (err, tx) => {
       console.log(tx);
+      txid = tx.result;
       assert(tx);
       done();
     }, '')
   });
+
+  it('should be be able to get a transaction', async () => {
+    const tx = await rpc.getTransaction('BTC', txid);
+    console.log(tx);
+    assert(tx.result);
+  })
 });
