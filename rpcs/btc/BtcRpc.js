@@ -7,14 +7,19 @@ class BtcRpc {
 
   asyncCall(method, args, cb) {
     if(cb) {
-      return this.rpc[method](...args, cb);
+      return this.rpc[method](...args, (err, resp) => {
+        if(err) {
+          return cb(err);
+        }
+        cb(null, resp.result);
+      });
     }
     return new Promise((resolve, reject) => {
       this.rpc[method](...args, (err, resp) => {
         if(err || (resp && resp.result && resp.result.errors)){
           reject(err);
         } else {
-          resolve(resp);
+          resolve(resp.result);
         }
       });
     });
@@ -56,7 +61,7 @@ class BtcRpc {
 
   async getBalance(address, cb) {
     const balanceInfo = await this.asyncCall("getWalletInfo", [], cb);
-    return balanceInfo.result.balance;
+    return balanceInfo.balance;
   }
 
   async getBestBlockHash(cb) {
@@ -67,22 +72,12 @@ class BtcRpc {
     return this.asyncCall("getTransaction", [txid], cb);
   }
 
+  async getRawTransaction(txid, cb) {
+    return this.asyncCall("getRawTransaction", [txid], cb);
+  }
+
   async decodeRawTransaction(rawTx, cb) {
-    const tx = new EthereumTx(rawTx);
-    const to = '0x' + tx.to.toString('hex');
-    const from = '0x' + tx.from.toString('hex');
-    const value= parseInt(tx.value.toString('hex') || '0', 16);
-    const gasPrice = parseInt(tx.gasPrice.toString('hex'), 16);
-    const gasLimit = parseInt(tx.gasLimit.toString('hex'), 16);
-    const data = tx.data.toString('hex');
-    return {
-      to,
-      from,
-      value,
-      gasPrice,
-      gasLimit,
-      data
-    }
+    return this.asyncCall('decodeRawTransaction', [rawTx], cb);
   }
 }
 

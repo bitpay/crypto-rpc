@@ -102,9 +102,9 @@ class EthRPC {
       };
       this.web3.eth.personal.sendTransaction(sendParams, passphrase, (err, result) => {
         if(callback) {
-          callback(err, { result });
+          callback(err, result);
         }
-        return { result };
+        return result;
       });
     } catch(e) {
       if(callback) {
@@ -169,8 +169,11 @@ class EthRPC {
   }
 
   async getBestBlockHash(callback) {
-    const bestBlock = await this.web3.eth.blockNumber;
-    const blockHash = await this.web3.eth.getBlock(bestBlock).hash;
+    const bestBlock = this.web3.eth.blockNumber;
+    console.log(bestBlock);
+    const block = await this.web3.eth.getBlock(bestBlock);
+    const blockHash = block.hash;
+    console.log(blockHash);
 
     if(callback) callback(null, blockHash);
     return blockHash
@@ -190,6 +193,10 @@ class EthRPC {
 
   async getTransaction(txid, callback) {
     return this.web3.eth.getTransaction(txid, callback)
+  }
+
+  async getRawTransaction(txid, callback) {
+    return this.web3.currentProvider.send('getRawTransaction', [txid], callback);
   }
 
   async decodeRawTransaction(rawTx, cb) {
