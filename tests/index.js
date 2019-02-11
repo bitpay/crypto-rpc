@@ -66,6 +66,12 @@ function TestForCurrency(currency, currencyConfigs) {
     console.log(block);
     assert(block);
   });
+  
+  it('should estimate fee', async () => {
+    const fee = await rpc.estimateFee(currency, nBlocks = 4);
+    console.log(fee); 
+    assert(fee);
+  });
 }
 
 
@@ -75,47 +81,5 @@ describe('ETH Tests', () => {
 
 
 describe('BTC Tests', () => {
-  let txid = '';
-  const rpc = new CryptoRpc({
-    host: 'localhost',
-    protocol: 'http',
-    rpcPort: '20005',
-    user: 'bitpaytest',
-    pass: 'local321'
-  }, {});
-
-  it('should be able to get a balance', async () => {
-    const balance = await rpc.getBalance('BTC');
-    console.log(balance);
-    assert(balance);
-  });
-
-  it('should be able to send a transaction', (done) => {
-    rpc.unlockAndSendToAddress('BTC', '2NGFWyW3LBPr6StDuDSNFzQF3Jouuup1rua', '1', (err, tx) => {
-      console.log(tx);
-      txid = tx;
-      assert(tx);
-      done();
-    }, '')
-  });
-
-  it('should be be able to get a transaction', async () => {
-    const tx = await rpc.getTransaction('BTC', txid);
-    console.log(tx);
-    assert(tx);
-  })
-
-  it('should be able to decode a raw transaction', async () => {
-    const tx = await rpc.getTransaction('BTC', txid);
-    const decoded = await rpc.decodeRawTransaction('BTC', tx.hex);
-    console.log(decoded)
-    assert(decoded);
-  });
-
-
-  it('should be able to get a block hash', async () => {
-    const block = await rpc.getBestBlockHash('BTC');
-    console.log(block);
-    assert(block);
-  });
+  TestForCurrency('BTC', currencyConfig);
 });
