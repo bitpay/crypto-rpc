@@ -73,9 +73,10 @@ class CryptoRpcProvider {
     return this.get(currency).decodeRawTransaction(rawTx, cb);
   }
 
-  getBlock(hash, cb) {
+  getBlock(currency, hash, cb) {
     return this.get(currency).getBlock(hash, cb);
   }
+
   getConfirmations(currency, txid, cb) {
     return this.get(currency).getConfirmations(txid, cb);
   }
