@@ -140,18 +140,17 @@ class EthRPC {
       return value;
     }).catch((err) => {
       if(cb) cb(err);
-      cb(err);
     });
   }
 
   async estimateGasPrice(nBlocks = 4) {
-    const bestBlock = this.web3.eth.blockNumber;
+    const bestBlock = await this.web3.eth.getBlockNumber();
     const gasPrices = [];
-    for(let i = bestBlock; i > bestBlock - nBlocks; i--) {
-      const block = this.web3.eth.getBlock(i);
-      const txs = block.transactions.map((txid) => {
+    for(let i = 0; i < nBlocks; i++) {
+      const block = await this.web3.eth.getBlock(bestBlock - i);
+      const txs = await Promise.all(block.transactions.map((txid) => {
         return this.web3.eth.getTransaction(txid);
-      });
+      }));
       var blockGasPrices = txs.map((tx) => { return tx.gasPrice });
       // sort gas prices in descending order
       blockGasPrices = blockGasPrices.sort((a, b) => { return b - a });
@@ -169,7 +168,7 @@ class EthRPC {
   }
 
   async getBestBlockHash(callback) {
-    const bestBlock = this.web3.eth.blockNumber;
+    const bestBlock = await this.web3.eth.getBlockNumber();
     const block = await this.web3.eth.getBlock(bestBlock);
     const blockHash = block.hash;
 
@@ -232,8 +231,8 @@ class EthRPC {
   async getConfirmations(txid, cb) {
     try {
       const tx = await this.getTransaction(txid);
-      const bestBlock = this.web3.eth.blockNumber;
-      const confirmations = blockNumber - tx.blockNumber;
+      const bestBlock = await this.web3.eth.getBlockNumber();
+      const confirmations = bestBlock - tx.blockNumber;
       if(cb) cb(confirmations);
       return confirmations;
     } catch (err) {
