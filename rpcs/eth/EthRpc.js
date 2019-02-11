@@ -170,10 +170,8 @@ class EthRPC {
 
   async getBestBlockHash(callback) {
     const bestBlock = this.web3.eth.blockNumber;
-    console.log(bestBlock);
     const block = await this.web3.eth.getBlock(bestBlock);
     const blockHash = block.hash;
-    console.log(blockHash);
 
     if(callback) callback(null, blockHash);
     return blockHash
@@ -196,7 +194,15 @@ class EthRPC {
   }
 
   async getRawTransaction(txid, callback) {
-    return this.web3.currentProvider.send('getRawTransaction', [txid], callback);
+    return new Promise((resolve, reject) => {
+      this.web3.currentProvider.send({method: 'getRawTransaction', args: [txid]}, (err, data) => {
+        if(callback) return callback(err, data);
+        if(err) {
+          return reject(err);
+        }
+        resolve(data);
+      });
+    });
   }
 
   async decodeRawTransaction(rawTx, cb) {

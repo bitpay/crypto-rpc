@@ -65,7 +65,6 @@ class CryptoRpcProvider {
     return this.get(currency).getTransaction(txid, cb);
   }
 
-
   getRawTransaction(currency, txid, cb) {
     return this.get(currency).getRawTransaction(txid, cb);
   }
