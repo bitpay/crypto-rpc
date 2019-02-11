@@ -65,6 +65,24 @@ class BtcRpc {
   async getTransaction(txid, cb) {
     return this.asyncCall("getTransaction", [txid], cb);
   }
+
+  async decodeRawTransaction(rawTx, cb) {
+    const tx = new EthereumTx(rawTx);
+    const to = '0x' + tx.to.toString('hex');
+    const from = '0x' + tx.from.toString('hex');
+    const value= parseInt(tx.value.toString('hex') || '0', 16);
+    const gasPrice = parseInt(tx.gasPrice.toString('hex'), 16);
+    const gasLimit = parseInt(tx.gasLimit.toString('hex'), 16);
+    const data = tx.data.toString('hex');
+    return {
+      to,
+      from,
+      value,
+      gasPrice,
+      gasLimit,
+      data
+    }
+  }
 }
 
 module.exports = BtcRpc;

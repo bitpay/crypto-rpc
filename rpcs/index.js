@@ -64,6 +64,10 @@ class CryptoRpcProvider {
   getTransaction(currency, txid, cb) {
     return this.get(currency).getTransaction(txid, cb);
   }
+
+  decodeRawTransaction(currency, rawTx, cb) {
+    return this.get(currency).decodeRawTransaction(rawTx, cb);
+  }
 }
 
 module.exports = CryptoRpcProvider;

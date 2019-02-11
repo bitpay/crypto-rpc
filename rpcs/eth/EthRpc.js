@@ -1,5 +1,7 @@
 const Web3 = require('web3');
 var promptly = require('promptly');
+const EthereumTx = require('ethereumjs-tx');
+
 
 class EthRPC {
   constructor(config) {
@@ -184,5 +186,24 @@ class EthRPC {
     return this.web3.eth.getTransaction(txid, callback)
   }
 
+  async decodeRawTransaction(rawTx, cb) {
+    const tx = new EthereumTx(rawTx);
+    const to = '0x' + tx.to.toString('hex');
+    const from = '0x' + tx.from.toString('hex');
+    const value= parseInt(tx.value.toString('hex') || '0', 16);
+    const gasPrice = parseInt(tx.gasPrice.toString('hex'), 16);
+    const gasLimit = parseInt(tx.gasLimit.toString('hex'), 16);
+    const data = tx.data.toString('hex');
+    const decodedData = {
+      to,
+      from,
+      value,
+      gasPrice,
+      gasLimit,
+      data
+    };
+    if(cb) cb(null, decodedData);
+    return decodedData
+  }
 }
 module.exports = EthRPC;

@@ -1,5 +1,6 @@
 const EthRPC = require('../eth/EthRpc');
 const erc20 = require('./erc20.json');
+const AbiDecoder = require('abi-decoder');
 class Erc20RPC extends EthRPC {
   constructor(config) {
     super(config);
@@ -70,6 +71,22 @@ class Erc20RPC extends EthRPC {
       if (callback) {
         return callback(err);
       }
+    }
+  }
+
+  async decodeRawTransaction(rawTx, cb) {
+    try {
+      const decodedEthTx = await super.decodeRawTransaction(rawTx)
+      if(decodedEthTx.data) {
+        AbiDecoder.addABI(erc20);
+        decodedEthTx.decodedData = AbiDecoder.decodeMethod('0x' + decodedEthTx.data);
+      }
+      if(cb) {
+        cb(null, decodedEthTx)
+      }
+      return decodedEthTx;
+    } catch(err) {
+      if(cb) cb(err)
     }
   }
 }
