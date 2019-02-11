@@ -79,6 +79,23 @@ class BtcRpc {
   async decodeRawTransaction(rawTx, cb) {
     return this.asyncCall('decodeRawTransaction', [rawTx], cb);
   }
+
+  async getBlock(hash, cb) {
+    return this.asyncCall('getBlock', [hash], cb);
+  }
+
+  async getConfirmations(txid, cb) {
+    try {
+      const blockHeight = await this.getTransaction(txid);
+      const blockHash = await this.getBestBlockHash();
+      const block = await this.getBlock(blockHash);
+      const confirmations = block.height - blockHeight;
+      if(cb) cb(null, confirmations);
+      return confirmations;
+    } catch (err) {
+      if(cb) cb(err);
+    }
+  }
 }
 
 module.exports = BtcRpc;

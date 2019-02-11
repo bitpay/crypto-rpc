@@ -224,5 +224,21 @@ class EthRPC {
     if(cb) cb(null, decodedData);
     return decodedData
   }
+
+  async getBlock(blockHash, cb) {
+    return this.web3.eth.getBlock(blockHash, cb);
+  }
+
+  async getConfirmations(txid, cb) {
+    try {
+      const tx = await this.getTransaction(txid);
+      const bestBlock = this.web3.eth.blockNumber;
+      const confirmations = blockNumber - tx.blockNumber;
+      if(cb) cb(confirmations);
+      return confirmations;
+    } catch (err) {
+      if(cb) cb(err);
+    }
+  }
 }
 module.exports = EthRPC;
