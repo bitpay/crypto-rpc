@@ -34,27 +34,27 @@ class CryptoRpcProvider {
   }
 
   cmdlineUnlock(currency, time, cb) {
-    this.get(currency).cmdlineUnlock(time, cb);
+    return this.get(currency).cmdlineUnlock(time, cb);
   }
 
   getBalance(currency, address, cb) {
-    this.get(currency).getBalance(address, cb);
+    return this.get(currency).getBalance(address, cb);
   }
 
   sendToAddress(currency, address, amount, cb, passphrase) {
-    this.get(currency).sendToAddress(address, amount, cb, passphrase);
+    return this.get(currency).sendToAddress(address, amount, cb, passphrase);
   }
 
   walletLock(currency, cb) {
-    this.get(currency).walletLock(cb);
+    return this.get(currency).walletLock(cb);
   }
 
   unlockAndSendToAddress(currency, address, amount, callback, passphrase) {
-    this.get(currency).unlockAndSendToAddress(address, amount, callback, passphrase);
+    return this.get(currency).unlockAndSendToAddress(address, amount, callback, passphrase);
   }
 
   estimateFee(currency, nBlocks, cb) {
-    this.get(currency).estimateFee(nBlocks, cb);
+    return this.get(currency).estimateFee(nBlocks, cb);
   }
 
   getBestBlockHash(currency, cb) {
