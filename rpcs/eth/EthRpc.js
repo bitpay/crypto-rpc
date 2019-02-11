@@ -7,7 +7,7 @@ class EthRPC {
   constructor(config) {
     this.config = config;
     this.web3 = this.getWeb3(config);
-    this.account = config.currencyConfig.account;
+    this.account = config.currencyConfig.account || this.web3.eth.accounts[0];
   }
 
   getWeb3(web3Config) {
@@ -94,31 +94,37 @@ class EthRPC {
   async sendToAddress(address, amount, callback, passphrase) {
     try {
       const gasPrice = await this.estimateGasPrice();
-      this.web3.eth.personal.sendTransaction({
+      const sendParams = {
         from: this.account,
         to: address,
         value: amount,
         gasPrice
-      }, passphrase, (err, result) => {
-        callback(err, { result });
+      };
+      this.web3.eth.personal.sendTransaction(sendParams, passphrase, (err, result) => {
+        if(callback) {
+          callback(err, { result });
+        }
+        return { result };
       });
     } catch(e) {
-      return callback(e);
+      if(callback) {
+        callback(e);
+      }
     }
   }
 
   async unlockAndSendToAddress(address, amount, callback, passphrase) {
     const send = (phrase) => {
       console.log('Unlocking for a single transaction.');
-      this.sendToAddress(address, amount, callback, passphrase);
+      return this.sendToAddress(address, amount, callback, passphrase);
     }
     try {
-      if(!passphrase) {
+      if(passphrase === undefined) {
         promptly.password('> ', (err, phrase) => {
-          send(phrase);
+          return send(phrase);
         })
       } else {
-        send(passphrase);
+        return send(passphrase);
       }
     } catch (err) {
       if (callback) {

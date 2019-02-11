@@ -6,14 +6,15 @@ class BtcRpc {
   }
 
   asyncCall(method, args, cb) {
+    if(cb) {
+      return this.rpc[method](...args, cb);
+    }
     return new Promise((resolve, reject) => {
       this.rpc[method](...args, (err, resp) => {
         if(err || (resp && resp.result && resp.result.errors)){
           reject(err);
-          if(cb) return cb(err);
         } else {
           resolve(resp);
-          if(cb) return cb(null, resp);
         }
       });
     });
@@ -34,7 +35,7 @@ class BtcRpc {
         if(err) return callback(err);
         this.walletLock((lockErr) => {
           if(lockErr) {
-            console.error('Unable to lock wallet');
+            console.error('Unable to lock wallet', lockErr);
           } else {
             console.log('Wallet locked');
           }
