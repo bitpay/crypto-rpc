@@ -21,13 +21,13 @@ class Erc20RPC extends EthRPC {
 
     const decimals = await this.erc20Contract.methods.decimals().call();
     if(precision > decimals) {
-      throw new Error("Precision provided is greater than the ERC20 precision");
+      throw new Error('Precision provided is greater than the ERC20 precision');
     }
     if(precision > 20) {
-      throw new Error("Precision provided is too high for this library");
+      throw new Error('Precision provided is too high for this library');
     }
 
-    const decimalsBN = this.web3.utils.toBN(decimals - precision)
+    const decimalsBN = this.web3.utils.toBN(decimals - precision);
     const TEN = this.web3.utils.toBN(10);
 
     // This line is why we can't handle a shift amount > 20
@@ -44,9 +44,9 @@ class Erc20RPC extends EthRPC {
           if(callback) {
             callback(err, { result });
           }
-          return { result }
+          return { result };
         });
-  };
+  }
 
   async getBalance(address, callback) {
     try {
@@ -79,17 +79,17 @@ class Erc20RPC extends EthRPC {
 
   async decodeRawTransaction(rawTx, cb) {
     try {
-      const decodedEthTx = await super.decodeRawTransaction(rawTx)
+      const decodedEthTx = await super.decodeRawTransaction(rawTx);
       if(decodedEthTx.data) {
         AbiDecoder.addABI(erc20);
         decodedEthTx.decodedData = AbiDecoder.decodeMethod('0x' + decodedEthTx.data);
       }
       if(cb) {
-        cb(null, decodedEthTx)
+        cb(null, decodedEthTx);
       }
       return decodedEthTx;
     } catch(err) {
-      if(cb) cb(err)
+      if(cb) cb(err);
     }
   }
 }

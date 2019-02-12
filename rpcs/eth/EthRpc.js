@@ -116,13 +116,13 @@ class EthRPC {
   async unlockAndSendToAddress(address, amount, callback, passphrase) {
     const send = (phrase) => {
       console.log('Unlocking for a single transaction.');
-      return this.sendToAddress(address, amount, callback, passphrase);
-    }
+      return this.sendToAddress(address, amount, callback, phrase);
+    };
     try {
       if(passphrase === undefined) {
         promptly.password('> ', (err, phrase) => {
           return send(phrase);
-        })
+        });
       } else {
         return send(passphrase);
       }
@@ -151,9 +151,9 @@ class EthRPC {
       const txs = await Promise.all(block.transactions.map((txid) => {
         return this.web3.eth.getTransaction(txid);
       }));
-      var blockGasPrices = txs.map((tx) => { return tx.gasPrice });
+      var blockGasPrices = txs.map((tx) => { return tx.gasPrice; });
       // sort gas prices in descending order
-      blockGasPrices = blockGasPrices.sort((a, b) => { return b - a });
+      blockGasPrices = blockGasPrices.sort((a, b) => { return b - a; });
       var txCount = txs.length;
       var lowGasPriceIndex = txCount > 1 ? txCount - 2 : 0;
       if(txCount > 0) {
@@ -173,7 +173,7 @@ class EthRPC {
     const blockHash = block.hash;
 
     if(callback) callback(null, blockHash);
-    return blockHash
+    return blockHash;
   }
 
   async walletLock(callback) {
@@ -189,7 +189,7 @@ class EthRPC {
 
 
   async getTransaction(txid, callback) {
-    return this.web3.eth.getTransaction(txid, callback)
+    return this.web3.eth.getTransaction(txid, callback);
   }
 
   async getRawTransaction(txid, callback) {
@@ -221,7 +221,7 @@ class EthRPC {
       data
     };
     if(cb) cb(null, decodedData);
-    return decodedData
+    return decodedData;
   }
 
   async getBlock(blockHash, cb) {
