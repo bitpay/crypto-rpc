@@ -44,13 +44,13 @@ class EthRPC {
       promptly.password('> ', async (err, phrase) => {
         if (err) { return callback(err); }
         await this.web3.eth.personal.unlockAccount(this.account, phrase, timeHex);
-        console.log(this.account, ' unlocked for ' + time + ' seconds');
+        console.warn(this.account, ' unlocked for ' + time + ' seconds');
         return callback(null, (doneLocking) => {
           this.walletLock((err) => {
             if (err) {
-              console.log(err.message);
+              console.error(err.message);
             } else {
-              console.log('wallet locked');
+              console.warn('wallet locked');
             }
             doneLocking && doneLocking();
           });
@@ -107,7 +107,7 @@ class EthRPC {
       return result;
     }
     catch(e) {
-      console.log(e);
+      console.error(e);
       if(callback) {
         callback(e);
       }
@@ -116,7 +116,7 @@ class EthRPC {
 
   async unlockAndSendToAddress(address, amount, callback, passphrase) {
     const send = (phrase) => {
-      console.log('Unlocking for a single transaction.');
+      console.warn('Unlocking for a single transaction.');
       return this.sendToAddress(address, amount, callback, phrase);
     };
     try {
@@ -128,7 +128,7 @@ class EthRPC {
         return send(passphrase);
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
       if (callback) {
         return callback(err);
       }

@@ -21,24 +21,24 @@ BitcoinRPC.prototype.cmdlineUnlock = function(timeout, callback) {
   var self = this;
   self.getWalletInfo(function(err, result) {
     if (err) {
-      console.log(err);
+      console.error(err);
       return callback(err);
     }
     if ('unlocked_until' in result.result) {
       if (result['unlocked_until']) { throw new Error('wallet is currently unlocked'); }
       promptly.password('> ', function(err, phrase) {
         if (err) { return callback(err); }
-        self.walletPassPhrase(phrase, timeout, function(err, response) {
+        self.walletPassPhrase(phrase, timeout, function(err) {
           if (err) {
             return callback(err);
           } else {
-            console.log('wallet unlocked for ' + timeout + ' seconds');
+            console.warn('wallet unlocked for ' + timeout + ' seconds');
             return callback(null, function(doneLocking) {
               self.walletLock(function(err) {
                 if (err) {
-                  console.log(err.message);
+                  console.error(err.message);
                 } else {
-                  console.log('wallet locked');
+                  console.error('wallet locked');
                 }
                 doneLocking && doneLocking();
               });

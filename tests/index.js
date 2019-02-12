@@ -57,7 +57,7 @@ describe('BTC Tests', function() {
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
     } catch(e) {
-      console.log('wallet already encrypted');
+      console.warn('wallet already encrypted');
     }
     await bitcoin.asyncCall('generate', [101]);
   });

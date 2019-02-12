@@ -40,7 +40,7 @@ class BtcRpc {
       try {
         await this.walletLock();
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
       if(callback) callback(null, tx);
       return tx;
