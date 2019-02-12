@@ -35,7 +35,11 @@ class BtcRpc {
 
   async unlockAndSendToAddress(address, amount, callback, phrase) {
     try {
-      await this.asyncCall('walletPassPhrase', [phrase, 10]);
+      try {
+        await this.asyncCall('walletPassPhrase', [phrase, 10]);
+      } catch (err) {
+        console.error(err);
+      }
       const tx = await this.sendToAddress(address, amount);
       try {
         await this.walletLock();
@@ -45,6 +49,7 @@ class BtcRpc {
       if(callback) callback(null, tx);
       return tx;
     } catch (err) {
+      console.error(err);
       if(err) callback(err);
     }
   }

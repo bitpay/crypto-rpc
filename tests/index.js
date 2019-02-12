@@ -1,7 +1,7 @@
 const { CryptoRpc } = require('../');
 const assert = require('assert');
 const mocha = require('mocha');
-const {describe, it} = mocha;
+const { before, describe, it } = mocha;
 const TestForCurrency = require('./generic-tests');
 
 
@@ -36,6 +36,11 @@ const currencyConfig = {
 describe('ETH Tests', function() {
   const config = currencyConfig.ETH;
   const rpcs = new CryptoRpc(config, config.currencyConfig);
+  this.timeout(10000);
+
+  before((done) => {
+    setTimeout(done, 5000);
+  });
 
   it('should estimate fee', async () => {
     const fee = await rpcs.estimateFee('ETH', 4);
@@ -49,17 +54,17 @@ describe('ETH Tests', function() {
 
 describe('BTC Tests', function() {
   this.timeout(10000);
+  const config = currencyConfig.BTC;
+  const rpcs = new CryptoRpc(config, config.currencyConfig);
+  const bitcoin = rpcs.get('BTC');
 
-  it('should generate 101 blocks before BTC tests', async () => {
-    const config = currencyConfig.BTC;
-    const rpcs = new CryptoRpc(config, config.currencyConfig);
-    const bitcoin = rpcs.get('BTC');
+  before(async ()=> {
+    await bitcoin.asyncCall('generate', [101]);
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
     } catch(e) {
       console.warn('wallet already encrypted');
     }
-    await bitcoin.asyncCall('generate', [101]);
   });
 
   TestForCurrency('BTC', currencyConfig);

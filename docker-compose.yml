@@ -27,6 +27,8 @@ services:
       -rpcbind=0.0.0.0
       -rpcuser=cryptorpc
       -rpcpassword=local321
+    ports:
+      - 8333:8333
 
   ganache:
     build:
