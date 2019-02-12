@@ -59,12 +59,13 @@ describe('BTC Tests', function() {
   const bitcoin = rpcs.get('BTC');
 
   before(async ()=> {
-    await bitcoin.asyncCall('generate', [101]);
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
     } catch(e) {
       console.warn('wallet already encrypted');
     }
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    await bitcoin.asyncCall('generate', [101]);
   });
 
   TestForCurrency('BTC', currencyConfig);
