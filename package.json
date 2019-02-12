@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha ./tests",
-    "ci": "docker-compose run test_runner",
+    "ci": "docker-compose build && docker-compose run test_runner",
     "lint": "eslint ."
   },
   "author": "Micah Riggan",
