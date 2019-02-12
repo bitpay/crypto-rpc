@@ -58,7 +58,27 @@ class CryptoRpcProvider {
   }
 
   getBestBlockHash(currency, cb) {
-    this.get(currency).getBestBlockHash(cb);
+    return this.get(currency).getBestBlockHash(cb);
+  }
+
+  getTransaction(currency, txid, cb) {
+    return this.get(currency).getTransaction(txid, cb);
+  }
+
+  getRawTransaction(currency, txid, cb) {
+    return this.get(currency).getRawTransaction(txid, cb);
+  }
+
+  decodeRawTransaction(currency, rawTx, cb) {
+    return this.get(currency).decodeRawTransaction(rawTx, cb);
+  }
+
+  getBlock(currency, hash, cb) {
+    return this.get(currency).getBlock(hash, cb);
+  }
+
+  getConfirmations(currency, txid, cb) {
+    return this.get(currency).getConfirmations(txid, cb);
   }
 }
 

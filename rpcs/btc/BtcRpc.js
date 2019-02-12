@@ -6,62 +6,100 @@ class BtcRpc {
   }
 
   asyncCall(method, args, cb) {
+    if(cb) {
+      return this.rpc[method](...args, (err, resp) => {
+        if(err) {
+          return cb(err);
+        }
+        cb(null, resp.result);
+      });
+    }
     return new Promise((resolve, reject) => {
       this.rpc[method](...args, (err, resp) => {
         if(err || (resp && resp.result && resp.result.errors)){
           reject(err);
-          if(cb) return cb(err);
         } else {
-          resolve(resp);
-          if(cb) return cb(null, resp);
+          resolve(resp.result);
         }
       });
     });
   }
 
   async cmdlineUnlock(time, cb) {
-    return this.asyncCall("cmdlineUnlock", [time], cb);
+    return this.asyncCall('cmdlineUnlock', [time], cb);
   }
 
   async sendToAddress(address, amount, cb) {
-    return this.asyncCall("sendToAddress", [address, amount], cb);
+    return this.asyncCall('sendToAddress', [address, amount], cb);
   }
 
-  async unlockAndSendToAddress(address, amount, callback, passphrase) {
-    this.cmdlineUnlock(10, (err, lock) => {
-      if(err) return callback(err);
-      this.sendToAddress(address, amount, (err, tx) => {
-        if(err) return callback(err);
-        this.walletLock((lockErr) => {
-          if(lockErr) {
-            console.error('Unable to lock wallet');
-          } else {
-            console.log('Wallet locked');
-          }
-          callback(err, tx);
-        });
-      });
-    });
+  async unlockAndSendToAddress(address, amount, callback, phrase) {
+    try {
+      await this.asyncCall('walletPassPhrase', [phrase, 10]);
+      const tx = await this.sendToAddress(address, amount);
+      try {
+        await this.walletLock();
+      } catch (err) {
+        console.log(err);
+      }
+      if(callback) callback(null, tx);
+      return tx;
+    } catch (err) {
+      if(err) callback(err);
+    }
   }
 
 
   async walletLock(cb) {
-    return this.asyncCall("walletLock", [], cb);
+    return this.asyncCall('walletLock', [], cb);
   }
 
   async estimateFee(nBlocks, cb) {
-    return this.asyncCall("estimateSmartFee", [nBlocks], cb);
+    return this.asyncCall('estimateSmartFee', [nBlocks], cb);
   }
 
   async getBalance(address, cb) {
-    const balanceInfo = await this.asyncCall("getWalletInfo", [], cb);
-    return balanceInfo.result.balance;
+    const balanceInfo = await this.asyncCall('getWalletInfo', [], cb);
+    return balanceInfo.balance;
   }
 
   async getBestBlockHash(cb) {
-    return this.asyncCall("getBestBlockHash", [], cb);
+    return this.asyncCall('getBestBlockHash', [], cb);
   }
 
+  async getTransaction(txid, cb) {
+    return this.asyncCall('getTransaction', [txid], cb);
+  }
+
+  async getRawTransaction(txid, cb) {
+    return this.asyncCall('getRawTransaction', [txid], cb);
+  }
+
+  async decodeRawTransaction(rawTx, cb) {
+    return this.asyncCall('decodeRawTransaction', [rawTx], cb);
+  }
+
+  async getBlock(hash, cb) {
+    return this.asyncCall('getBlock', [hash], cb);
+  }
+
+  async getConfirmations(txid, cb) {
+    try {
+      const tx = await this.getTransaction(txid);
+      if(tx.blockhash === undefined) {
+        if(cb) cb(null, confirmations);
+        return 0;
+      }
+      const blockHash = await this.getBestBlockHash();
+      const block = await this.getBlock(blockHash);
+      const txBlock = await this.getBlock(tx.blockhash); //tx without blockhash, add return zero if without blockhash
+      const confirmations = (block.height - txBlock.height) + 1;
+      if(cb) cb(null, confirmations);
+      return confirmations;
+    } catch (err) {
+      if(cb) cb(err);
+    }
+  }
 }
 
 module.exports = BtcRpc;

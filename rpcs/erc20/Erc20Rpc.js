@@ -1,5 +1,6 @@
 const EthRPC = require('../eth/EthRpc');
 const erc20 = require('./erc20.json');
+const AbiDecoder = require('abi-decoder');
 class Erc20RPC extends EthRPC {
   constructor(config) {
     super(config);
@@ -20,13 +21,13 @@ class Erc20RPC extends EthRPC {
 
     const decimals = await this.erc20Contract.methods.decimals().call();
     if(precision > decimals) {
-      throw new Error("Precision provided is greater than the ERC20 precision");
+      throw new Error('Precision provided is greater than the ERC20 precision');
     }
     if(precision > 20) {
-      throw new Error("Precision provided is too high for this library");
+      throw new Error('Precision provided is too high for this library');
     }
 
-    const decimalsBN = this.web3.utils.toBN(decimals - precision)
+    const decimalsBN = this.web3.utils.toBN(decimals - precision);
     const TEN = this.web3.utils.toBN(10);
 
     // This line is why we can't handle a shift amount > 20
@@ -37,12 +38,15 @@ class Erc20RPC extends EthRPC {
     const gasPrice = await this.estimateGasPrice();
     const contractData = this.erc20Contract.methods
       .transfer(address, scaledAmount).encodeABI();
-    this.web3.eth.personal
+    return this.web3.eth.personal
       .sendTransaction({ from: this.account, gasPrice, data: contractData, to: this.tokenContractAddress },
         passphrase, (err, result) => {
-          callback(err, { result });
+          if(callback) {
+            callback(err, { result });
+          }
+          return { result };
         });
-  };
+  }
 
   async getBalance(address, callback) {
     try {
@@ -70,6 +74,22 @@ class Erc20RPC extends EthRPC {
       if (callback) {
         return callback(err);
       }
+    }
+  }
+
+  async decodeRawTransaction(rawTx, cb) {
+    try {
+      const decodedEthTx = await super.decodeRawTransaction(rawTx);
+      if(decodedEthTx.data) {
+        AbiDecoder.addABI(erc20);
+        decodedEthTx.decodedData = AbiDecoder.decodeMethod('0x' + decodedEthTx.data);
+      }
+      if(cb) {
+        cb(null, decodedEthTx);
+      }
+      return decodedEthTx;
+    } catch(err) {
+      if(cb) cb(err);
     }
   }
 }
