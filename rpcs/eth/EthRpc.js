@@ -100,13 +100,14 @@ class EthRPC {
         value: amount,
         gasPrice
       };
-      this.web3.eth.personal.sendTransaction(sendParams, passphrase, (err, result) => {
-        if(callback) {
-          callback(err, result);
-        }
-        return result;
-      });
-    } catch(e) {
+      const result = await this.web3.eth.personal.sendTransaction(sendParams, passphrase);
+      if(callback) {
+        callback(null, result);
+      }
+      return result;
+    }
+    catch(e) {
+      console.log(e);
       if(callback) {
         callback(e);
       }
@@ -120,13 +121,14 @@ class EthRPC {
     };
     try {
       if(passphrase === undefined) {
-        promptly.password('> ', (err, phrase) => {
+        return promptly.password('> ', (err, phrase) => {
           return send(phrase);
         });
       } else {
         return send(passphrase);
       }
     } catch (err) {
+      console.log(err);
       if (callback) {
         return callback(err);
       }
@@ -189,7 +191,11 @@ class EthRPC {
 
 
   async getTransaction(txid, callback) {
-    return this.web3.eth.getTransaction(txid, callback);
+    if(callback) {
+      return this.web3.eth.getTransaction(txid, callback);
+    } else {
+      return this.web3.eth.getTransaction(txid);
+    }
   }
 
   async getRawTransaction(txid, callback) {
@@ -232,7 +238,11 @@ class EthRPC {
     try {
       const tx = await this.getTransaction(txid);
       const bestBlock = await this.web3.eth.getBlockNumber();
-      const confirmations = bestBlock - tx.blockNumber;
+      if(tx.blockNumber === undefined) {
+        if(cb) cb(null, 0);
+        return 0;
+      }
+      const confirmations = (bestBlock - tx.blockNumber) + 1;
       if(cb) cb(confirmations);
       return confirmations;
     } catch (err) {

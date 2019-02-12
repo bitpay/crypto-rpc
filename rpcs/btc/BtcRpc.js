@@ -33,21 +33,20 @@ class BtcRpc {
     return this.asyncCall('sendToAddress', [address, amount], cb);
   }
 
-  async unlockAndSendToAddress(address, amount, callback) {
-    this.cmdlineUnlock(10, (err, lock) => {
-      if(err) return callback(err);
-      this.sendToAddress(address, amount, (err, tx) => {
-        if(err) return callback(err);
-        lock((lockErr) => {
-          if(lockErr) {
-            console.error('Unable to lock wallet', lockErr);
-          } else {
-            console.log('Wallet locked');
-          }
-          callback(err, tx);
-        });
-      });
-    });
+  async unlockAndSendToAddress(address, amount, callback, phrase) {
+    try {
+      await this.asyncCall('walletPassPhrase', [phrase, 10]);
+      const tx = await this.sendToAddress(address, amount);
+      try {
+        await this.walletLock();
+      } catch (err) {
+        console.log(err);
+      }
+      if(callback) callback(null, tx);
+      return tx;
+    } catch (err) {
+      if(err) callback(err);
+    }
   }
 
 
@@ -87,15 +86,18 @@ class BtcRpc {
   async getConfirmations(txid, cb) {
     try {
       const tx = await this.getTransaction(txid);
+      if(tx.blockhash === undefined) {
+        if(cb) cb(null, confirmations);
+        return 0;
+      }
       const blockHash = await this.getBestBlockHash();
       const block = await this.getBlock(blockHash);
       const txBlock = await this.getBlock(tx.blockhash); //tx without blockhash, add return zero if without blockhash
-      const confirmations = block.height - txBlock.height;
+      const confirmations = (block.height - txBlock.height) + 1;
       if(cb) cb(null, confirmations);
       return confirmations;
     } catch (err) {
       if(cb) cb(err);
-      console.log(err);
     }
   }
 }
