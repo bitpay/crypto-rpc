@@ -19,7 +19,7 @@ const currencyConfig = {
   BTC: {
     host: 'localhost',
     protocol: 'http',
-    rpcPort: '20005',
+    rpcPort: '20006',
     user: 'bitpaytest',
     pass: 'local321',
     currencyConfig: {
@@ -31,8 +31,21 @@ const currencyConfig = {
 
 function TestForCurrency(currency, currencyConfigs) {
   let txid = '';
+  let blockHash = '';
   const config = currencyConfigs[currency];
   const rpc = new CryptoRpc(config, config.currencyConfig);
+
+  it("should be able to get a block hash", async () => {
+    const block = await rpc.getBestBlockHash(currency);
+    blockHash = block;
+    assert(block);
+  });
+
+  it('should get block', async () => {
+    const reqBlock = await rpc.getBlock(currency, blockHash);
+    console.log(reqBlock);
+    assert(reqBlock);
+  });
 
   it('should be able to get a balance', async () => {
     const balance = await rpc.getBalance(currency);
@@ -58,16 +71,17 @@ function TestForCurrency(currency, currencyConfigs) {
     const decoded = await rpc.decodeRawTransaction(currency, tx);
     assert(decoded);
   });
-
-  it('should be able to get a block hash', async () => {
-    const block = await rpc.getBestBlockHash(currency);
-    assert(block);
-  });
   
   it('should estimate fee', async () => {
     const fee = await rpc.estimateFee(currency, nBlocks = 4);
     console.log(fee); 
     assert(fee);
+  });
+
+  it('should get confirmations', async () => {
+    const confirmations = await rpc.getConfirmations(currency, txid);
+    console.log(confirmations);
+    assert(confirmations === 0);
   });
 }
 

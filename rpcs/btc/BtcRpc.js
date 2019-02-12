@@ -86,14 +86,19 @@ class BtcRpc {
 
   async getConfirmations(txid, cb) {
     try {
-      const blockHeight = await this.getTransaction(txid);
+      const tx = await this.getTransaction(txid);
       const blockHash = await this.getBestBlockHash();
       const block = await this.getBlock(blockHash);
-      const confirmations = block.height - blockHeight;
+      console.log("tx", tx);
+      const txBlock = await this.getBlock(tx.blockhash); //tx without blockhash, add return zero if without blockhash
+      const confirmations = block.height - txBlock.height;
+      console.log("block.height", block.height);
+      console.log("txBlock.height", txBlock.height);
       if(cb) cb(null, confirmations);
       return confirmations;
     } catch (err) {
-      if(cb) cb(err);
+      if(cb) cb(err)
+      console.log(err);
     }
   }
 }
