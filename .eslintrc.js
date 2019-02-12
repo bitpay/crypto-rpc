@@ -2,9 +2,14 @@ module.exports = {
   "env": {
     "browser": true,
     "commonjs": true,
+    "node": true,
     "es6": true
   },
   "extends": "eslint:recommended",
+  "plugins": ["prettier"],
+  "rules": {
+    "prettier/prettier": "error"
+  },
   "parserOptions": {
     "ecmaVersion": 2018,
     "sourceType": "module"
@@ -26,6 +31,7 @@ module.exports = {
     "semi": [
       "error",
       "always"
-    ]
+    ],
+    "no-console": ["error", { allow: ["warn", "error"] }]
   }
 };

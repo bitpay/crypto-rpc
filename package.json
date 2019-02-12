@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha ./tests",
-    "ci": "docker-compose run test_runner",
+    "ci": "docker-compose build && docker-compose run test_runner",
     "lint": "eslint ."
   },
   "author": "Micah Riggan",
@@ -25,6 +25,7 @@
     "eslint-config-standard": "^12.0.0",
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-prettier": "^3.0.1",
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0",
     "mocha": "^5.2.0",
