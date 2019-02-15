@@ -51,12 +51,13 @@ describe("ETH Tests", function() {
   });
 
   it("should send raw transaction", async () => {
+    // Reset nonce to 0
     const txCount = await rpcs.getTransactionCount(
       "ETH",
       config.currencyConfig.account
     );
 
-    assert(txCount);
+    assert(txCount).to.deep.equal(0);
 
     // construct the transaction data
     const txData = {
