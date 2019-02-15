@@ -57,8 +57,6 @@ describe("ETH Tests", function() {
       config.currencyConfig.account
     );
 
-    assert(txCount).to.deep.equal(0);
-
     // construct the transaction data
     const txData = {
       nonce: util.toHex(txCount),
