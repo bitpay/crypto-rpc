@@ -6,7 +6,7 @@
   "scripts": {
     "ci:test": "mocha ./tests",
     "test": "docker-compose build && docker-compose run test_runner",
-    "lint": "eslint ."
+    "lint": "./node_modules/.bin/eslint ."
   },
   "author": "Micah Riggan",
   "license": "ISC",
