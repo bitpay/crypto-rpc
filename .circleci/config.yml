@@ -5,7 +5,6 @@ jobs:
   build:
     machine:
       image: circleci/classic:latest
-      docker_layer_caching: true
     working_directory: ~/crypto-rpc
     steps:
       - checkout
