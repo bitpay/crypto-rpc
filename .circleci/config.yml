@@ -11,4 +11,4 @@ jobs:
       - checkout
       - run:
           name: Build service
-          command: npm test
+          command: npm run lint && npm test
