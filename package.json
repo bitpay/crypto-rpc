@@ -4,8 +4,8 @@
   "description": "rpc wrapper for multiple rpcs",
   "main": "index.js",
   "scripts": {
-    "test": "mocha ./tests",
-    "ci": "docker-compose build && docker-compose run test_runner",
+    "ci:test": "mocha ./tests",
+    "test": "docker-compose build && docker-compose run test_runner",
     "lint": "eslint ."
   },
   "author": "Micah Riggan",

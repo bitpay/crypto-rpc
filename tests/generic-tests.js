@@ -46,6 +46,11 @@ module.exports = function TestForCurrency(currency, currencyConfigs) {
     assert(decoded);
   });
 
+  it('should get the tip', async () => {
+    const tip = await rpcs.getTip(currency);
+    assert(tip != undefined);
+  });
+
   it('should get confirmations', async () => {
     const confirmations = await rpcs.getConfirmations(currency, txid);
     assert(confirmations != undefined);
