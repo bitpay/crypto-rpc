@@ -6,8 +6,8 @@ const EthereumTx = require('ethereumjs-tx');
 class EthRPC {
   constructor(config) {
     this.config = config;
-    this.web3 = this.getWeb3(config);
-    this.account = config.currencyConfig.account || this.web3.eth.accounts[0];
+    this.web3 = this.getWeb3(this.config);
+    this.account = this.config.currencyConfig.account || this.web3.eth.accounts[0];
   }
 
   getWeb3(web3Config) {

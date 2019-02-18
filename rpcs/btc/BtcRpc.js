@@ -2,7 +2,8 @@ var BitcoinRPC = require('./bitcoin');
 
 class BtcRpc {
   constructor(config) {
-    this.rpc = new BitcoinRPC(config);
+    this.config = config;
+    this.rpc = new BitcoinRPC(this.config);
   }
 
   asyncCall(method, args, cb) {
