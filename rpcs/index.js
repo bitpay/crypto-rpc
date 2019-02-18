@@ -1,7 +1,7 @@
-var BTCRpc = require('./btc/BtcRpc');
-var BCHRpc = require('./bch/BchRpc');
-var EthRPC = require('./eth/EthRpc');
-var Erc20RPC = require('./erc20/Erc20Rpc');
+var BTCRpc = require("./btc/BtcRpc");
+var BCHRpc = require("./bch/BchRpc");
+var EthRPC = require("./eth/EthRpc");
+var Erc20RPC = require("./erc20/Erc20Rpc");
 class CryptoRpcProvider {
   constructor(rpcConfig, currencyConfig) {
     this.rpcClasses = {
@@ -50,7 +50,12 @@ class CryptoRpcProvider {
   }
 
   unlockAndSendToAddress(currency, address, amount, callback, passphrase) {
-    return this.get(currency).unlockAndSendToAddress(address, amount, callback, passphrase);
+    return this.get(currency).unlockAndSendToAddress(
+      address,
+      amount,
+      callback,
+      passphrase
+    );
   }
 
   estimateFee(currency, nBlocks, cb) {
@@ -65,8 +70,16 @@ class CryptoRpcProvider {
     return this.get(currency).getTransaction(txid, cb);
   }
 
+  getTransactionCount(currency, address, cb) {
+    return this.get(currency).getTransactionCount(address, cb);
+  }
+
   getRawTransaction(currency, txid, cb) {
     return this.get(currency).getRawTransaction(txid, cb);
+  }
+
+  sendRawTransaction(currency, rawTx, cb) {
+    return this.get(currency).sendRawTransaction(rawTx, cb);
   }
 
   decodeRawTransaction(currency, rawTx, cb) {
