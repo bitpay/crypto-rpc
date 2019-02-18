@@ -105,6 +105,22 @@ class BtcRpc {
       if(cb) cb(err);
     }
   }
+
+  async getTip(cb) {
+    try {
+      const blockchainInfo = await this.asyncCall('getblockchaininfo', []);
+      const { blocks: height, bestblockhash: hash } = blockchainInfo;
+      if (cb) {
+        return cb(null, { height, hash });
+      }
+      return { height, hash };
+    } catch (err) {
+      if (cb) {
+        return cb(err);
+      }
+      throw err;
+    }
+  }
 }
 
 module.exports = BtcRpc;

@@ -249,5 +249,22 @@ class EthRPC {
       if(cb) cb(err);
     }
   }
+
+  async getTip(cb) {
+    try {
+      const height = await this.web3.eth.getBlockNumber();
+      const block = await this.web3.eth.getBlock(height);
+      const { hash } = block;
+      if (cb) {
+        return cb(null, { height, hash });
+      }
+      return { height, hash };
+    } catch (err) {
+      if (cb) {
+        return cb(err);
+      }
+      throw err;
+    }
+  }
 }
 module.exports = EthRPC;

@@ -80,6 +80,10 @@ class CryptoRpcProvider {
   getConfirmations(currency, txid, cb) {
     return this.get(currency).getConfirmations(txid, cb);
   }
+
+  getTip(currency, cb) {
+    return this.get(currency).getTip(cb);
+  }
 }
 
 module.exports = CryptoRpcProvider;
