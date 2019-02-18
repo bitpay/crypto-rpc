@@ -5,9 +5,10 @@ jobs:
   build:
     machine:
       image: circleci/classic:latest
+      docker_layer_caching: true
     working_directory: ~/crypto-rpc
     steps:
       - checkout
       - run:
           name: Build service
-          command: npm run lint && npm test
+          command: npm test
