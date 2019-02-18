@@ -4,7 +4,7 @@
   "description": "rpc wrapper for multiple rpcs",
   "main": "index.js",
   "scripts": {
-    "ci:test": "mocha ./tests",
+    "ci:test": "npm run lint && mocha ./tests",
     "test": "docker-compose build && docker-compose run test_runner",
     "lint": "./node_modules/.bin/eslint ."
   },

@@ -1,4 +1,5 @@
 from node:8
+WORKDIR /crypto-rpc
 COPY package.json .
 RUN npm install
 ADD . .
