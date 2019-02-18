@@ -1,6 +1,6 @@
-const Web3 = require("web3");
-var promptly = require("promptly");
-const EthereumTx = require("ethereumjs-tx");
+const Web3 = require('web3');
+var promptly = require('promptly');
+const EthereumTx = require('ethereumjs-tx');
 
 class EthRPC {
   constructor(config) {
@@ -14,25 +14,25 @@ class EthRPC {
     const connectionString = `${protocol}://${host}:${port}`;
     let Provider = null;
     switch (protocol) {
-      case "http":
+      case 'http':
         Provider = Web3.providers.HttpProvider;
         break;
-      case "wss":
+      case 'wss':
         Provider = Web3.providers.WebsocketProvider;
         break;
-      case "ipc":
+      case 'ipc':
         Provider = Web3.providers.IpcProvider;
         break;
     }
     if (!Provider) {
-      throw new Error("Please provide a valid protocol");
+      throw new Error('Please provide a valid protocol');
     }
     return new Web3(new Provider(connectionString));
   }
 
   async isUnlocked() {
     try {
-      await this.web3.eth.sign("", this.account);
+      await this.web3.eth.sign('', this.account);
     } catch (err) {
       return false;
     }
@@ -42,7 +42,7 @@ class EthRPC {
   async cmdlineUnlock(time, callback) {
     const timeHex = this.web3.utils.toHex(time);
     try {
-      promptly.password("> ", async (err, phrase) => {
+      promptly.password('> ', async (err, phrase) => {
         if (err) {
           return callback(err);
         }
@@ -51,13 +51,13 @@ class EthRPC {
           phrase,
           timeHex
         );
-        console.warn(this.account, " unlocked for " + time + " seconds");
+        console.warn(this.account, ' unlocked for ' + time + ' seconds');
         return callback(null, doneLocking => {
           this.walletLock(err => {
             if (err) {
               console.error(err.message);
             } else {
-              console.warn("wallet locked");
+              console.warn('wallet locked');
             }
             doneLocking && doneLocking();
           });
@@ -124,12 +124,12 @@ class EthRPC {
 
   async unlockAndSendToAddress(address, amount, callback, passphrase) {
     const send = phrase => {
-      console.warn("Unlocking for a single transaction.");
+      console.warn('Unlocking for a single transaction.');
       return this.sendToAddress(address, amount, callback, phrase);
     };
     try {
       if (passphrase === undefined) {
-        return promptly.password("> ", (err, phrase) => {
+        return promptly.password('> ', (err, phrase) => {
           return send(phrase);
         });
       } else {
@@ -223,7 +223,7 @@ class EthRPC {
   async getRawTransaction(txid, callback) {
     return new Promise((resolve, reject) => {
       this.web3.currentProvider.send(
-        { method: "getRawTransaction", args: [txid] },
+        { method: 'getRawTransaction', args: [txid] },
         (err, data) => {
           if (callback) return callback(err, data);
           if (err) {
@@ -245,12 +245,12 @@ class EthRPC {
 
   async decodeRawTransaction(rawTx, cb) {
     const tx = new EthereumTx(rawTx);
-    const to = "0x" + tx.to.toString("hex");
-    const from = "0x" + tx.from.toString("hex");
-    const value = parseInt(tx.value.toString("hex") || "0", 16);
-    const gasPrice = parseInt(tx.gasPrice.toString("hex"), 16);
-    const gasLimit = parseInt(tx.gasLimit.toString("hex"), 16);
-    const data = tx.data.toString("hex");
+    const to = '0x' + tx.to.toString('hex');
+    const from = '0x' + tx.from.toString('hex');
+    const value = parseInt(tx.value.toString('hex') || '0', 16);
+    const gasPrice = parseInt(tx.gasPrice.toString('hex'), 16);
+    const gasLimit = parseInt(tx.gasLimit.toString('hex'), 16);
+    const data = tx.data.toString('hex');
     const decodedData = {
       to,
       from,

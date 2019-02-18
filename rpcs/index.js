@@ -1,7 +1,7 @@
-var BTCRpc = require("./btc/BtcRpc");
-var BCHRpc = require("./bch/BchRpc");
-var EthRPC = require("./eth/EthRpc");
-var Erc20RPC = require("./erc20/Erc20Rpc");
+var BTCRpc = require('./btc/BtcRpc');
+var BCHRpc = require('./bch/BchRpc');
+var EthRPC = require('./eth/EthRpc');
+var Erc20RPC = require('./erc20/Erc20Rpc');
 class CryptoRpcProvider {
   constructor(rpcConfig, currencyConfig) {
     this.rpcClasses = {
@@ -66,8 +66,8 @@ class CryptoRpcProvider {
     return this.get(currency).getBestBlockHash(cb);
   }
 
-  getTransaction(currency, txid, cb) {
-    return this.get(currency).getTransaction(txid, cb);
+  getTransaction(currency, txid, cb, options) {
+    return this.get(currency).getTransaction(txid, cb, options);
   }
 
   getTransactionCount(currency, address, cb) {

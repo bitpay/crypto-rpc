@@ -73,8 +73,28 @@ class BtcRpc {
     return this.asyncCall('getBestBlockHash', [], cb);
   }
 
-  async getTransaction(txid, cb) {
-    return this.asyncCall('getTransaction', [txid], cb);
+  async getTransaction(txid, cb, options = {}) {
+    const populatedInputs = [];
+    if(options.populateInputs) {
+      try {
+        const tx = await this.asyncCall('getTransaction', [txid]);
+        for(const input of tx.vin) {
+          const populatedInput = await this.getTransaction(input.txid);
+          populatedInputs.push(populatedInput);
+        }
+        tx.vin = populatedInputs;
+        if(cb) {
+          cb(null, tx);
+        }
+        return tx;
+      } catch(err) {
+        if(cb) {
+          return cb(err);
+        }
+      }
+    } else {
+      return this.asyncCall('getTransaction', [txid], cb);
+    }
   }
 
   async getRawTransaction(txid, cb) {
