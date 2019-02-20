@@ -29,7 +29,7 @@ class CryptoRpcProvider {
       [this.chain]: new rpcClasses[this.chain](this.config)
     };
     Object.entries(config.tokens).forEach((token, tokenConfig) => {
-      this.rpcs[token] = new tokensClasses[this.chain][token](Object.assign(tokenConfig, this.config));
+      this.rpcs[token] = new tokensClasses[this.chain][tokenConfig.type](Object.assign(tokenConfig, this.config));
     });
   }
 
