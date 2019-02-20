@@ -1,10 +1,10 @@
-const rpcClasses = {
+const RpcClasses = {
   BTC: require('./btc/BtcRpc'),
   BCH: require('./bch/BchRpc'),
   ETH: require('./eth/EthRpc')
 };
 
-const tokensClasses = {
+const TokenClasses = {
   ETH: {
     ERC20: require('./erc20/Erc20Rpc')
   },
@@ -15,21 +15,23 @@ const tokensClasses = {
 class CryptoRpcProvider {
   constructor(config) {
     this.chain = config.chain;
-    if (!rpcClasses[this.chain]) {
+    if (!RpcClasses[this.chain]) {
       throw new Error('Invalid chain specified');
     }
-    this.config = {
+    this.config = Object.assign({}, config, {
       host: config.host,
-      port: config.rpcPort,
+      port: config.port || config.rpcPort,
       user: config.user || config.rpcUser,
       pass: config.pass || config.rpcPass,
       protocol: config.protocol
-    };
+    });
     this.rpcs = {
-      [this.chain]: new rpcClasses[this.chain](this.config)
+      [this.chain]: new RpcClasses[this.chain](this.config)
     };
     Object.entries(config.tokens).forEach((token, tokenConfig) => {
-      this.rpcs[token] = new tokensClasses[this.chain][token](Object.assign(tokenConfig, this.config));
+      const TokenClass = TokenClasses[this.chain][token];
+      const configForToken = Object.assign(tokenConfig, this.config);
+      this.rpcs[token] = new TokenClass(configForToken);
     });
   }
 

@@ -4,7 +4,7 @@ const AbiDecoder = require('abi-decoder');
 class Erc20RPC extends EthRPC {
   constructor(config) {
     super(config);
-    this.tokenContractAddress = config.currencyConfig.tokenContractAddress;
+    this.tokenContractAddress = config.tokenContractAddress;
     this.erc20Contract = new this.web3.eth.Contract(erc20, this.tokenContractAddress);
   }
 

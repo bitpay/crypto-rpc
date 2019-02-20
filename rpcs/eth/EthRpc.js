@@ -6,7 +6,7 @@ class EthRPC {
   constructor(config) {
     this.config = config;
     this.web3 = this.getWeb3(this.config);
-    this.account = this.config.currencyConfig.account || this.web3.eth.accounts[0];
+    this.account = this.config.account || this.web3.eth.accounts[0];
   }
 
   getWeb3(web3Config) {
@@ -102,7 +102,7 @@ class EthRPC {
     return this.estimateGasPrice(nBlocks);
   }
 
-  async estimateGasPrice({ nBlocks = 4 }) {
+  async estimateGasPrice({ nBlocks = 4 } = {}) {
     const bestBlock = await this.web3.eth.getBlockNumber();
     const gasPrices = [];
     for (let i = 0; i < nBlocks; i++) {
@@ -188,12 +188,12 @@ class EthRPC {
     return decodedData;
   }
 
-  getBlock({ blockHash }) {
-    return this.web3.eth.getBlock(blockHash);
+  getBlock({ hash }) {
+    return this.web3.eth.getBlock(hash);
   }
 
   async getConfirmations({ txid }) {
-    const tx = await this.getTransaction(txid);
+    const tx = await this.getTransaction({ txid });
     const bestBlock = await this.web3.eth.getBlockNumber();
     if (tx.blockNumber === undefined) {
       return 0;
