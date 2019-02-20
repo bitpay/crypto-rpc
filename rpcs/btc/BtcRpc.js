@@ -26,9 +26,9 @@ class BtcRpc {
     return this.asyncCall('sendToAddress', [address, amount]);
   }
 
-  async unlockAndSendToAddress({ address, amount, phrase }) {
-    await this.asyncCall('walletPassPhrase', [phrase, 10]);
-    const tx = await this.sendToAddress(address, amount);
+  async unlockAndSendToAddress({ address, amount, passphrase }) {
+    await this.asyncCall('walletPassPhrase', [passphrase, 10]);
+    const tx = await this.sendToAddress({ address, amount });
     await this.walletLock();
     return tx;
   }
@@ -77,13 +77,13 @@ class BtcRpc {
   }
 
   async getConfirmations({ txid }) {
-    const tx = await this.getTransaction(txid);
+    const tx = await this.getTransaction({ txid });
     if (tx.blockhash === undefined) {
       return 0;
     }
-    const blockHash = await this.getBestBlockHash();
-    const block = await this.getBlock(blockHash);
-    const txBlock = await this.getBlock(tx.blockhash); //tx without blockhash, add return zero if without blockhash
+    const hash = await this.getBestBlockHash();
+    const block = await this.getBlock({ hash });
+    const txBlock = await this.getBlock({hash: tx.blockhash}); //tx without blockhash, add return zero if without blockhash
     const confirmations = (block.height - txBlock.height) + 1;
     return confirmations;
   }
