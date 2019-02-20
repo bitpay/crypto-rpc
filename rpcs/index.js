@@ -1,101 +1,104 @@
-var BTCRpc = require('./btc/BtcRpc');
-var BCHRpc = require('./bch/BchRpc');
-var EthRPC = require('./eth/EthRpc');
-var Erc20RPC = require('./erc20/Erc20Rpc');
-class CryptoRpcProvider {
-  constructor(rpcConfig, currencyConfig) {
-    this.rpcClasses = {
-      BTC: BTCRpc,
-      BCH: BCHRpc,
-      ETH: EthRPC,
-      ERC20: Erc20RPC,
-      GUSD: Erc20RPC,
-      USDC: Erc20RPC,
-      PAX: Erc20RPC
-    };
+const rpcClasses = {
+  BTC: require('./btc/BtcRpc'),
+  BCH: require('./bch/BchRpc'),
+  ETH: require('./eth/EthRpc')
+};
 
+const tokensClasses = {
+  ETH: {
+    ERC20: require('./erc20/Erc20Rpc')
+  },
+  BTC: {},
+  BCH: {}
+};
+
+class CryptoRpcProvider {
+  constructor(config) {
+    this.chain = config.chain;
+    if (!rpcClasses[this.chain]) {
+      throw new Error('Invalid chain specified');
+    }
     this.config = {
-      host: rpcConfig.host,
-      port: rpcConfig.rpcPort,
-      user: rpcConfig.user || rpcConfig.rpcUser,
-      pass: rpcConfig.pass || rpcConfig.rpcPass,
-      protocol: rpcConfig.protocol,
-      currencyConfig
+      host: config.host,
+      port: config.rpcPort,
+      user: config.user || config.rpcUser,
+      pass: config.pass || config.rpcPass,
+      protocol: config.protocol
     };
+    this.rpcs = {
+      [this.chain]: new rpcClasses[this.chain](this.config)
+    };
+    Object.entries(config.tokens).forEach((token, tokenConfig) => {
+      this.rpcs[token] = new tokensClasses[this.chain][token](Object.assign(tokenConfig, this.config));
+    });
   }
 
   has(currency) {
-    return this.rpcClasses[currency] != null;
+    return !!this.rpcs[currency];
   }
 
-  get(currency) {
-    const RpcClass = this.rpcClasses[currency];
-    return new RpcClass(this.config);
+  get(currency=this.chain) {
+    return this.rpcs[currency];
   }
 
-  cmdlineUnlock(currency, time, cb) {
-    return this.get(currency).cmdlineUnlock(time, cb);
+  cmdlineUnlock(params) {
+    return this.get(params.currency).cmdlineUnlock(params);
   }
 
-  getBalance(currency, address, cb) {
-    return this.get(currency).getBalance(address, cb);
+  getBalance(params) {
+    return this.get(params.currency).getBalance(params);
   }
 
-  sendToAddress(currency, address, amount, cb, passphrase) {
-    return this.get(currency).sendToAddress(address, amount, cb, passphrase);
+  sendToAddress(params) {
+    return this.get(params.currency).sendToAddress(params);
   }
 
-  walletLock(currency, cb) {
-    return this.get(currency).walletLock(cb);
+  walletLock(params) {
+    return this.get(params.currency).walletLock(params);
   }
 
-  unlockAndSendToAddress(currency, address, amount, callback, passphrase) {
-    return this.get(currency).unlockAndSendToAddress(
-      address,
-      amount,
-      callback,
-      passphrase
-    );
+  unlockAndSendToAddress(params) {
+    return this.get(params.currency).unlockAndSendToAddress(params);
   }
 
-  estimateFee(currency, nBlocks, cb) {
-    return this.get(currency).estimateFee(nBlocks, cb);
+  estimateFee(params) {
+    return this.get(params.currency).estimateFee(params);
   }
 
-  getBestBlockHash(currency, cb) {
-    return this.get(currency).getBestBlockHash(cb);
+  getBestBlockHash(params) {
+    return this.get(params.currency).getBestBlockHash(params);
   }
 
-  getTransaction(currency, txid, cb, options) {
-    return this.get(currency).getTransaction(txid, cb, options);
+  getTransaction(params) {
+    return this.get(params.currency).getTransaction(params);
   }
 
-  getTransactionCount(currency, address, cb) {
-    return this.get(currency).getTransactionCount(address, cb);
+  getTransactionCount(params) {
+    return this.get(params.currency).getTransactionCount(params);
   }
 
-  getRawTransaction(currency, txid, cb) {
-    return this.get(currency).getRawTransaction(txid, cb);
+  getRawTransaction(params) {
+    return this.get(params.currency).getRawTransaction(params);
   }
 
-  sendRawTransaction(currency, rawTx, cb) {
-    return this.get(currency).sendRawTransaction(rawTx, cb);
+  sendRawTransaction(params) {
+    return this.get(params.currency).sendRawTransaction(params);
   }
 
-  decodeRawTransaction(currency, rawTx, cb) {
-    return this.get(currency).decodeRawTransaction(rawTx, cb);
+  decodeRawTransaction(params) {
+    return this.get(params.currency).decodeRawTransaction(params);
   }
 
-  getBlock(currency, hash, cb) {
-    return this.get(currency).getBlock(hash, cb);
+  getBlock(params) {
+    return this.get(params.currency).getBlock(params);
   }
 
-  getConfirmations(currency, txid, cb) {
-    return this.get(currency).getConfirmations(txid, cb);
+  getConfirmations(params) {
+    return this.get(params.currency).getConfirmations(params);
   }
 
-  getTip(currency, cb) {
-    return this.get(currency).getTip(cb);
+  getTip(params) {
+    return this.get(params.currency).getTip(params);
   }
 }
 

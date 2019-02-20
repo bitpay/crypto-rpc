@@ -39,122 +39,70 @@ class EthRPC {
     return true;
   }
 
-  async cmdlineUnlock(time, callback) {
+  async cmdlineUnlock({ time }) {
     const timeHex = this.web3.utils.toHex(time);
-    try {
-      promptly.password('> ', async (err, phrase) => {
-        if (err) {
-          return callback(err);
-        }
-        await this.web3.eth.personal.unlockAccount(
-          this.account,
-          phrase,
-          timeHex
-        );
-        console.warn(this.account, ' unlocked for ' + time + ' seconds');
-        return callback(null, doneLocking => {
-          this.walletLock(err => {
-            if (err) {
-              console.error(err.message);
-            } else {
-              console.warn('wallet locked');
-            }
-            doneLocking && doneLocking();
-          });
-        });
-      });
-    } catch (e) {
-      return callback(e);
-    }
-  }
-
-  async getBalance(address, callback) {
-    try {
-      if (address) {
-        const balance = await this.web3.eth.getBalance(address);
-        if (callback) {
-          return callback(null, balance);
-        } else {
-          return balance;
-        }
-      } else {
-        const accounts = await this.web3.eth.getAccounts();
-        const balances = [];
-        for (let account of accounts) {
-          const balance = await this.web3.eth.getBalance(account);
-          balances.push({ account, balance });
-        }
-        if (callback) {
-          return callback(null, balances);
-        } else {
-          return balances;
-        }
+    promptly.password('> ', async (err, phrase) => {
+      if (err) {
+        throw err;
       }
-    } catch (err) {
-      if (callback) {
-        return callback(err);
-      }
-    }
-  }
-
-  async sendToAddress(address, amount, callback, passphrase) {
-    try {
-      const gasPrice = await this.estimateGasPrice();
-      const sendParams = {
-        from: this.account,
-        to: address,
-        value: amount,
-        gasPrice
-      };
-      const result = await this.web3.eth.personal.sendTransaction(
-        sendParams,
-        passphrase
+      await this.web3.eth.personal.unlockAccount(
+        this.account,
+        phrase,
+        timeHex
       );
-      if (callback) {
-        callback(null, result);
+      console.warn(this.account, ' unlocked for ' + time + ' seconds');
+    });
+  }
+
+  async getBalance({ address }) {
+    if (address) {
+      const balance = await this.web3.eth.getBalance(address);
+      return balance;
+    } else {
+      const accounts = await this.web3.eth.getAccounts();
+      const balances = [];
+      for (let account of accounts) {
+        const balance = await this.web3.eth.getBalance(account);
+        balances.push({ account, balance });
       }
-      return result;
-    } catch (e) {
-      console.error(e);
-      if (callback) {
-        callback(e);
-      }
+      return balances;
     }
   }
 
-  async unlockAndSendToAddress(address, amount, callback, passphrase) {
+  async sendToAddress({ address, amount, passphrase }) {
+    const gasPrice = await this.estimateGasPrice();
+    const sendParams = {
+      from: this.account,
+      to: address,
+      value: amount,
+      gasPrice
+    };
+    const result = await this.web3.eth.personal.sendTransaction(
+      sendParams,
+      passphrase
+    );
+    return result;
+  }
+
+  async unlockAndSendToAddress({ address, amount, passphrase }) {
     const send = phrase => {
       console.warn('Unlocking for a single transaction.');
-      return this.sendToAddress(address, amount, callback, phrase);
+      return this.sendToAddress({ address, amount, phrase });
     };
-    try {
-      if (passphrase === undefined) {
-        return promptly.password('> ', (err, phrase) => {
-          return send(phrase);
-        });
-      } else {
-        return send(passphrase);
-      }
-    } catch (err) {
-      console.error(err);
-      if (callback) {
-        return callback(err);
-      }
+    if (passphrase === undefined) {
+      return promptly.password('> ', (err, phrase) => {
+        return send(phrase);
+      });
+    } else {
+      return send(passphrase);
     }
   }
 
-  estimateFee(nBlocks, cb) {
-    return this.estimateGasPrice(nBlocks)
-      .then(value => {
-        if (cb) cb(null, value);
-        return value;
-      })
-      .catch(err => {
-        if (cb) cb(err);
-      });
+  estimateFee({ nBlocks }) {
+    return this.estimateGasPrice(nBlocks);
   }
 
-  async estimateGasPrice(nBlocks = 4) {
+  async estimateGasPrice({ nBlocks = 4 }) {
     const bestBlock = await this.web3.eth.getBlockNumber();
     const gasPrices = [];
     for (let i = 0; i < nBlocks; i++) {
@@ -184,48 +132,30 @@ class EthRPC {
     return estimate;
   }
 
-  async getBestBlockHash(callback) {
+  async getBestBlockHash() {
     const bestBlock = await this.web3.eth.getBlockNumber();
     const block = await this.web3.eth.getBlock(bestBlock);
     const blockHash = block.hash;
-
-    if (callback) callback(null, blockHash);
     return blockHash;
   }
 
-  async walletLock(callback) {
-    try {
-      await this.web3.eth.personal.lockAccount(this.account);
-      return callback();
-    } catch (err) {
-      if (callback) {
-        return callback(err);
-      }
-    }
+  walletLock() {
+    return this.web3.eth.personal.lockAccount(this.account);
   }
 
-  async getTransaction(txid, callback) {
-    if (callback) {
-      return this.web3.eth.getTransaction(txid, callback);
-    } else {
-      return this.web3.eth.getTransaction(txid);
-    }
+  getTransaction({ txid }) {
+    return this.web3.eth.getTransaction(txid);
   }
 
-  async getTransactionCount(address, cb) {
-    if (cb) {
-      return this.web3.eth.getTransactionCount(address, cb);
-    } else {
-      return this.web3.eth.getTransactionCount(address);
-    }
+  async getTransactionCount({ address }) {
+    return this.web3.eth.getTransactionCount(address);
   }
 
-  async getRawTransaction(txid, callback) {
+  async getRawTransaction({ txid }) {
     return new Promise((resolve, reject) => {
       this.web3.currentProvider.send(
         { method: 'getRawTransaction', args: [txid] },
         (err, data) => {
-          if (callback) return callback(err, data);
           if (err) {
             return reject(err);
           }
@@ -235,15 +165,11 @@ class EthRPC {
     });
   }
 
-  async sendRawTransaction(signedRawTx, cb) {
-    if (cb) {
-      return this.web3.eth.sendSignedTransaction(signedRawTx, cb);
-    } else {
-      return this.web3.eth.sendSignedTransaction(signedRawTx);
-    }
+  sendRawTransaction({ signedRawTx }) {
+    return this.web3.eth.sendSignedTransaction(signedRawTx);
   }
 
-  async decodeRawTransaction(rawTx, cb) {
+  async decodeRawTransaction({ rawTx }) {
     const tx = new EthereumTx(rawTx);
     const to = '0x' + tx.to.toString('hex');
     const from = '0x' + tx.from.toString('hex');
@@ -259,45 +185,28 @@ class EthRPC {
       gasLimit,
       data
     };
-    if (cb) cb(null, decodedData);
     return decodedData;
   }
 
-  async getBlock(blockHash, cb) {
-    return this.web3.eth.getBlock(blockHash, cb);
+  getBlock({ blockHash }) {
+    return this.web3.eth.getBlock(blockHash);
   }
 
-  async getConfirmations(txid, cb) {
-    try {
-      const tx = await this.getTransaction(txid);
-      const bestBlock = await this.web3.eth.getBlockNumber();
-      if (tx.blockNumber === undefined) {
-        if (cb) cb(null, 0);
-        return 0;
-      }
-      const confirmations = bestBlock - tx.blockNumber + 1;
-      if (cb) cb(confirmations);
-      return confirmations;
-    } catch (err) {
-      if (cb) cb(err);
+  async getConfirmations({ txid }) {
+    const tx = await this.getTransaction(txid);
+    const bestBlock = await this.web3.eth.getBlockNumber();
+    if (tx.blockNumber === undefined) {
+      return 0;
     }
+    const confirmations = bestBlock - tx.blockNumber + 1;
+    return confirmations;
   }
 
-  async getTip(cb) {
-    try {
-      const height = await this.web3.eth.getBlockNumber();
-      const block = await this.web3.eth.getBlock(height);
-      const { hash } = block;
-      if (cb) {
-        return cb(null, { height, hash });
-      }
-      return { height, hash };
-    } catch (err) {
-      if (cb) {
-        return cb(err);
-      }
-      throw err;
-    }
+  async getTip() {
+    const height = await this.web3.eth.getBlockNumber();
+    const block = await this.web3.eth.getBlock(height);
+    const { hash } = block;
+    return { height, hash };
   }
 }
 module.exports = EthRPC;

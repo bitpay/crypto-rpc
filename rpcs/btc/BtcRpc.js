@@ -6,15 +6,7 @@ class BtcRpc {
     this.rpc = new BitcoinRPC(this.config);
   }
 
-  asyncCall(method, args, cb) {
-    if(cb) {
-      return this.rpc[method](...args, (err, resp) => {
-        if(err) {
-          return cb(err);
-        }
-        cb(null, resp.result);
-      });
-    }
+  asyncCall(method, args) {
     return new Promise((resolve, reject) => {
       this.rpc[method](...args, (err, resp) => {
         if(err || (resp && resp.result && resp.result.errors)){
@@ -26,125 +18,80 @@ class BtcRpc {
     });
   }
 
-  async cmdlineUnlock(time, cb) {
-    return this.asyncCall('cmdlineUnlock', [time], cb);
+  async cmdlineUnlock({ time }) {
+    return this.asyncCall('cmdlineUnlock', [time]);
   }
 
-  async sendToAddress(address, amount, cb) {
-    return this.asyncCall('sendToAddress', [address, amount], cb);
+  async sendToAddress({ address, amount }) {
+    return this.asyncCall('sendToAddress', [address, amount]);
   }
 
-  async unlockAndSendToAddress(address, amount, callback, phrase) {
-    try {
-      try {
-        await this.asyncCall('walletPassPhrase', [phrase, 10]);
-      } catch (err) {
-        console.error(err);
-      }
-      const tx = await this.sendToAddress(address, amount);
-      try {
-        await this.walletLock();
-      } catch (err) {
-        console.error(err);
-      }
-      if(callback) callback(null, tx);
-      return tx;
-    } catch (err) {
-      console.error(err);
-      if(err) callback(err);
-    }
+  async unlockAndSendToAddress({ address, amount, phrase }) {
+    await this.asyncCall('walletPassPhrase', [phrase, 10]);
+    const tx = await this.sendToAddress(address, amount);
+    await this.walletLock();
+    return tx;
   }
 
 
-  async walletLock(cb) {
-    return this.asyncCall('walletLock', [], cb);
+  async walletLock() {
+    return this.asyncCall('walletLock', []);
   }
 
-  async estimateFee(nBlocks, cb) {
-    return this.asyncCall('estimateSmartFee', [nBlocks], cb);
+  async estimateFee({ nBlocks }) {
+    return this.asyncCall('estimateSmartFee', [nBlocks]);
   }
 
-  async getBalance(address, cb) {
-    const balanceInfo = await this.asyncCall('getWalletInfo', [], cb);
+  async getBalance() {
+    const balanceInfo = await this.asyncCall('getWalletInfo', []);
     return balanceInfo.balance;
   }
 
-  async getBestBlockHash(cb) {
-    return this.asyncCall('getBestBlockHash', [], cb);
+  async getBestBlockHash() {
+    return this.asyncCall('getBestBlockHash', []);
   }
 
-  async getTransaction(txid, cb, options = {}) {
-    const populatedInputs = [];
-    if(options.populateInputs) {
-      try {
-        const tx = await this.asyncCall('getTransaction', [txid]);
-        for(const input of tx.vin) {
-          const populatedInput = await this.getTransaction(input.txid);
-          populatedInputs.push(populatedInput);
-        }
-        tx.vin = populatedInputs;
-        if(cb) {
-          cb(null, tx);
-        }
-        return tx;
-      } catch(err) {
-        if(cb) {
-          return cb(err);
-        }
-      }
-    } else {
-      return this.asyncCall('getTransaction', [txid], cb);
+  async getTransaction({ txid, populateInputs = false}) {
+    const tx = await this.asyncCall('getTransaction', [txid]);
+    if (populateInputs) {
+      tx.vin = tx.vin.map(async input => await this.getTransaction(input.txid));
     }
+
+    return tx;
   }
 
-  async getRawTransaction(txid, cb) {
-    return this.asyncCall('getRawTransaction', [txid], cb);
+  async getRawTransaction({ txid }) {
+    return this.asyncCall('getRawTransaction', [txid]);
   }
 
-  async sendRawTransactions(rawTx, cb) {
-    return this.asyncCall('sendRawTransaction', [rawTx], cb);
+  async sendRawTransactions({ rawTx }) {
+    return this.asyncCall('sendRawTransaction', [rawTx]);
   }
 
-  async decodeRawTransaction(rawTx, cb) {
-    return this.asyncCall('decodeRawTransaction', [rawTx], cb);
+  async decodeRawTransaction({ rawTx }) {
+    return this.asyncCall('decodeRawTransaction', [rawTx]);
   }
 
-  async getBlock(hash, cb) {
-    return this.asyncCall('getBlock', [hash], cb);
+  async getBlock({ hash }) {
+    return this.asyncCall('getBlock', [hash]);
   }
 
-  async getConfirmations(txid, cb) {
-    try {
-      const tx = await this.getTransaction(txid);
-      if(tx.blockhash === undefined) {
-        if(cb) cb(null, confirmations);
-        return 0;
-      }
-      const blockHash = await this.getBestBlockHash();
-      const block = await this.getBlock(blockHash);
-      const txBlock = await this.getBlock(tx.blockhash); //tx without blockhash, add return zero if without blockhash
-      const confirmations = (block.height - txBlock.height) + 1;
-      if(cb) cb(null, confirmations);
-      return confirmations;
-    } catch (err) {
-      if(cb) cb(err);
+  async getConfirmations({ txid }) {
+    const tx = await this.getTransaction(txid);
+    if (tx.blockhash === undefined) {
+      return 0;
     }
+    const blockHash = await this.getBestBlockHash();
+    const block = await this.getBlock(blockHash);
+    const txBlock = await this.getBlock(tx.blockhash); //tx without blockhash, add return zero if without blockhash
+    const confirmations = (block.height - txBlock.height) + 1;
+    return confirmations;
   }
 
-  async getTip(cb) {
-    try {
-      const blockchainInfo = await this.asyncCall('getblockchaininfo', []);
-      const { blocks: height, bestblockhash: hash } = blockchainInfo;
-      if (cb) {
-        return cb(null, { height, hash });
-      }
-      return { height, hash };
-    } catch (err) {
-      if (cb) {
-        return cb(err);
-      }
-      throw err;
-    }
+  async getTip() {
+    const blockchainInfo = await this.asyncCall('getblockchaininfo', []);
+    const { blocks: height, bestblockhash: hash } = blockchainInfo;
+    return { height, hash };
   }
 }
 
