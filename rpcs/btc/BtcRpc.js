@@ -51,10 +51,20 @@ class BtcRpc {
     return this.asyncCall('getBestBlockHash', []);
   }
 
-  async getTransaction({ txid, populateInputs = false}) {
-    const tx = await this.asyncCall('getTransaction', [txid]);
-    if (populateInputs) {
-      tx.vin = tx.vin.map(async input => await this.getTransaction(input.txid));
+  async getTransaction({ txid, detail = false}) {
+    const tx = await this.asyncCall('getRawTransaction', [txid, 1]);
+    if (detail) {
+      for (let input of tx.vin) {
+        const prevTx = await this.getTransaction({ txid: input.txid });
+        const utxo = prevTx.vout[input.vout];
+        const { value } = utxo;
+        const address = utxo.addresses && utxo.addresses.length && utxo.addresses[0].address;
+        input = Object.assign(input, { value, address, confirmations: prevTx.confirmations });
+      }
+      tx.unconfirmedInputs = tx.vin.some(input => input.confirmations < 1);
+      let totalInputValue = tx.vin.reduce((total, input) => total + input.value * 1e8, 0);
+      let totalOutputValue = tx.vout.reduce((total, output) => total + output.value * 1e8, 0);
+      tx.fee = totalInputValue - totalOutputValue;
     }
 
     return tx;
@@ -81,11 +91,7 @@ class BtcRpc {
     if (tx.blockhash === undefined) {
       return 0;
     }
-    const hash = await this.getBestBlockHash();
-    const block = await this.getBlock({ hash });
-    const txBlock = await this.getBlock({hash: tx.blockhash}); //tx without blockhash, add return zero if without blockhash
-    const confirmations = (block.height - txBlock.height) + 1;
-    return confirmations;
+    return tx.confirmations;
   }
 
   async getTip() {
