@@ -28,11 +28,13 @@ class CryptoRpcProvider {
     this.rpcs = {
       [this.chain]: new RpcClasses[this.chain](this.config)
     };
-    Object.entries(config.tokens).forEach((token, tokenConfig) => {
-      const TokenClass = TokenClasses[this.chain][tokenConfig.type];
-      const configForToken = Object.assign(tokenConfig, this.config);
-      this.rpcs[token] = new TokenClass(configForToken);
-    });
+    if (config.tokens) {
+      Object.entries(config.tokens).forEach((token, tokenConfig) => {
+        const TokenClass = TokenClasses[this.chain][tokenConfig.type];
+        const configForToken = Object.assign(tokenConfig, this.config);
+        this.rpcs[token] = new TokenClass(configForToken);
+      });
+    }
   }
 
   has(currency) {
