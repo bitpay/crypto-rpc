@@ -58,7 +58,7 @@ class BtcRpc {
         const prevTx = await this.getTransaction({ txid: input.txid });
         const utxo = prevTx.vout[input.vout];
         const { value } = utxo;
-        const address = utxo.addresses && utxo.addresses.length && utxo.addresses[0].address;
+        const address = utxo.scriptPubKey.addresses && utxo.scriptPubKey.addresses.length && utxo.scriptPubKey.addresses[0];
         input = Object.assign(input, { value, address, confirmations: prevTx.confirmations });
       }
       tx.unconfirmedInputs = tx.vin.some(input => input.confirmations < 1);
