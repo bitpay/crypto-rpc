@@ -81,7 +81,7 @@ describe('ETH Tests', function() {
     const sentTx = await rpcs.sendRawTransaction(
       {
         currency,
-        signedRawTx: '0x' + serializedTx.toString('hex')
+        rawTx: '0x' + serializedTx.toString('hex')
       }
     );
     assert(sentTx);

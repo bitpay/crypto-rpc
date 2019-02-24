@@ -165,8 +165,8 @@ class EthRPC {
     });
   }
 
-  sendRawTransaction({ signedRawTx }) {
-    return this.web3.eth.sendSignedTransaction(signedRawTx);
+  sendRawTransaction({ rawTx }) {
+    return this.web3.eth.sendSignedTransaction(rawTx);
   }
 
   async decodeRawTransaction({ rawTx }) {

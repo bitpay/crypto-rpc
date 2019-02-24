@@ -75,7 +75,7 @@ class BtcRpc {
     return this.asyncCall('getRawTransaction', [txid]);
   }
 
-  async sendRawTransactions({ rawTx }) {
+  async sendRawTransaction({ rawTx }) {
     return this.asyncCall('sendRawTransaction', [rawTx]);
   }
 
