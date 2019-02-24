@@ -9,7 +9,8 @@ class BtcRpc {
   asyncCall(method, args) {
     return new Promise((resolve, reject) => {
       this.rpc[method](...args, (err, resp) => {
-        if(err || (resp && resp.result && resp.result.errors)){
+        err = err || (resp && resp.result && resp.result.errors);
+        if(err){
           reject(err);
         } else {
           resolve(resp.result);
