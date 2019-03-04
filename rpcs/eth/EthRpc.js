@@ -86,10 +86,10 @@ class EthRPC {
 
   async unlockAndSendToAddress({ address, amount, passphrase }) {
     return new Promise((resolve, reject) => {
-      const send = async phrase => {
+      const send = async passphrase => {
         console.warn('Unlocking for a single transaction.');
         try {
-          const tx = await this.sendToAddress({ address, amount, phrase });
+          const tx = await this.sendToAddress({ address, amount, passphrase });
           resolve(tx);
         } catch (err) {
           reject(err);
