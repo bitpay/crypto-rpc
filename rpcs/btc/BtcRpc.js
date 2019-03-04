@@ -1,4 +1,5 @@
-var BitcoinRPC = require('./bitcoin');
+const BitcoinRPC = require('./bitcoin');
+const promptly = require('promptly');
 
 class BtcRpc {
   constructor(config) {
@@ -28,10 +29,28 @@ class BtcRpc {
   }
 
   async unlockAndSendToAddress({ address, amount, passphrase }) {
-    await this.asyncCall('walletPassPhrase', [passphrase, 10]);
-    const tx = await this.sendToAddress({ address, amount });
-    await this.walletLock();
-    return tx;
+    return new Promise((resolve, reject) => {
+      const send = async (phrase) => {
+        try {
+          await this.asyncCall('walletPassPhrase', [phrase, 10]);
+          const tx = await this.sendToAddress({ address, amount });
+          await this.walletLock();
+          resolve(tx);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      if (passphrase === undefined) {
+        return promptly.password('> ', (err, phrase) => {
+          if (err) {
+            return reject(err);
+          }
+          return send(phrase);
+        });
+      } else {
+        return send(passphrase);
+      }
+    });
   }
 
 
