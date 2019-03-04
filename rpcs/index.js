@@ -6,10 +6,15 @@ const RpcClasses = {
 
 const TokenClasses = {
   ETH: {
+    native: require('./eth/EthRpc'),
     ERC20: require('./erc20/Erc20Rpc')
   },
-  BTC: {},
-  BCH: {}
+  BTC: {
+    native: require('./btc/BtcRpc')
+  },
+  BCH: {
+    native: require('./bch/BchRpc')
+  }
 };
 
 class CryptoRpcProvider {
@@ -29,7 +34,7 @@ class CryptoRpcProvider {
       [this.chain]: new RpcClasses[this.chain](this.config)
     };
     if (config.tokens) {
-      Object.entries(config.tokens).forEach((token, tokenConfig) => {
+      Object.entries(config.tokens).forEach(([token, tokenConfig]) => {
         const TokenClass = TokenClasses[this.chain][tokenConfig.type];
         const configForToken = Object.assign(tokenConfig, this.config);
         this.rpcs[token] = new TokenClass(configForToken);
