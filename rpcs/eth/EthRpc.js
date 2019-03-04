@@ -85,17 +85,27 @@ class EthRPC {
   }
 
   async unlockAndSendToAddress({ address, amount, passphrase }) {
-    const send = phrase => {
-      console.warn('Unlocking for a single transaction.');
-      return this.sendToAddress({ address, amount, phrase });
-    };
-    if (passphrase === undefined) {
-      return promptly.password('> ', (err, phrase) => {
-        return send(phrase);
-      });
-    } else {
-      return send(passphrase);
-    }
+    return new Promise((resolve, reject) => {
+      const send = async phrase => {
+        console.warn('Unlocking for a single transaction.');
+        try {
+          const tx = await this.sendToAddress({ address, amount, phrase });
+          resolve(tx);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      if (passphrase === undefined) {
+        return promptly.password('> ', (err, phrase) => {
+          if (err) {
+            return reject(err);
+          }
+          return send(phrase);
+        });
+      } else {
+        return send(passphrase);
+      }
+    });
   }
 
   estimateFee({ nBlocks }) {
