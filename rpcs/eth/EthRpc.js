@@ -204,6 +204,9 @@ class EthRPC {
 
   async getConfirmations({ txid }) {
     const tx = await this.getTransaction({ txid });
+    if (!tx) {
+      return null;
+    }
     const bestBlock = await this.web3.eth.getBlockNumber();
     if (tx.blockNumber === undefined) {
       return 0;
