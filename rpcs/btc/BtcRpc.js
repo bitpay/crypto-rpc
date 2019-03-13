@@ -53,7 +53,6 @@ class BtcRpc {
     });
   }
 
-
   async walletLock() {
     return this.asyncCall('walletLock', []);
   }
@@ -118,6 +117,12 @@ class BtcRpc {
     const blockchainInfo = await this.asyncCall('getblockchaininfo', []);
     const { blocks: height, bestblockhash: hash } = blockchainInfo;
     return { height, hash };
+  }
+
+  async validateAddress({ address }) {
+    const validateInfo = await this.asyncCall('validateaddress', [address]);
+    const { isvalid } = validateInfo;
+    return isvalid;
   }
 }
 
