@@ -25,7 +25,7 @@ class BtcRpc {
   }
 
   async sendToAddress({ address, amount }) {
-    return this.asyncCall('sendToAddress', [address, amount]);
+    return this.asyncCall('sendToAddress', [address, amount / 1e8]);
   }
 
   async unlockAndSendToAddress({ address, amount, passphrase }) {
@@ -58,12 +58,13 @@ class BtcRpc {
   }
 
   async estimateFee({ nBlocks }) {
-    return this.asyncCall('estimateSmartFee', [nBlocks]);
+    const { feerate } = await this.asyncCall('estimateSmartFee', [nBlocks]);
+    return feerate * 1e8;
   }
 
   async getBalance() {
     const balanceInfo = await this.asyncCall('getWalletInfo', []);
-    return balanceInfo.balance;
+    return balanceInfo.balance * 1e8;
   }
 
   async getBestBlockHash() {
