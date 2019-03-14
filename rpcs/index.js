@@ -21,7 +21,7 @@ class CryptoRpcProvider {
   constructor(config) {
     this.chain = config.chain;
     if (!RpcClasses[this.chain]) {
-      throw new Error('Invalid chain specified');
+      throw new Error(`Invalid chain ${this.chain} specified`);
     }
     this.config = Object.assign({}, config, {
       host: config.host,
