@@ -9,13 +9,22 @@ class BtcRpc {
 
   asyncCall(method, args) {
     return new Promise((resolve, reject) => {
-      this.rpc[method](...args, (err, resp) => {
-        err = err || (resp && resp.result && resp.result.errors);
-        if(err){
-          reject(err);
-        } else {
-          resolve(resp.result);
+      this.rpc[method](...args, (err, response) => {
+        if (err instanceof Error) {
+          return reject(err);
         }
+
+        const { error, result } = response;
+        if (error) {
+          err = new Error(error.message);
+          err.code = error.code; // used by functions below
+          err.conclusive = true; // used by server
+          return reject(err);
+        }
+        if (result.errors) {
+          return reject(new Error(result.errors[0]));
+        }
+        return resolve(result);
       });
     });
   }
@@ -29,28 +38,13 @@ class BtcRpc {
   }
 
   async unlockAndSendToAddress({ address, amount, passphrase }) {
-    return new Promise((resolve, reject) => {
-      const send = async (phrase) => {
-        try {
-          await this.asyncCall('walletPassPhrase', [phrase, 10]);
-          const tx = await this.sendToAddress({ address, amount });
-          await this.walletLock();
-          resolve(tx);
-        } catch (err) {
-          reject(err);
-        }
-      };
-      if (passphrase === undefined) {
-        return promptly.password('> ', (err, phrase) => {
-          if (err) {
-            return reject(err);
-          }
-          return send(phrase);
-        });
-      } else {
-        return send(passphrase);
-      }
-    });
+    if (passphrase === undefined) {
+      passphrase = await promptly.password('> ');
+    }
+    await this.asyncCall('walletPassPhrase', [passphrase, 10]);
+    const tx = await this.sendToAddress({ address, amount });
+    await this.walletLock();
+    return tx;
   }
 
 
@@ -71,9 +65,10 @@ class BtcRpc {
     return this.asyncCall('getBestBlockHash', []);
   }
 
-  async getTransaction({ txid, detail = false}) {
-    const tx = await this.asyncCall('getRawTransaction', [txid, 1]);
-    if (detail) {
+  async getTransaction({ txid, detail = false }) {
+    const tx = await this.getRawTransaction({ txid });
+
+    if (tx && detail) {
       for (let input of tx.vin) {
         const prevTx = await this.getTransaction({ txid: input.txid });
         const utxo = prevTx.vout[input.vout];
@@ -91,7 +86,14 @@ class BtcRpc {
   }
 
   async getRawTransaction({ txid }) {
-    return this.asyncCall('getRawTransaction', [txid]);
+    try {
+      return await this.asyncCall('getRawTransaction', [txid]);
+    } catch (err) {
+      if (err.code === -5) {
+        return null;
+      }
+      throw err;
+    }
   }
 
   async sendRawTransaction({ rawTx }) {
