@@ -221,5 +221,9 @@ class EthRPC {
     const { hash } = block;
     return { height, hash };
   }
+
+  async validateAddress({ address }) {
+    return await this.web3.utils.isAddress(address);
+  }
 }
 module.exports = EthRPC;

@@ -51,4 +51,14 @@ module.exports = function TestForCurrency(currency, currencyConfigs) {
     const confirmations = await rpcs.getConfirmations({ currency, txid });
     assert(confirmations != undefined);
   });
+
+  it('should validate address', async () => {
+    const isValid = await rpcs.validateAddress({ currency, address: config.currencyConfig.sendTo });
+    assert(isValid === true);
+  });
+
+  it('should not validate bad address', async () => {
+    const isValid = await rpcs.validateAddress({ currency, address: 'NOTANADDRESS' });
+    assert(isValid === false);
+  });
 };
