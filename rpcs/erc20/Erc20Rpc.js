@@ -33,7 +33,7 @@ class Erc20RPC extends EthRPC {
     // This line is why we can't handle a shift amount > 20
     // BigNum can't handle scientific notation,
     // or floats, so we must convert amount into an integer
-    const bigNumAmount = this.web3.utils.toBN(amount * Math.pow(10, precision));
+    const bigNumAmount = this.web3.utils.toBN(Math.floor(amount * Math.pow(10, precision)));
     const scaledAmount = bigNumAmount.mul(TEN.pow(decimalsBN)).toString();
     const gasPrice = await this.estimateGasPrice();
     const contractData = this.erc20Contract.methods
