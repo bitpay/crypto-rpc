@@ -54,7 +54,7 @@ class Erc20RPC extends EthRPC {
       const accounts = await this.web3.eth.getAccounts();
       const balances = [];
       for (let account of accounts) {
-        const balance = await this.getBalance(account);
+        const balance = await this.getBalance({ address: account });
         balances.push({ account, balance });
       }
       return balances;
