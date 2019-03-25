@@ -109,6 +109,10 @@ class CryptoRpcProvider {
   getTip(params) {
     return this.get(params.currency).getTip(params);
   }
+
+  validateAddress(params) {
+    return this.get(params.currency).validateAddress(params);
+  }
 }
 
 module.exports = CryptoRpcProvider;
