@@ -21,7 +21,7 @@ class BtcRpc {
           err.conclusive = true; // used by server
           return reject(err);
         }
-        if (result.errors) {
+        if (result && result.errors) {
           return reject(new Error(result.errors[0]));
         }
         return resolve(result);
