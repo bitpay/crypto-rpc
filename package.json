@@ -4,10 +4,11 @@
   "description": "rpc wrapper for multiple rpcs",
   "main": "index.js",
   "scripts": {
-    "ci:test": "npm run lint && npm run migrate && mocha ./tests",
+    "ci:test": "npm run lint && npm run truffle:compile && npm run truffle:migrate && mocha ./tests",
     "test": "docker-compose build && docker-compose run test_runner",
     "lint": "./node_modules/.bin/eslint .",
-    "migrate": "cd blockchain/ && ../node_modules/.bin/truffle migrate"
+    "truffle:compile": "cd blockchain/ && ../node_modules/.bin/truffle compile",
+    "truffle:migrate": "cd blockchain/ && ../node_modules/.bin/truffle migrate"
   },
   "author": "Micah Riggan",
   "license": "ISC",
