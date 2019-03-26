@@ -22,3 +22,4 @@ dist
 src/vendor
 src/dist
 config.js
+blockchain/build
