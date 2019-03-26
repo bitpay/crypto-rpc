@@ -1,7 +1,8 @@
 const BtcRpc = require('../btc/BtcRpc');
 class BchRpc extends BtcRpc {
-  estimateFee({ nBlocks }) {
-    return this.asyncCall('estimateFee', [nBlocks]);
+  async estimateFee({ nBlocks }) {
+    const feeRate = await this.asyncCall('estimateFee', [nBlocks]);
+    return feeRate * 1e8;
   }
 }
 module.exports = BchRpc;
