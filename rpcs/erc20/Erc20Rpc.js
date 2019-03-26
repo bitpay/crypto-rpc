@@ -36,10 +36,11 @@ class Erc20RPC extends EthRPC {
     const bigNumAmount = this.web3.utils.toBN(Math.floor(amount * Math.pow(10, precision)));
     const scaledAmount = bigNumAmount.mul(TEN.pow(decimalsBN)).toString();
     const gasPrice = await this.estimateGasPrice();
+    const account = await this.getAccount();
     const contractData = this.erc20Contract.methods
       .transfer(address, scaledAmount).encodeABI();
     return this.web3.eth.personal
-      .sendTransaction({ from: this.account, gasPrice, data: contractData, to: this.tokenContractAddress },
+      .sendTransaction({ from: account, gasPrice, data: contractData, to: this.tokenContractAddress },
         passphrase, (err, result) => {
           if (err) throw err;
           return { result };
