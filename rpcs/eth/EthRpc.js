@@ -6,7 +6,7 @@ class EthRPC {
   constructor(config) {
     this.config = config;
     this.web3 = this.getWeb3(this.config);
-    this.account = this.config.account || this.web3.eth.accounts[0];
+    this.account = this.config.account;
   }
 
   getWeb3(web3Config) {
@@ -32,11 +32,20 @@ class EthRPC {
 
   async isUnlocked() {
     try {
-      await this.web3.eth.sign('', this.account);
+      const account = await this.getAccount();
+      await this.web3.eth.sign('', account);
     } catch (err) {
       return false;
     }
     return true;
+  }
+
+  async getAccount() {
+    if (this.account) {
+      return this.account;
+    }
+    const accounts = await this.web3.eth.getAccounts();
+    return accounts[0];
   }
 
   async cmdlineUnlock({ time }) {
@@ -45,12 +54,13 @@ class EthRPC {
       if (err) {
         throw err;
       }
+      const account = await this.getAccount();
       await this.web3.eth.personal.unlockAccount(
-        this.account,
+        account,
         phrase,
         timeHex
       );
-      console.warn(this.account, ' unlocked for ' + time + ' seconds');
+      console.warn(account, ' unlocked for ' + time + ' seconds');
     });
   }
 
@@ -71,8 +81,9 @@ class EthRPC {
 
   async sendToAddress({ address, amount, passphrase }) {
     const gasPrice = await this.estimateGasPrice();
+    const account = await this.getAccount();
     const sendParams = {
-      from: this.account,
+      from: account,
       to: address,
       value: amount,
       gasPrice
@@ -149,8 +160,9 @@ class EthRPC {
     return blockHash;
   }
 
-  walletLock() {
-    return this.web3.eth.personal.lockAccount(this.account);
+  async walletLock() {
+    const account = await this.getAccount();
+    return this.web3.eth.personal.lockAccount(account);
   }
 
   getTransaction({ txid }) {
