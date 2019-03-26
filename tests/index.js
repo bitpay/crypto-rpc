@@ -1,3 +1,5 @@
+// eslint-disable-next-line
+const ERC20 = require('../blockchain/build/contracts/CryptoErc20.json');
 const { CryptoRpc } = require('../');
 const assert = require('assert');
 const mocha = require('mocha');
@@ -13,9 +15,14 @@ const currencyConfig = {
     protocol: 'http',
     rpcPort: '8545',
     account: '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D',
-    tokens: {},
+    tokens: {
+      ERC20: {
+        tokenContractAddress: ERC20.networks['5555'].address,
+        type: 'ERC20'
+      }
+    },
     currencyConfig: {
-      sendTo: '0x0000000000000000000000000000000000000000',
+      sendTo: '0xA15035277A973d584b1d6150e93C21152D6Af440',
       unlockPassword: '',
       privateKey:
       '117ACF0C71DE079057F4D125948D2F1F12CB3F47C234E43438E1E44C93A9C583',
@@ -87,8 +94,20 @@ describe('ETH Tests', function() {
     assert(sentTx);
   });
 
-  TestForCurrency('ETH', currencyConfig);
+  TestForCurrency('ETH', 'ETH', currencyConfig);
 });
+
+
+describe('ERC20 Tests', function() {
+  this.timeout(10000);
+
+  before(done => {
+    setTimeout(done, 5000);
+  });
+
+  TestForCurrency('ETH', 'ERC20', currencyConfig);
+});
+
 
 describe('BTC Tests', function() {
   this.timeout(10000);
@@ -106,5 +125,5 @@ describe('BTC Tests', function() {
     await bitcoin.asyncCall('generate', [101]);
   });
 
-  TestForCurrency('BTC', currencyConfig);
+  TestForCurrency('BTC', 'BTC',  currencyConfig);
 });

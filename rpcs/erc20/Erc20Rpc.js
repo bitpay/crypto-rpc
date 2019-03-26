@@ -63,7 +63,7 @@ class Erc20RPC extends EthRPC {
   }
 
   async decodeRawTransaction({ rawTx }) {
-    const decodedEthTx = await super.decodeRawTransaction(rawTx);
+    const decodedEthTx = await super.decodeRawTransaction({rawTx});
     if (decodedEthTx.data) {
       AbiDecoder.addABI(erc20);
       decodedEthTx.decodedData = AbiDecoder.decodeMethod('0x' + decodedEthTx.data);
