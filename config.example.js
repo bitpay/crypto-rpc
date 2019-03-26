@@ -1,27 +1,37 @@
 module.exports = {
   BTCNode: {
+    chain: 'BTC',
     host: 'localhost',
     rpcPort: '20009',
     protocol: 'http',
     user: 'bitpaytest',
     pass: 'local321',
-    currencies: {
-      BTC: {}
-    }
   },
-  BCHNode: {},
+  BCHNode: {
+    chain: 'BCH',
+    host: 'localhost',
+    rpcPort: '20003',
+    protocol: 'http',
+    user: 'bitpaytest',
+    pass: 'local321',
+  },
   ETHNode: {
+    chain: 'ETH',
     host: 'localhost',
     rpcPort: '8545',
     protocol: 'http',
-    currencies : {
+    tokens : {
       GUSD: {
-        //tokenContractAddress: '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
-        tokenContractAddress: '0xd0683a2f4e9ecc9ac6bb41090b4269f7cacdd5d4'
+        tokenContractAddress: '0x00C3f2662F4F56623712BaC28179E7aDf952c0F0',
+        type: 'ERC20'
       },
       USDC: {
-        //tokenContractAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
-        tokenContractAddress: '0xc92e381c387edbfd2e2112f3054896dd20ac3d31'
+        tokenContractAddress: '0xc2258ea076cF2467960EE9B62264b9E17d59eFc9',
+        type: 'ERC20'
+      },
+      PAX: {
+        tokenContractAddress: '0x531f6D8aFA88CC6966FD817340b2A5D7FA3750AD',
+        type: 'ERC20'
       }
     }
   }
