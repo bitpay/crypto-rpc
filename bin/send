@@ -4,15 +4,18 @@
  *
  * @param config
  * ETHNode: {
+ *  chain: 'ETH',
  *  host: 'localhost',
  *  rpcPort: '8545',
  *  protocol: 'http',
- *  currencies : {
+ *  tokens : {
  *    GUSD: {
- *      tokenContractAddress: '0xd0683a2f4e9ecc9ac6bb41090b4269f7cacdd5d4'
+ *      tokenContractAddress: '0xd0683a2f4e9ecc9ac6bb41090b4269f7cacdd5d4',
+ *      type: 'ERC20'
  *    },
  *    USDC: {
- *      tokenContractAddress: '0xc92e381c387edbfd2e2112f3054896dd20ac3d31'
+ *      tokenContractAddress: '0xc92e381c387edbfd2e2112f3054896dd20ac3d31',
+ *      type: 'ERC20'
  *    }
  *  }
  *}
@@ -20,52 +23,44 @@
 const SendProgram = {
   start: (config, program) => {
     const CryptoRPC = require('../rpcs');
-    const util = require('util');
-
-    async function main() {
-      const { node, currency, address, amount } = program;
-      const rpcHost = config[node];
-      if(rpcHost) {
-        const { host, rpcPort, protocol, user, pass } = rpcHost;
-        const currencyConfig = rpcHost.currencies[currency] || {};
-        let rpcs = new CryptoRPC({
-          host,
-          rpcPort,
-          user,
-          pass,
-          protocol,
-        }, currencyConfig);
-
-        rpcs.unlockAndSendToAddress(currency, address, amount, (err, tx) => {
-          if(err) console.error(err);
-          console.log(tx);
-        });
-      } else {
-        console.error('ERROR: Node is not in the config');
-      }
+    const { node, currency, address, amount } = program;
+    const rpcHost = config[node];
+    if (!rpcHost) {
+      throw new Error('ERROR: Node is not in the config');
     }
-    main();
+    const { chain, host, rpcPort, protocol, user, pass } = rpcHost;
+    let rpcs = new CryptoRPC({
+      chain,
+      host,
+      rpcPort,
+      user,
+      pass,
+      protocol,
+      tokens: rpcHost.tokens
+    });
+    return rpcs.unlockAndSendToAddress({currency, address, amount});
   }
 };
-
 
 if (require.main === module) {
   const config = require('../config');
   const program = require('commander');
+  program
+    .option('--node <node>')
+    .option('--currency <currency>')
+    .option('--address <address>')
+    .option('--amount <amount>')
+
   try{
-    program
-      .option('--node <node>')
-      .option('--currency <currency>')
-      .option('--address <address>')
-      .option('--amount <amount>')
-
     program.parse(process.argv);
-    SendProgram.start(config, program);
   } catch (e) {
-    console.log(e.message);
-    return program.help()
+    console.error(e.message);
+    program.help();
+    process.exit(1);
   }
+  SendProgram.start(config, program)
+    .then(balance => console.log(balance))
+    .catch(err => console.error(err));
 }
-
 
 module.exports = SendProgram;
