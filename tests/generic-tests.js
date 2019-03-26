@@ -3,10 +3,10 @@ const assert = require('assert');
 const mocha = require('mocha');
 const {it} = mocha;
 
-module.exports = function TestForCurrency(currency, currencyConfigs) {
+module.exports = function TestForCurrency(chain, currency, currencyConfigs) {
   let txid = '';
   let blockHash = '';
-  const config = currencyConfigs[currency];
+  const config = currencyConfigs[chain];
   const currencyConfig = config.currencyConfig;
   const rpcs = new CryptoRpc(config, currencyConfig);
 

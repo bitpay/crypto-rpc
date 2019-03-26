@@ -92,8 +92,20 @@ describe('ETH Tests', function() {
     assert(sentTx);
   });
 
-  TestForCurrency('ETH', currencyConfig);
+  TestForCurrency('ETH', 'ETH', currencyConfig);
 });
+
+
+describe('ERC20 Tests', function() {
+  this.timeout(10000);
+
+  before(done => {
+    setTimeout(done, 5000);
+  });
+
+  TestForCurrency('ETH', 'ERC20', currencyConfig);
+});
+
 
 describe('BTC Tests', function() {
   this.timeout(10000);
@@ -111,5 +123,5 @@ describe('BTC Tests', function() {
     await bitcoin.asyncCall('generate', [101]);
   });
 
-  TestForCurrency('BTC', currencyConfig);
+  TestForCurrency('BTC', 'BTC',  currencyConfig);
 });
