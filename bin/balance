@@ -4,15 +4,18 @@
  *
  * @param config
  * ETHNode: {
+ *  chain: 'ETH',
  *  host: 'localhost',
  *  rpcPort: '8545',
  *  protocol: 'http',
- *  currencies : {
+ *  tokens : {
  *    GUSD: {
- *      tokenContractAddress: '0xd0683a2f4e9ecc9ac6bb41090b4269f7cacdd5d4'
+ *      tokenContractAddress: '0xd0683a2f4e9ecc9ac6bb41090b4269f7cacdd5d4',
+ *      type: 'ERC20'
  *    },
  *    USDC: {
- *      tokenContractAddress: '0xc92e381c387edbfd2e2112f3054896dd20ac3d31'
+ *      tokenContractAddress: '0xc92e381c387edbfd2e2112f3054896dd20ac3d31',
+ *      type: 'ERC20'
  *    }
  *  }
  *}
@@ -20,49 +23,43 @@
 const BalanceProgram = {
   start: (config, program) => {
     const CryptoRPC = require('../rpcs');
-    const util = require('util');
-
-    async function main() {
-      const { node, currency, address } = program;
-      const rpcHost = config[node];
-      if(rpcHost) {
-        const { host, rpcPort, protocol, user, pass } = rpcHost;
-        const currencyConfig = rpcHost.currencies[currency] || {};
-        let rpcs = new CryptoRPC({
-          host,
-          rpcPort,
-          user,
-          pass,
-          protocol,
-        }, currencyConfig);
-
-        rpcs.getBalance(currency, address, (err, balance) => {
-          if(err) console.error(err);
-          console.log(`${currency} ${util.inspect(balance)}`)
-        });
-      } else {
-        console.error('ERROR: Node is not in the config');
-      }
+    const { node, currency, address } = program;
+    const rpcHost = config[node];
+    if (!rpcHost) {
+      throw new Error('ERROR: Node is not in the config');
     }
-    main();
+    const { chain, host, rpcPort, protocol, user, pass } = rpcHost;
+    let rpcs = new CryptoRPC({
+      chain,
+      host,
+      rpcPort,
+      user,
+      pass,
+      protocol,
+      tokens: rpcHost.tokens
+    });
+    return rpcs.getBalance({currency, address});
   }
 };
 
 if (require.main === module) {
   const config = require('../config');
   const program = require('commander');
-  try{
-    program
-      .option('--node <node>')
-      .option('--currency <currency>')
-      .option('--address <address>')
+  program
+    .option('--node <node>')
+    .option('--currency <currency>')
+    .option('--address <address>')
 
+  try{
     program.parse(process.argv);
-    BalanceProgram.start(config, program);
   } catch (e) {
-    console.log(e.message);
-    return program.help()
+    console.error(e.message);
+    program.help();
+    process.exit(1);
   }
+  BalanceProgram.start(config, program)
+    .then(balance => console.log(balance))
+    .catch(err => console.error(err));
 }
 
 
