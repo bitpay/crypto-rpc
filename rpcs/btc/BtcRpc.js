@@ -17,7 +17,7 @@ class BtcRpc {
         const { error, result } = response;
         if (error) {
           err = new Error(error.message);
-          err.code = error.code; // used by functions below
+          err.code = error.code; // used by methods below
           err.conclusive = true; // used by server
           return reject(err);
         }
@@ -109,6 +109,9 @@ class BtcRpc {
 
   async getConfirmations({ txid }) {
     const tx = await this.getTransaction({ txid });
+    if (!tx) {
+      return null;
+    }
     if (tx.blockhash === undefined) {
       return 0;
     }
