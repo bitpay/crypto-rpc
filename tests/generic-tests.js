@@ -28,6 +28,7 @@ module.exports = function TestForCurrency(currency, currencyConfigs) {
 
   it('should be able to send a transaction', async () => {
     txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '1', passphrase: currencyConfig.unlockPassword });
+    assert(txid);
   });
 
   it('should be able to get a transaction', async () => {
