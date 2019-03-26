@@ -4,9 +4,10 @@
   "description": "rpc wrapper for multiple rpcs",
   "main": "index.js",
   "scripts": {
-    "ci:test": "npm run lint && mocha ./tests",
+    "ci:test": "npm run lint && npm run migrate && mocha ./tests",
     "test": "docker-compose build && docker-compose run test_runner",
-    "lint": "./node_modules/.bin/eslint ."
+    "lint": "./node_modules/.bin/eslint .",
+    "migrate": "cd blockchain/ && ../node_modules/.bin/truffle migrate"
   },
   "author": "Micah Riggan",
   "license": "ISC",
@@ -29,6 +30,7 @@
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0",
     "mocha": "^5.2.0",
-    "prettier": "^1.16.4"
+    "prettier": "^1.16.4",
+    "truffle": "^5.0.9"
   }
 }

@@ -13,7 +13,12 @@ const currencyConfig = {
     protocol: 'http',
     rpcPort: '8545',
     account: '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D',
-    tokens: {},
+    tokens: {
+      ERC20: {
+        tokenContractAddress: '0xC68f833115ADA8076A57589aEfD4004C25c645cF',
+        type: 'ERC20'
+      }
+    },
     currencyConfig: {
       sendTo: '0x0000000000000000000000000000000000000000',
       unlockPassword: '',
