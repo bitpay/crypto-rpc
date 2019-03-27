@@ -129,7 +129,7 @@ class EthRPC {
       }
     }
     const promises = payToArray.map(a => {
-      const [address, amount] = a;
+      const { address, amount } = a;
       return this.sendToAddress({ address, amount, phrase });
     });
     return Promise.all(promises);

@@ -53,7 +53,7 @@ class BtcRpc {
     }
     await this.asyncCall('walletPassPhrase', [passphrase, 10]);
     const promises = payToArray.map(a => {
-      const [address, amount] = a;
+      const { address, amount } = a;
       return this.sendToAddress({ address, amount });
     });
     const txs = await Promise.all(promises);
