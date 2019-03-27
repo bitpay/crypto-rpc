@@ -120,19 +120,42 @@ class EthRPC {
   }
 
   async unlockAndSendToAddressMany({ payToArray, passphrase }) {
+    function RpcException(message) {
+      const e = new Error(message);
+      e.name = 'failedRequest';
+      e.data = errorObject;
+      return e;
+    }
+
     let phrase = passphrase;
     if (passphrase === undefined) {
+      phrase = await promptly.password('> ');
+    }
+
+    let someRequestFailed;
+    const errorObject = {};
+    const result = [];
+    for (const [i, request] of payToArray.entries()) {
+      const { address, amount } = request;
       try {
-        phrase = await promptly.password('> ');
-      } catch (e) {
-        return Promise.reject(e);
+        const txid = await this.sendToAddress({ address, amount, phrase });
+        if (!errorObject.hasOwnProperty('success')) {
+          errorObject.success = {};
+        }
+        errorObject.success[i] = txid;
+        result.push(txid);
+      } catch (error) {
+        if (!errorObject.hasOwnProperty('failure')) {
+          errorObject.failure = {};
+        }
+        errorObject.failure[i] = error;
+        someRequestFailed = true;
       }
     }
-    const promises = payToArray.map(a => {
-      const { address, amount } = a;
-      return this.sendToAddress({ address, amount, phrase });
-    });
-    return Promise.all(promises);
+    if (someRequestFailed) {
+      throw RpcException('At least one of many requests Failed');
+    }
+    return result;
   }
 
   estimateFee({ nBlocks }) {

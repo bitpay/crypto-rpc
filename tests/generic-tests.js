@@ -34,9 +34,26 @@ module.exports = function TestForCurrency(chain, currency, currencyConfigs) {
   it('should be able to send many transactions', async () => {
     const address = config.currencyConfig.sendTo;
     const amount = '1000';
-    const payToArray = [{ address, amount }];
+    const payToArray = [
+      { address, amount },
+    ];
     const txids = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword });
     assert(txids[0]);
+  });
+
+  it('should reject when one of many transactions fails', async () => {
+    const address = config.currencyConfig.sendTo;
+    const amount = '1000';
+    const payToArray = [
+      { address, amount },
+      { address: 'funkyColdMedina', amount: 1 },
+    ];
+    try {
+      await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword });
+    } catch (error) {
+      assert(error.message = 'At least one of many requests Failed');
+      assert(error.data.failure[1]);
+    }
   });
 
   it('should be able to get a transaction', async () => {
