@@ -47,6 +47,20 @@ class BtcRpc {
     return tx;
   }
 
+  async unlockAndSendToAddressMany({ payToArray, passphrase }) {
+    if (passphrase === undefined) {
+      passphrase = await promptly.password('> ');
+    }
+    await this.asyncCall('walletPassPhrase', [passphrase, 10]);
+    const promises = payToArray.map(a => {
+      const [address, amount] = a;
+      return this.sendToAddress({ address, amount });
+    });
+    const txs = await Promise.all(promises);
+    await this.walletLock();
+    return txs;
+  }
+
   async walletLock() {
     return this.asyncCall('walletLock', []);
   }

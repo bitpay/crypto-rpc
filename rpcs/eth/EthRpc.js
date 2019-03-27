@@ -119,6 +119,22 @@ class EthRPC {
     });
   }
 
+  async unlockAndSendToAddressMany({ payToArray, passphrase }) {
+    let phrase = passphrase;
+    if (passphrase === undefined) {
+      try {
+        phrase = await promptly.password('> ');
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    }
+    const promises = payToArray.map(a => {
+      const [address, amount] = a;
+      return this.sendToAddress({ address, amount, phrase });
+    });
+    return Promise.all(promises);
+  }
+
   estimateFee({ nBlocks }) {
     return this.estimateGasPrice(nBlocks);
   }

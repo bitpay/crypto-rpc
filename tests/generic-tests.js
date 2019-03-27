@@ -31,6 +31,14 @@ module.exports = function TestForCurrency(chain, currency, currencyConfigs) {
     assert(txid);
   });
 
+  it('should be able to send many transactions', async () => {
+    const address = config.currencyConfig.sendTo;
+    const amount = '1';
+    const payToArray = [[address, amount]];
+    const txids = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword });
+    assert(txids[0]);
+  });
+
   it('should be able to get a transaction', async () => {
     const tx = await rpcs.getTransaction({ currency, txid });
     assert(tx);
