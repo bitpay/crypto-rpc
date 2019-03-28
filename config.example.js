@@ -4,8 +4,8 @@ module.exports = {
     host: 'localhost',
     rpcPort: '20009',
     protocol: 'http',
-    user: 'bitpaytest',
-    pass: 'local321',
+    rpcUser: 'bitpaytest',
+    rpcPass: 'local321',
   },
   BCHNode: {
     chain: 'BCH',
