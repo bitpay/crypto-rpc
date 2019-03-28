@@ -61,21 +61,15 @@ class BtcRpc {
     await this.asyncCall('walletPassPhrase', [passphrase, 10]);
 
     let someRequestFailed;
-    const errorObject = {};
+    const errorObject = { success: {}, failure: {} };
     const result = [];
     for (const [i, request] of payToArray.entries()) {
       const { address, amount } = request;
       try {
         const txid = await this.sendToAddress({ address, amount });
-        if (!errorObject.hasOwnProperty('success')) {
-          errorObject.success = {};
-        }
         errorObject.success[i] = txid;
         result.push(txid);
       } catch (error) {
-        if (!errorObject.hasOwnProperty('failure')) {
-          errorObject.failure = {};
-        }
         errorObject.failure[i] = error;
         someRequestFailed = true;
       }
