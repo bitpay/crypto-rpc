@@ -35,8 +35,8 @@ const currencyConfig = {
     host: 'bitcoin',
     protocol: 'http',
     rpcPort: '8333',
-    user: 'cryptorpc',
-    pass: 'local321',
+    rpcUser: 'cryptorpc',
+    rpcPass: 'local321',
     tokens: {},
     currencyConfig: {
       sendTo: '2NGFWyW3LBPr6StDuDSNFzQF3Jouuup1rua',
