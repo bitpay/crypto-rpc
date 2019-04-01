@@ -119,6 +119,39 @@ class EthRPC {
     });
   }
 
+  async unlockAndSendToAddressMany({ payToArray, passphrase }) {
+    function RpcException(message) {
+      const e = new Error(message);
+      e.name = 'failedRequest';
+      e.data = errorObject;
+      return e;
+    }
+
+    let phrase = passphrase;
+    if (passphrase === undefined) {
+      phrase = await promptly.password('> ');
+    }
+
+    let someRequestFailed;
+    const errorObject = { success: {}, failure: {} };
+    const result = [];
+    for (const [i, request] of payToArray.entries()) {
+      const { address, amount } = request;
+      try {
+        const txid = await this.sendToAddress({ address, amount, phrase });
+        errorObject.success[i] = txid;
+        result.push(txid);
+      } catch (error) {
+        errorObject.failure[i] = error;
+        someRequestFailed = true;
+      }
+    }
+    if (someRequestFailed) {
+      throw RpcException('At least one of many requests Failed');
+    }
+    return result;
+  }
+
   estimateFee({ nBlocks }) {
     return this.estimateGasPrice(nBlocks);
   }

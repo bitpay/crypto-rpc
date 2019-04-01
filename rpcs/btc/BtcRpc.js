@@ -48,6 +48,41 @@ class BtcRpc {
     return tx;
   }
 
+  async unlockAndSendToAddressMany({ payToArray, passphrase }) {
+    function RpcException(message) {
+      const e = new Error(message);
+      e.name = 'failedRequest';
+      e.data = errorObject;
+      return e;
+    }
+
+    if (passphrase === undefined) {
+      passphrase = await promptly.password('> ');
+    }
+    await this.asyncCall('walletPassPhrase', [passphrase, 10]);
+
+    let someRequestFailed;
+    const errorObject = { success: {}, failure: {} };
+    const result = [];
+    for (const [i, request] of payToArray.entries()) {
+      const { address, amount } = request;
+      try {
+        const txid = await this.sendToAddress({ address, amount });
+        errorObject.success[i] = txid;
+        result.push(txid);
+      } catch (error) {
+        errorObject.failure[i] = error;
+        someRequestFailed = true;
+      }
+    }
+    await this.walletLock();
+
+    if (someRequestFailed) {
+      throw RpcException('At least one of many requests Failed');
+    }
+    return result;
+  }
+
   async walletLock() {
     return this.asyncCall('walletLock', []);
   }

@@ -70,6 +70,10 @@ class CryptoRpcProvider {
     return this.get(params.currency).unlockAndSendToAddress(params);
   }
 
+  unlockAndSendToAddressMany(params) {
+    return this.get(params.currency).unlockAndSendToAddressMany(params);
+  }
+
   estimateFee(params) {
     return this.get(params.currency).estimateFee(params);
   }
