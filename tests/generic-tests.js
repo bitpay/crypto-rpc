@@ -59,6 +59,7 @@ module.exports = function TestForCurrency(chain, currency, currencyConfigs) {
   it('should be able to get a transaction', async () => {
     const tx = await rpcs.getTransaction({ currency, txid });
     assert(tx);
+    assert(typeof tx === 'object');
   });
 
   it('should be able to decode a raw transaction', async () => {

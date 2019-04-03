@@ -123,7 +123,7 @@ class BtcRpc {
 
   async getRawTransaction({ txid }) {
     try {
-      return await this.asyncCall('getRawTransaction', [txid]);
+      return await this.asyncCall('getRawTransaction', [txid, 1]);
     } catch (err) {
       if (err.code === -5) {
         return null;
