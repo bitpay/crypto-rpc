@@ -59,6 +59,24 @@ module.exports = function TestForCurrency(chain, currency, currencyConfigs) {
   it('should be able to get a transaction', async () => {
     const tx = await rpcs.getTransaction({ currency, txid });
     assert(tx);
+    assert(typeof tx === 'object');
+    if (['ETH', 'ERC20'].includes(currency)) {
+      assert(tx.hash);
+      assert(tx.blockHash);
+      assert(tx.nonce);
+      assert(tx.gas);
+      assert(tx.gasPrice);
+      assert(tx.v);
+      assert(tx.r);
+      assert(tx.s);
+    }
+    if (['BTC', 'BCH'].includes(currency)) {
+      assert(tx.hex);
+      assert(tx.vin);
+      assert(tx.vout);
+      assert(Array.isArray(tx.vin));
+      assert(Array.isArray(tx.vout));
+    }
   });
 
   it('should be able to decode a raw transaction', async () => {
