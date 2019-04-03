@@ -4,16 +4,16 @@ module.exports = {
     host: 'localhost',
     protocol: 'http',
     rpcPort: '20009',
-    rpcUser: 'bitpaytest',
-    rpcPass: 'local321',
+    user: 'bitpaytest',
+    pass: 'local321',
   },
   BCHNode: {
     chain: 'BCH',
     host: 'localhost',
     protocol: 'http',
     rpcPort: '20003',
-    rpcUser: 'bitpaytest',
-    rpcPass: 'local321'
+    user: 'bitpaytest',
+    pass: 'local321'
   },
   ETHNode: {
     chain: 'ETH',
