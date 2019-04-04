@@ -94,7 +94,7 @@ class BtcRpc {
   }
 
   async estimateFee({ nBlocks }) {
-    const { feeRate } = await this.asyncCall('estimateSmartFee', [nBlocks]);
+    const { feerate: feeRate } = await this.asyncCall('estimateSmartFee', [nBlocks]);
     const scale = 1e3;
     const scaledFeeRate = Math.round(feeRate * 1e8 * 1e-3 * scale);
     return scaledFeeRate / scale;
