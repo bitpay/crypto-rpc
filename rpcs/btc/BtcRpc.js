@@ -4,8 +4,14 @@ const promptly = require('promptly');
 class BtcRpc {
   constructor(config) {
     this.config = config;
-    const {rpcPort: port, rpcUser: user, rpcPass: pass, host, protocol } = config;
-    this.rpc = new BitcoinRPC({host, port, user, pass, protocol});
+    const {
+      rpcPort: port,
+      rpcUser: user,
+      rpcPass: pass,
+      host,
+      protocol
+    } = config;
+    this.rpc = new BitcoinRPC({ host, port, user, pass, protocol });
   }
 
   asyncCall(method, args) {
@@ -88,8 +94,10 @@ class BtcRpc {
   }
 
   async estimateFee({ nBlocks }) {
-    const { feerate } = await this.asyncCall('estimateSmartFee', [nBlocks]);
-    return feerate * 1e8;
+    const { feeRate } = await this.asyncCall('estimateSmartFee', [nBlocks]);
+    const scale = 1e3;
+    const scaledFeeRate = Math.round(feeRate * 1e8 * 1e-3 * scale);
+    return scaledFeeRate / scale;
   }
 
   async getBalance() {
@@ -109,12 +117,25 @@ class BtcRpc {
         const prevTx = await this.getTransaction({ txid: input.txid });
         const utxo = prevTx.vout[input.vout];
         const { value } = utxo;
-        const address = utxo.scriptPubKey.addresses && utxo.scriptPubKey.addresses.length && utxo.scriptPubKey.addresses[0];
-        input = Object.assign(input, { value, address, confirmations: prevTx.confirmations });
+        const address =
+          utxo.scriptPubKey.addresses &&
+          utxo.scriptPubKey.addresses.length &&
+          utxo.scriptPubKey.addresses[0];
+        input = Object.assign(input, {
+          value,
+          address,
+          confirmations: prevTx.confirmations
+        });
       }
       tx.unconfirmedInputs = tx.vin.some(input => input.confirmations < 1);
-      let totalInputValue = tx.vin.reduce((total, input) => total + input.value * 1e8, 0);
-      let totalOutputValue = tx.vout.reduce((total, output) => total + output.value * 1e8, 0);
+      let totalInputValue = tx.vin.reduce(
+        (total, input) => total + input.value * 1e8,
+        0
+      );
+      let totalOutputValue = tx.vout.reduce(
+        (total, output) => total + output.value * 1e8,
+        0
+      );
       tx.fee = totalInputValue - totalOutputValue;
     }
 
