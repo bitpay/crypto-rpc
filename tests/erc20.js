@@ -1,24 +1,41 @@
 const { CryptoRpc } = require('../');
 const assert = require('assert');
 const mocha = require('mocha');
-const {it} = mocha;
+const { before, describe, it } = mocha;
+const ERC20 = require('../blockchain/build/contracts/CryptoErc20.json');
+const config = {
+  chain: 'ETH',
+  host: 'ganache',
+  protocol: 'http',
+  rpcPort: '8545',
+  account: '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D',
+  tokens: {
+    ERC20: {
+      tokenContractAddress: ERC20.networks['5555'].address,
+      type: 'ERC20'
+    }
+  },
+  currencyConfig: {
+    sendTo: '0xA15035277A973d584b1d6150e93C21152D6Af440',
+    unlockPassword: '',
+    privateKey:
+      '117ACF0C71DE079057F4D125948D2F1F12CB3F47C234E43438E1E44C93A9C583',
+    rawTx:
+      '0xf8978202e38471a14e6382ea6094000000000000000000000000000000000000000080b244432d4c353a4e2b4265736a3770445a46784f6149703630735163757a382f4f672b617361655a3673376543676b6245493d26a04904c712736ce12808f531996007d3eb1c1e1c1dcf5431f6252678b626385e40a043ead01a06044cd86fba04ae1dc5259c5b3b5556a8bd86aeb8867e8f1e41512a'
+  }
+};
 
-module.exports = function TestForCurrency(chain, currency, currencyConfigs) {
+describe('ERC20 Tests', function() {
   let txid = '';
-  let blockHash = '';
-  const config = currencyConfigs[chain];
+  const currency = 'ERC20';
   const currencyConfig = config.currencyConfig;
   const rpcs = new CryptoRpc(config, currencyConfig);
 
-  it('should be able to get a block hash', async () => {
-    const block = await rpcs.getBestBlockHash({ currency });
-    blockHash = block;
-    assert(block);
-  });
 
-  it('should get block', async () => {
-    const reqBlock = await rpcs.getBlock({ currency, hash: blockHash });
-    assert(reqBlock);
+  this.timeout(10000);
+
+  before(done => {
+    setTimeout(done, 5000);
   });
 
   it('should be able to get a balance', async () => {
@@ -56,36 +73,11 @@ module.exports = function TestForCurrency(chain, currency, currencyConfigs) {
     }
   });
 
-  it('should be able to get a transaction', async () => {
-    const tx = await rpcs.getTransaction({ currency, txid });
-    assert(tx);
-    assert(typeof tx === 'object');
-  });
-
   it('should be able to decode a raw transaction', async () => {
     const { rawTx } = config.currencyConfig;
     assert(rawTx);
     const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
     assert(decoded);
   });
+});
 
-  it('should get the tip', async () => {
-    const tip = await rpcs.getTip({ currency });
-    assert(tip != undefined);
-  });
-
-  it('should get confirmations', async () => {
-    const confirmations = await rpcs.getConfirmations({ currency, txid });
-    assert(confirmations != undefined);
-  });
-
-  it('should validate address', async () => {
-    const isValid = await rpcs.validateAddress({ currency, address: config.currencyConfig.sendTo });
-    assert(isValid === true);
-  });
-
-  it('should not validate bad address', async () => {
-    const isValid = await rpcs.validateAddress({ currency, address: 'NOTANADDRESS' });
-    assert(isValid === false);
-  });
-};
