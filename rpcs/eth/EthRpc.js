@@ -206,19 +206,19 @@ class EthRPC {
     return this.web3.eth.getTransactionCount(address);
   }
 
-  async getRawTransaction({ txid }) {
-    return new Promise((resolve, reject) => {
-      this.web3.currentProvider.send(
-        { method: 'getRawTransaction', args: [txid] },
-        (err, data) => {
-          if (err) {
-            return reject(err);
-          }
-          resolve(data);
-        }
-      );
-    });
-  }
+  // async getRawTransaction({ txid }) {
+  //   return new Promise((resolve, reject) => {
+  //     this.web3.currentProvider.send(
+  //       { method: 'getRawTransaction', args: [txid] },
+  //       (err, data) => {
+  //         if (err) {
+  //           return reject(err);
+  //         }
+  //         resolve(data);
+  //       }
+  //     );
+  //   });
+  // }
 
   sendRawTransaction({ rawTx }) {
     return this.web3.eth.sendSignedTransaction(rawTx);

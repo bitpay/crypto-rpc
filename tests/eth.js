@@ -1,13 +1,15 @@
 const { CryptoRpc } = require('../');
-const assert = require('assert');
+const assert = require('chai').assert;
 const mocha = require('mocha');
 const { before, describe, it } = mocha;
 const EthereumTx = require('ethereumjs-tx');
 const util = require('web3-utils');
+const EthRPC = require('../rpcs/eth/EthRpc');
 const config = {
   chain: 'ETH',
   host: 'ganache',
   protocol: 'http',
+  port: '8545',
   rpcPort: '8545',
   account: '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D',
   currencyConfig: {
@@ -20,11 +22,11 @@ const config = {
   }
 };
 
-
 describe('ETH Tests', function() {
   const currency = 'ETH';
   const currencyConfig = config.currencyConfig;
   const rpcs = new CryptoRpc(config, currencyConfig);
+  const ethRPC = new EthRPC(config);
   let txid = '';
   let blockHash = '';
 
@@ -36,17 +38,20 @@ describe('ETH Tests', function() {
 
   it('should estimate fee', async () => {
     const fee = await rpcs.estimateFee({ currency, nBlocks: 4 });
-    assert(fee);
+    assert.isDefined(fee);
+  });
+
+  it('should estimate gas price', async () => {
+    const gasPrice = await ethRPC.estimateGasPrice();
+    assert.isDefined(gasPrice);
   });
 
   it('should send raw transaction', async () => {
     // Reset nonce to 0
-    const txCount = await rpcs.getTransactionCount(
-      {
-        currency,
-        address: config.account
-      }
-    );
+    const txCount = await rpcs.getTransactionCount({
+      currency,
+      address: config.account
+    });
 
     // construct the transaction data
     const txData = {
@@ -62,45 +67,54 @@ describe('ETH Tests', function() {
     const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
     rawTx.sign(privateKey);
     const serializedTx = rawTx.serialize();
-    const sentTx = await rpcs.sendRawTransaction(
-      {
-        currency,
-        rawTx: '0x' + serializedTx.toString('hex')
-      }
-    );
-    assert(sentTx);
+    const sentTx = await rpcs.sendRawTransaction({
+      currency,
+      rawTx: '0x' + serializedTx.toString('hex')
+    });
+    assert.isTrue(sentTx.from === txData.from.toLowerCase());
+    assert.isTrue(sentTx.to === txData.to.toLowerCase());
+    assert.hasAllKeys(sentTx, ['transactionHash', 'transactionIndex', 'blockHash', 'blockNumber', 'gasUsed', 'from', 'to', 'cumulativeGasUsed', 'contractAddress', 'logs', 'status', 'logsBloom', 'v', 'r', 's']);
   });
-
 
   it('should be able to get a block hash', async () => {
     const block = await rpcs.getBestBlockHash({ currency });
     blockHash = block;
-    assert(block);
+    assert.isTrue(util.isHex(block));
   });
 
   it('should get block', async () => {
     const reqBlock = await rpcs.getBlock({ currency, hash: blockHash });
-    assert(reqBlock);
+    assert(reqBlock.hash === blockHash);
+    assert.hasAllKeys(reqBlock, ['number', 'hash', 'parentHash', 'mixHash', 'nonce', 'sha3Uncles', 'logsBloom', 'transactionsRoot', 'stateRoot', 'receiptsRoot', 'miner', 'difficulty', 'totalDifficulty', 'extraData', 'size', 'gasLimit', 'gasUsed', 'timestamp', 'transactions', 'uncles']);
   });
 
   it('should be able to get a balance', async () => {
     const balance = await rpcs.getBalance({ currency });
-    assert(balance != undefined);
+    assert(util.isAddress(balance[0].account));
+    assert.hasAllKeys(balance[0], ['account', 'balance']);
   });
 
   it('should be able to send a transaction', async () => {
-    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
-    assert(txid);
+    txid = await rpcs.unlockAndSendToAddress({
+      currency,
+      address: config.currencyConfig.sendTo,
+      amount: '10000',
+      passphrase: currencyConfig.unlockPassword
+    });
+    assert.isTrue(util.isHex(txid));
   });
 
   it('should be able to send many transactions', async () => {
     const address = config.currencyConfig.sendTo;
     const amount = '1000';
-    const payToArray = [
-      { address, amount },
-    ];
-    const txids = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword });
-    assert(txids[0]);
+    const payToArray = [{ address, amount }, {address, amount}];
+    const txids = await rpcs.unlockAndSendToAddressMany({
+      currency,
+      payToArray,
+      passphrase: currencyConfig.unlockPassword
+    });
+    assert.isTrue(util.isHex(txids[0]));
+    assert.isTrue(txids.length === 2);
   });
 
   it('should reject when one of many transactions fails', async () => {
@@ -108,47 +122,65 @@ describe('ETH Tests', function() {
     const amount = '1000';
     const payToArray = [
       { address, amount },
-      { address: 'funkyColdMedina', amount: 1 },
+      { address: 'funkyColdMedina', amount: 1 }
     ];
     try {
-      await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword });
+      await rpcs.unlockAndSendToAddressMany({
+        currency,
+        payToArray,
+        passphrase: currencyConfig.unlockPassword
+      });
     } catch (error) {
-      assert(error.message = 'At least one of many requests Failed');
+      assert((error.message = 'At least one of many requests Failed'));
       assert(error.data.failure[1]);
     }
   });
 
   it('should be able to get a transaction', async () => {
     const tx = await rpcs.getTransaction({ currency, txid });
-    assert(tx);
-    assert(typeof tx === 'object');
+    assert.isDefined(tx);
+    assert.isObject(tx);
   });
 
   it('should be able to decode a raw transaction', async () => {
     const { rawTx } = config.currencyConfig;
-    assert(rawTx);
     const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
-    assert(decoded);
+    assert.isDefined(decoded);
   });
 
   it('should get the tip', async () => {
     const tip = await rpcs.getTip({ currency });
-    assert(tip != undefined);
+    assert.hasAllKeys(tip, ['height', 'hash']);
   });
 
   it('should get confirmations', async () => {
     const confirmations = await rpcs.getConfirmations({ currency, txid });
-    assert(confirmations != undefined);
+    assert.isDefined(confirmations);
+  });
+
+  it('should not get confirmations with invalid txid', async () => {
+    try {
+      await rpcs.getConfirmations({ currency, txid: 'wrongtxid' });
+    } catch (err) {
+      assert.isDefined(err);
+    }
   });
 
   it('should validate address', async () => {
-    const isValid = await rpcs.validateAddress({ currency, address: config.currencyConfig.sendTo });
-    assert(isValid === true);
+    const isValid = await rpcs.validateAddress({
+      currency,
+      address: config.currencyConfig.sendTo
+    });
+    const utilVaildate = util.isAddress(config.currencyConfig.sendTo);
+    assert.isTrue(isValid === utilVaildate);
   });
 
   it('should not validate bad address', async () => {
-    const isValid = await rpcs.validateAddress({ currency, address: 'NOTANADDRESS' });
-    assert(isValid === false);
+    const isValid = await rpcs.validateAddress({
+      currency,
+      address: 'NOTANADDRESS'
+    });
+    const utilVaildate = util.isAddress('NOTANADDRESS');
+    assert.isTrue(isValid === utilVaildate);
   });
-
 });
