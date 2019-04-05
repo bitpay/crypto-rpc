@@ -46,6 +46,7 @@ services:
       -rpcport=9333
       -rpcallowip=172.0.0.0/8
       -rpcbind=0.0.0.0
+      -discover=0
       -rpcuser=cryptorpc
       -rpcpassword=local321
     restart: always

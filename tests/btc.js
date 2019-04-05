@@ -26,7 +26,7 @@ describe('BTC Tests', function() {
   const currency = 'BTC';
   const { currencyConfig } = config;
   const rpcs = new CryptoRpc(config, currencyConfig);
-  const bitcoin = rpcs.get('BTC');
+  const bitcoin = rpcs.get(currency);
 
   before(async () => {
     try {
