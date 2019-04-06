@@ -4,7 +4,7 @@ const promptly = require('promptly');
 class BtcRpc {
   constructor(config) {
     this.config = config;
-    const {rpcPort: port, user, pass, host, protocol } = config;
+    const {rpcPort: port, rpcUser: user, rpcPass: pass, host, protocol } = config;
     this.rpc = new BitcoinRPC({host, port, user, pass, protocol});
   }
 
