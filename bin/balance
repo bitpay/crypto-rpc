@@ -28,13 +28,13 @@ const BalanceProgram = {
     if (!rpcHost) {
       throw new Error('ERROR: Node is not in the config');
     }
-    const { chain, host, rpcPort, protocol, user, pass } = rpcHost;
+    const { chain, host, rpcPort, protocol, rpcUser, rpcPass } = rpcHost;
     let rpcs = new CryptoRPC({
       chain,
       host,
       rpcPort,
-      user,
-      pass,
+      rpcUser,
+      rpcPass,
       protocol,
       tokens: rpcHost.tokens
     });
