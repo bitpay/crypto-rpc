@@ -22,7 +22,7 @@
  */
 const BalanceProgram = {
   start: (config, program) => {
-    const CryptoRPC = require('../rpcs');
+    const CryptoRPC = require('../lib');
     const { node, currency, address } = program;
     const rpcHost = config[node];
     if (!rpcHost) {
@@ -48,7 +48,7 @@ if (require.main === module) {
   program
     .option('--node <node>')
     .option('--currency <currency>')
-    .option('--address <address>')
+    .option('--address <address>');
 
   try{
     program.parse(process.argv);
@@ -58,7 +58,7 @@ if (require.main === module) {
     process.exit(1);
   }
   BalanceProgram.start(config, program)
-    .then(balance => console.log(balance))
+    .then(balance => global.console.log(balance))
     .catch(err => console.error(err));
 }
 
