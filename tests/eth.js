@@ -25,6 +25,7 @@ describe('ETH Tests', function() {
   const currency = 'ETH';
   const currencyConfig = config.currencyConfig;
   const rpcs = new CryptoRpc(config, currencyConfig);
+  const ethRPC = rpcs.get(currency);
   let txid = '';
   let blockHash = '';
 
