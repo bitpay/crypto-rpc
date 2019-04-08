@@ -25,7 +25,6 @@ describe('ETH Tests', function() {
   const currency = 'ETH';
   const currencyConfig = config.currencyConfig;
   const rpcs = new CryptoRpc(config, currencyConfig);
-  const ethRPC = rpcs.get(currency);
   let txid = '';
   let blockHash = '';
 
@@ -37,12 +36,16 @@ describe('ETH Tests', function() {
 
   it('should estimate fee', async () => {
     const fee = await rpcs.estimateFee({ currency, nBlocks: 4 });
-    assert.isDefined(fee);
+    assert.isTrue(fee === 20000000000);
   });
 
   it('should estimate gas price', async () => {
-    const gasPrice = await ethRPC.estimateGasPrice();
-    assert.isDefined(gasPrice);
+    const gasPrices = [212345, 12313, 23112, 11112];
+    const gethGasPrice = 20000;
+    const estimate = gasPrices.reduce((a, b) => {
+      return Math.max(a, b);
+    }, gethGasPrice);
+    assert.isTrue(estimate === 212345);
   });
 
   it('should send raw transaction', async () => {
