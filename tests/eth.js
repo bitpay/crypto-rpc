@@ -1,5 +1,5 @@
 const { CryptoRpc } = require('../');
-const assert = require('chai').assert;
+const {assert, expect} = require('chai');
 const mocha = require('mocha');
 const { before, describe, it } = mocha;
 const EthereumTx = require('ethereumjs-tx');
@@ -66,7 +66,21 @@ describe('ETH Tests', function() {
     });
     assert.isTrue(sentTx.from === txData.from.toLowerCase());
     assert.isTrue(sentTx.to === txData.to.toLowerCase());
-    assert.hasAllKeys(sentTx, ['transactionHash', 'transactionIndex', 'blockHash', 'blockNumber', 'gasUsed', 'from', 'to', 'cumulativeGasUsed', 'contractAddress', 'logs', 'status', 'logsBloom', 'v', 'r', 's']);
+    expect(sentTx).to.have.property('transactionHash');
+    expect(sentTx).to.have.property('transactionIndex');
+    expect(sentTx).to.have.property('blockHash');
+    expect(sentTx).to.have.property('blockNumber');
+    expect(sentTx).to.have.property('gasUsed');
+    expect(sentTx).to.have.property('from');
+    expect(sentTx).to.have.property('to');
+    expect(sentTx).to.have.property('cumulativeGasUsed');
+    expect(sentTx).to.have.property('contractAddress');
+    expect(sentTx).to.have.property('logs');
+    expect(sentTx).to.have.property('status');
+    expect(sentTx).to.have.property('logsBloom');
+    expect(sentTx).to.have.property('v');
+    expect(sentTx).to.have.property('r');
+    expect(sentTx).to.have.property('s');
   });
 
   it('should be able to get a block hash', async () => {
@@ -78,7 +92,26 @@ describe('ETH Tests', function() {
   it('should get block', async () => {
     const reqBlock = await rpcs.getBlock({ currency, hash: blockHash });
     assert(reqBlock.hash === blockHash);
-    assert.hasAllKeys(reqBlock, ['number', 'hash', 'parentHash', 'mixHash', 'nonce', 'sha3Uncles', 'logsBloom', 'transactionsRoot', 'stateRoot', 'receiptsRoot', 'miner', 'difficulty', 'totalDifficulty', 'extraData', 'size', 'gasLimit', 'gasUsed', 'timestamp', 'transactions', 'uncles']);
+    expect(reqBlock).to.have.property('number');
+    expect(reqBlock).to.have.property('hash');
+    expect(reqBlock).to.have.property('parentHash');
+    expect(reqBlock).to.have.property('mixHash');
+    expect(reqBlock).to.have.property('nonce');
+    expect(reqBlock).to.have.property('sha3Uncles');
+    expect(reqBlock).to.have.property('logsBloom');
+    expect(reqBlock).to.have.property('transactionsRoot');
+    expect(reqBlock).to.have.property('stateRoot');
+    expect(reqBlock).to.have.property('receiptsRoot');
+    expect(reqBlock).to.have.property('miner');
+    expect(reqBlock).to.have.property('difficulty');
+    expect(reqBlock).to.have.property('totalDifficulty');
+    expect(reqBlock).to.have.property('extraData');
+    expect(reqBlock).to.have.property('size');
+    expect(reqBlock).to.have.property('gasLimit');
+    expect(reqBlock).to.have.property('gasUsed');
+    expect(reqBlock).to.have.property('timestamp');
+    expect(reqBlock).to.have.property('transactions');
+    expect(reqBlock).to.have.property('uncles');
   });
 
   it('should be able to get a balance', async () => {

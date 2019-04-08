@@ -19,8 +19,7 @@
  */
 const UnlockSendProgram = {
   start: (config, program) => {
-    const CryptoRPC = require('../rpcs');
-    const util = require('util');
+    const CryptoRPC = require('../lib');
 
     async function main() {
       const { node, currency, address, amount } = program;
@@ -39,10 +38,10 @@ const UnlockSendProgram = {
         rpcs.cmdlineUnlock(currency, 6000, (err, relock) => {
           rpcs.sendToAddress(currency, address, amount, (err, tx) => {
             if(err) console.error(err);
-            console.log(tx);
+            global.console.log(tx);
             relock();
           });
-        })
+        });
       } else {
         console.error('ERROR: Node is not in the config');
       }
@@ -60,13 +59,13 @@ if (require.main === module) {
       .option('--node <node>')
       .option('--currency <currency>')
       .option('--address <address>')
-      .option('--amount <amount>')
+      .option('--amount <amount>');
 
     program.parse(process.argv);
     UnlockSendProgram.start(config, program);
   } catch (e) {
-    console.log(e.message);
-    return program.help()
+    global.console.log(e.message);
+    program.help();
   }
 }
 
