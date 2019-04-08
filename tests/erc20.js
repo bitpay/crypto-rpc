@@ -48,6 +48,11 @@ describe('ERC20 Tests', function() {
     assert(txid);
   });
 
+  it('should be able to send a big transaction', async () => {
+    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: 1e23, passphrase: currencyConfig.unlockPassword });
+    assert(txid);
+  });
+
   it('should be able to send many transactions', async () => {
     const address = config.currencyConfig.sendTo;
     const amount = '1000';
