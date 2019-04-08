@@ -4,7 +4,7 @@
   "description": "rpc wrapper for multiple rpcs",
   "main": "index.js",
   "scripts": {
-    "ci:test": "npm run lint && npm run truffle:compile && npm run truffle:migrate && mocha ./tests",
+    "ci:test": "npm run lint && npm run truffle:compile && npm run truffle:migrate && mocha --recursive ./tests",
     "test": "docker-compose down && docker-compose build && docker-compose run test_runner",
     "lint": "./node_modules/.bin/eslint .",
     "truffle:compile": "cd blockchain/ && ../node_modules/.bin/truffle compile",
@@ -16,6 +16,7 @@
   "dependencies": {
     "abi-decoder": "1.2.0",
     "bitcoind-rpc": "0.7.2",
+    "chai": "^4.2.0",
     "commander": "2.8.1",
     "ethereumjs-tx": "1.3.7",
     "promptly": "0.2.0",
