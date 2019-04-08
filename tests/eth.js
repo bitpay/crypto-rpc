@@ -25,7 +25,6 @@ describe('ETH Tests', function() {
   const currency = 'ETH';
   const currencyConfig = config.currencyConfig;
   const rpcs = new CryptoRpc(config, currencyConfig);
-  const ethRPC = rpcs.get(currency);
   let txid = '';
   let blockHash = '';
 
@@ -37,7 +36,7 @@ describe('ETH Tests', function() {
 
   it('should estimate fee', async () => {
     const fee = await rpcs.estimateFee({ currency, nBlocks: 4 });
-    assert.isDefined(fee);
+    assert.isTrue(fee === 20000000000);
   });
 
 
