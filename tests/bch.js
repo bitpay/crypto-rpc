@@ -48,10 +48,10 @@ describe('BCH Tests', function() {
 
   it('should be able to estimateFee', async () => {
     sinon.stub(bitcoin.rpc,'estimateFee').callsFake((nBlocks, cb) => {
-      cb(null, {result: 0.00001000});
+      cb(null, {result: 0.00001234});
     });
     const fee = await bitcoin.estimateFee({nBlocks: 2});
-    expect(fee).to.be.eq(1);
+    expect(fee).to.be.eq(1.234);
   });
 
   it('should get block', async () => {
