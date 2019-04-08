@@ -40,13 +40,12 @@ describe('ETH Tests', function() {
   });
 
   it('should estimate gas price', async () => {
-    const gasPrices = [20000000003];
-    const gethGasPrice = 20000000000;
+    const gasPrices = [212345, 12313, 23112, 11112];
+    const gethGasPrice = 20000;
     const estimate = gasPrices.reduce((a, b) => {
       return Math.max(a, b);
     }, gethGasPrice);
-    global.console.log(estimate);
-    assert.isDefined(estimate);
+    assert.isTrue(estimate === 212345);
   });
 
   it('should send raw transaction', async () => {
