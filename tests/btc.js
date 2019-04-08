@@ -1,6 +1,7 @@
 const { CryptoRpc } = require('../');
 const assert = require('assert');
 const mocha = require('mocha');
+const sinon = require('sinon');
 const { expect } = require('chai');
 const { before, describe, it } = mocha;
 const config = {
@@ -42,6 +43,14 @@ describe('BTC Tests', function() {
   it('should be able to get a block hash', async () => {
     blockHash = await rpcs.getBestBlockHash({ currency });
     expect(blockHash).to.have.lengthOf('64');
+  });
+
+  it('should be able to estimateFee', async () => {
+    sinon.stub(bitcoin.rpc,'estimateSmartFee').callsFake((nBlocks, cb) => {
+      cb(null, {result: {'feerate': 0.00001000, 'blocks': 2}});
+    });
+    const fee = await bitcoin.estimateFee({nBlocks: 2});
+    expect(fee).to.be.eq(1);
   });
 
   it('should get block', async () => {
