@@ -4,7 +4,6 @@ const mocha = require('mocha');
 const { before, describe, it } = mocha;
 const EthereumTx = require('ethereumjs-tx');
 const util = require('web3-utils');
-const EthRPC = require('../rpcs/eth/EthRpc');
 const config = {
   chain: 'ETH',
   host: 'ganache',
@@ -26,7 +25,7 @@ describe('ETH Tests', function() {
   const currency = 'ETH';
   const currencyConfig = config.currencyConfig;
   const rpcs = new CryptoRpc(config, currencyConfig);
-  const ethRPC = new EthRPC(config);
+  const ethRPC = rpcs.get(currency);
   let txid = '';
   let blockHash = '';
 
