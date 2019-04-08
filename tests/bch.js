@@ -1,4 +1,5 @@
 const { CryptoRpc } = require('../');
+const sinon = require('sinon');
 const assert = require('assert');
 const mocha = require('mocha');
 const { expect } = require('chai');
@@ -42,6 +43,15 @@ describe('BCH Tests', function() {
   it('should be able to get a block hash', async () => {
     blockHash = await rpcs.getBestBlockHash({ currency });
     expect(blockHash).to.have.lengthOf('64');
+  });
+
+
+  it('should be able to estimateFee', async () => {
+    sinon.stub(bitcoin.rpc,'estimateFee').callsFake((nBlocks, cb) => {
+      cb(null, {result: 0.00001000});
+    });
+    const fee = await bitcoin.estimateFee({nBlocks: 2});
+    expect(fee).to.be.eq(1);
   });
 
   it('should get block', async () => {
