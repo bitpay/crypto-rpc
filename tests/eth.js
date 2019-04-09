@@ -25,6 +25,7 @@ describe('ETH Tests', function() {
   const currency = 'ETH';
   const currencyConfig = config.currencyConfig;
   const rpcs = new CryptoRpc(config, currencyConfig);
+  const ethRPC = rpcs.get(currency);
   let txid = '';
   let blockHash = '';
 
@@ -39,14 +40,6 @@ describe('ETH Tests', function() {
     assert.isTrue(fee === 20000000000);
   });
 
-  it('should estimate gas price', async () => {
-    const gasPrices = [212345, 12313, 23112, 11112];
-    const gethGasPrice = 20000;
-    const estimate = gasPrices.reduce((a, b) => {
-      return Math.max(a, b);
-    }, gethGasPrice);
-    assert.isTrue(estimate === 212345);
-  });
 
   it('should send raw transaction', async () => {
     // Reset nonce to 0
@@ -59,7 +52,7 @@ describe('ETH Tests', function() {
     const txData = {
       nonce: util.toHex(txCount),
       gasLimit: util.toHex(25000),
-      gasPrice: util.toHex(10e9), // 10 Gwei
+      gasPrice: util.toHex(2.1*10e9),
       to: config.currencyConfig.sendTo,
       from: config.account,
       value: util.toHex(util.toWei('123', 'wei'))
@@ -90,6 +83,13 @@ describe('ETH Tests', function() {
     expect(sentTx).to.have.property('v');
     expect(sentTx).to.have.property('r');
     expect(sentTx).to.have.property('s');
+  });
+
+
+  it('should estimate gas price', async () => {
+    const gasPrice = await ethRPC.estimateGasPrice();
+    assert.isDefined(gasPrice);
+    expect(gasPrice).to.be.eq(2.1 * 10e9);
   });
 
   it('should be able to get a block hash', async () => {
