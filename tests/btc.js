@@ -171,4 +171,9 @@ describe('BTC Tests', function() {
     assert(isValid === false);
   });
 
+  it('should be able to generate a block', async() => {
+    let block = await rpcs.generate(1);
+    expect(block).to.exist;
+  });
+
 });
