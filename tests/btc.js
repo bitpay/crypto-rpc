@@ -39,6 +39,29 @@ describe('BTC Tests', function() {
     await bitcoin.asyncCall('generate', [101]);
   });
 
+  it('walletUnlock should unlock wallet successfully', async () => {
+    await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword, time: 10 });
+  });
+
+  it('walletUnlock should error on if wrong args', async () => {
+    await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword })
+      .catch(err => {
+        assert(err);
+        expect(typeof err).to.eq('object');
+        expect(err).to.have.property('message');
+        expect(err.message).to.eq('JSON value is not an integer as expected');
+      });
+  });
+
+  it('walletUnlock should error on if wrong passphrase', async () => {
+    await bitcoin.walletUnlock({ passphrase: 'wrong', time: 10 })
+      .catch(err => {
+        assert(err);
+        expect(typeof err).to.eq('object');
+        expect(err).to.have.property('message');
+        expect(err.message).to.eq('Error: The wallet passphrase entered was incorrect.');
+      });
+  });
 
   it('should be able to get a block hash', async () => {
     blockHash = await rpcs.getBestBlockHash({ currency });
