@@ -1,0 +1,14 @@
+#!/usr/bin/env bats
+
+setup() {
+  cp config.example.js config.js
+}
+
+teardown() {
+  rm config.js
+}
+
+@test "get balance" {
+  result="$(bin/balance --node BTCNode --port 8333)"
+  [ "$result" -eq 0 ]
+}

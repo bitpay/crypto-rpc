@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+CONTAINER=$(docker-compose run -p8333:8333 -d bitcoin)
+sleep 2
+npx bats tests/cli
+docker stop ${CONTAINER}
+  
