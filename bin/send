@@ -21,46 +21,41 @@
  *}
  */
 const SendProgram = {
-  start: (config, program) => {
+  start: (program) => {
     const CryptoRPC = require('../lib');
-    let { node, currency, address, amount } = program;
-    const rpcHost = config[node];
-    if (!rpcHost) {
-      throw new Error('ERROR: Node is not in the config');
-    }
-    const { chain, host, rpcPort, protocol, user, pass } = rpcHost;
+    const {
+      currency,
+      address,
+      host,
+      port,
+      user,
+      password,
+      chain,
+      protocol,
+      rpcUser,
+      rpcPass,
+      rpcPort,
+      token,
+      amount,
+    } = program;
+
     let rpcs = new CryptoRPC({
       chain,
       host,
-      rpcPort,
-      user,
-      pass,
+      rpcPort: port || rpcPort,
+      rpcUser: user || rpcUser,
+      rpcPass: password || rpcPass,
       protocol,
-      tokens: rpcHost.tokens
+      token,
     });
-    amount = Number(amount);
     return rpcs.unlockAndSendToAddress({currency, address, amount});
   }
 };
 
 if (require.main === module) {
-  const config = require('../config');
-  const program = require('commander');
-  program
-    .option('--node <node>')
-    .option('--currency <currency>')
-    .option('--address <address>')
-    .option('--amount <amount>');
-
-  try{
-    program.parse(process.argv);
-  } catch (e) {
-    console.error(e.message);
-    program.help();
-    process.exit(1);
-  }
-  SendProgram.start(config, program)
-    .then(balance => global.console.log(balance))
+  const params = require('../lib/args');
+  SendProgram.start(params)
+    .then(balance => process.stdout.write(`${balance}\n`))
     .catch(err => console.error(err));
 }
 
