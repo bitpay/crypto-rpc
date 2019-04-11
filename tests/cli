@@ -1,14 +1,25 @@
 #!/usr/bin/env bats
 
-setup() {
-  cp config.example.js config.js
+@test "get BTC balance" {
+  result="$(
+    bin/balance \
+    --user cryptorpc \
+    --password local321 \
+    --port 8333 \
+    --host localhost \
+    --currency BTC
+    )"
+  [ "$result" -eq 0 ]
 }
 
-teardown() {
-  rm config.js
-}
-
-@test "get balance" {
-  result="$(bin/balance --node BTCNode --port 8333)"
+@test "get BCH balance" {
+  result="$(
+    bin/balance \
+    --user cryptorpc \
+    --password local321 \
+    --port 9333 \
+    --host localhost \
+    --currency BCH
+    )"
   [ "$result" -eq 0 ]
 }
