@@ -10,5 +10,8 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Smoke test
+          command: npm run test:bats
+      - run:
           name: Build service
           command: npm test
