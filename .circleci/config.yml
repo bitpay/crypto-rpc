@@ -16,6 +16,7 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm install 8
             nvm alias default 8
+            npm install
             npm run test:bats
       - run:
           name: Build service
