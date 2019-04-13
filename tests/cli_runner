@@ -4,4 +4,6 @@ BTC_CONTAINER=$(docker-compose run -p8333:8333 -d bitcoin)
 BCH_CONTAINER=$(docker-compose run -p9333:9333 -d bitcoin-cash)
 sleep 1
 npx bats tests/cli
+result=$?
 docker stop ${BTC_CONTAINER} ${BCH_CONTAINER}
+exit ${result}
