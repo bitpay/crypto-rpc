@@ -12,6 +12,8 @@ jobs:
       - run:
           name: Smoke test
           command: |
+            export NVM_DIR="/opt/circleci/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             nvm install 8
             nvm alias default 8
             npm run test:bats
