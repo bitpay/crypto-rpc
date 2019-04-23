@@ -117,7 +117,7 @@ describe('BTC Tests', function() {
     const payToArray = [
       { address, amount },
     ];
-    const txids = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword });
+    const txids = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
     expect(txids).to.have.lengthOf(1);
     assert(txids[0]);
     expect(txids[0]).to.have.lengthOf(64);
@@ -131,7 +131,7 @@ describe('BTC Tests', function() {
       { address: 'funkyColdMedina', amount: 1 },
     ];
     try {
-      await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword });
+      await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
     } catch (error) {
       assert(error.message = 'At least one of many requests Failed');
       assert(error.data.failure[1]);
