@@ -21,43 +21,39 @@
  *}
  */
 const BalanceProgram = {
-  start: (config, program) => {
+  start: (program) => {
     const CryptoRPC = require('../lib');
-    const { node, currency, address } = program;
-    const rpcHost = config[node];
-    if (!rpcHost) {
-      throw new Error('ERROR: Node is not in the config');
-    }
-    const { chain, host, rpcPort, protocol, rpcUser, rpcPass } = rpcHost;
+    const {
+      currency,
+      address,
+      host,
+      port,
+      user,
+      password,
+      chain,
+      protocol,
+      rpcUser,
+      rpcPass,
+      rpcPort,
+      token,
+    } = program;
+
     let rpcs = new CryptoRPC({
       chain,
       host,
-      rpcPort,
-      rpcUser,
-      rpcPass,
+      rpcPort: port || rpcPort,
+      rpcUser: user || rpcUser,
+      rpcPass: password || rpcPass,
       protocol,
-      tokens: rpcHost.tokens
+      token,
     });
     return rpcs.getBalance({currency, address});
   }
 };
 
 if (require.main === module) {
-  const config = require('../config');
-  const program = require('commander');
-  program
-    .option('--node <node>')
-    .option('--currency <currency>')
-    .option('--address <address>');
-
-  try{
-    program.parse(process.argv);
-  } catch (e) {
-    console.error(e.message);
-    program.help();
-    process.exit(1);
-  }
-  BalanceProgram.start(config, program)
+  const params = require('../lib/args');
+  BalanceProgram.start(params)
     .then(balance => global.console.log(balance))
     .catch(err => console.error(err));
 }
