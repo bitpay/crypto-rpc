@@ -219,7 +219,7 @@ describe('BTC Tests', function() {
     obj[address1] = amount1;
     obj[address2] = amount2;
 
-    let txid = await bitcoin.unlockAndSendManyBatched({ obj: obj, passphrase: currencyConfig.unlockPassword, options: null });
+    let txid = await bitcoin.unlockAndSendManyBatched({ obj: obj, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
     expect(txid).to.have.lengthOf(64);
     assert(txid);
   });
