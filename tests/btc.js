@@ -194,4 +194,34 @@ describe('BTC Tests', function() {
     assert(isValid === false);
   });
 
+  it('should be able to send a bached transaction', async() => {
+    let address1 = 'mtXWDB6k5yC5v7TcwKZHB89SUp85yCKshy';
+    let amount1 = '10000';
+    let address2 = 'msngvArStqsSqmkG7W7Fc9jotPcURyLyYu';
+    let amount2 = '20000';
+    const obj = {};
+    obj[address1] = amount1;
+    obj[address2] = amount2;
+
+    await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword, time: 10 });
+    let txid = await bitcoin.sendMany({ obj: obj, options: null });
+    await bitcoin.walletLock();
+    expect(txid).to.have.lengthOf(64);
+    assert(txid);
+  });
+
+  it('should be able to unlock wallet and send a bached transaction', async() => {
+    let address1 = config.currencyConfig.sendTo;
+    let amount1 = '10000';
+    let address2 = 'msngvArStqsSqmkG7W7Fc9jotPcURyLyYu';
+    let amount2 = '20000';
+    const obj = {};
+    obj[address1] = amount1;
+    obj[address2] = amount2;
+
+    let txid = await bitcoin.unlockAndSendManyBatched({ obj: obj, passphrase: currencyConfig.unlockPassword, options: null });
+    expect(txid).to.have.lengthOf(64);
+    assert(txid);
+  });
+
 });

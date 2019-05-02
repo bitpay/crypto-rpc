@@ -167,4 +167,34 @@ describe('BCH Tests', function() {
     assert(isValid === false);
   });
 
+  it('should be able to send a bached transaction', async() => {
+    let address1 = 'bchreg:qq2lqjaeut5ppjkx9339htfed8enx7hmugk37ytwqy';
+    let amount1 = 10000;
+    let address2 = 'bchreg:qq6n0n37mut4353m9k2zm5nh0pejk7vh7u77tan544';
+    let amount2 = 20000;
+    const obj = {};
+    obj[address1] = amount1;
+    obj[address2] = amount2;
+
+    await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword, time: 10 });
+    let txid = await bitcoin.sendMany({ obj: obj, options: null });
+    await bitcoin.walletLock();
+    expect(txid).to.have.lengthOf(64);
+    assert(txid);
+  });
+
+  it('should be able to unlock wallet and send a bached transaction', async() => {
+    let address1 = config.currencyConfig.sendTo;
+    let amount1 = 10000;
+    let address2 = 'bchreg:qq6n0n37mut4353m9k2zm5nh0pejk7vh7u77tan544';
+    let amount2 = 20000;
+    const obj = {};
+    obj[address1] = amount1;
+    obj[address2] = amount2;
+
+    let txid = await bitcoin.unlockAndSendManyBatched({ obj: obj, passphrase: currencyConfig.unlockPassword, options: null });
+    expect(txid).to.have.lengthOf(64);
+    assert(txid);
+  });
+
 });
