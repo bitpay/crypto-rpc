@@ -204,24 +204,41 @@ describe('BTC Tests', function() {
     obj[address2] = amount2;
 
     await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword, time: 10 });
-    let txid = await bitcoin.sendMany({ obj: obj, options: null });
+    let txid = await bitcoin.sendMany({ batch: obj, options: null });
     await bitcoin.walletLock();
     expect(txid).to.have.lengthOf(64);
     assert(txid);
   });
 
   it('should be able to unlock wallet and send a bached transaction', async() => {
-    let address1 = config.currencyConfig.sendTo;
+    let address1 = 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg';
     let amount1 = '10000';
-    let address2 = 'msngvArStqsSqmkG7W7Fc9jotPcURyLyYu';
+    let address2 = 'mzkjj6fuSFpaBcKy63xdVMvwA6peUEyQzc';
     let amount2 = '20000';
-    const obj = {};
-    obj[address1] = amount1;
-    obj[address2] = amount2;
+    const obj1 = {};
+    obj1[address1] = amount1;
+    obj1[address2] = amount2;
 
-    let txid = await bitcoin.unlockAndSendManyBatched({ obj: obj, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
-    expect(txid).to.have.lengthOf(64);
-    assert(txid);
+    let address3 = 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H';
+    let amount3 = '30000';
+    let address4 = 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2';
+    let amount4 = '40000';
+    const obj2 = {};
+    obj2[address3] = amount3;
+    obj2[address4] = amount4;
+
+    const obj = [obj1, obj2];
+
+    let result = await bitcoin.unlockAndSendManyBatched({ batchArray: obj, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
+    expect(result).to.exist;
+    let txidSuccessArr = Object.keys(result.txSuccessResults);
+    let txidFailureArr = Object.keys(result.txFailureResults);
+    expect(txidSuccessArr).to.have.lengthOf(2);
+    expect(txidFailureArr).to.have.lengthOf(0);
+    expect(txidSuccessArr[0]).to.have.lengthOf(64);
+    expect(txidSuccessArr[1]).to.have.lengthOf(64);
+    assert(txidSuccessArr[0]);
+    assert(txidSuccessArr[1]);
   });
 
 });
