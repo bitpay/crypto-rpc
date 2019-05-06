@@ -194,42 +194,42 @@ describe('BTC Tests', function() {
     assert(isValid === false);
   });
 
-  it('should be able to send a bached transaction', async() => {
+  it('should be able to send a batched transaction', async() => {
     let address1 = 'mtXWDB6k5yC5v7TcwKZHB89SUp85yCKshy';
     let amount1 = '10000';
     let address2 = 'msngvArStqsSqmkG7W7Fc9jotPcURyLyYu';
     let amount2 = '20000';
-    const obj = {};
-    obj[address1] = amount1;
-    obj[address2] = amount2;
+    const batch = {};
+    batch[address1] = amount1;
+    batch[address2] = amount2;
 
     await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword, time: 10 });
-    let txid = await bitcoin.sendMany({ batch: obj, options: null });
+    let txid = await bitcoin.sendMany({ batch, options: null });
     await bitcoin.walletLock();
     expect(txid).to.have.lengthOf(64);
     assert(txid);
   });
 
-  it('should be able to unlock wallet and send a bached transaction', async() => {
+  it('should be able to unlock wallet and send multiple batched transactions', async() => {
     let address1 = 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg';
     let amount1 = '10000';
     let address2 = 'mzkjj6fuSFpaBcKy63xdVMvwA6peUEyQzc';
     let amount2 = '20000';
-    const obj1 = {};
-    obj1[address1] = amount1;
-    obj1[address2] = amount2;
+    const batch1 = {};
+    batch1[address1] = amount1;
+    batch1[address2] = amount2;
 
     let address3 = 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H';
     let amount3 = '30000';
     let address4 = 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2';
     let amount4 = '40000';
-    const obj2 = {};
-    obj2[address3] = amount3;
-    obj2[address4] = amount4;
+    const batch2 = {};
+    batch2[address3] = amount3;
+    batch2[address4] = amount4;
 
-    const obj = [obj1, obj2];
+    const batchArray = [batch1, batch2];
 
-    let result = await bitcoin.unlockAndSendManyBatched({ batchArray: obj, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
+    let result = await bitcoin.unlockAndSendManyBatched({ batchArray, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
     expect(result).to.exist;
     let txidSuccessArr = Object.keys(result.txSuccessResults);
     let txidFailureArr = Object.keys(result.txFailureResults);

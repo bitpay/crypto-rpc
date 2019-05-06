@@ -172,12 +172,12 @@ describe('BCH Tests', function() {
     let amount1 = 10000;
     let address2 = 'bchreg:qq6n0n37mut4353m9k2zm5nh0pejk7vh7u77tan544';
     let amount2 = 20000;
-    const obj = {};
-    obj[address1] = amount1;
-    obj[address2] = amount2;
+    const batch = {};
+    batch[address1] = amount1;
+    batch[address2] = amount2;
 
     await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword, time: 10 });
-    let txid = await bitcoin.sendMany({ batch: obj, options: null });
+    let txid = await bitcoin.sendMany({ batch, options: null });
     await bitcoin.walletLock();
     expect(txid).to.have.lengthOf(64);
     assert(txid);
@@ -188,21 +188,21 @@ describe('BCH Tests', function() {
     let amount1 = '10000';
     let address2 = 'bchreg:qpmrahuqhpmq4se34zx4lt9lp3l5j4t4ggzf98lk8v';
     let amount2 = '20000';
-    const obj1 = {};
-    obj1[address1] = amount1;
-    obj1[address2] = amount2;
+    const batch1 = {};
+    batch1[address1] = amount1;
+    batch1[address2] = amount2;
 
     let address3 = 'bchreg:qz07vf90w70s8d0pfx9qygxxlpgr2vwz65d53p22cr';
     let amount3 = '30000';
     let address4 = 'bchreg:qzp2lmc7m49du2n55qmyattncf404vmgnq8gr53aj7';
     let amount4 = '40000';
-    const obj2 = {};
-    obj2[address3] = amount3;
-    obj2[address4] = amount4;
+    const batch2 = {};
+    batch2[address3] = amount3;
+    batch2[address4] = amount4;
 
-    const obj = [obj1, obj2];
+    const batchArray = [batch1, batch2];
 
-    let result = await bitcoin.unlockAndSendManyBatched({ batchArray: obj, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
+    let result = await bitcoin.unlockAndSendManyBatched({ batchArray, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
     expect(result).to.exist;
     let txidSuccessArr = Object.keys(result.txSuccessResults);
     let txidFailureArr = Object.keys(result.txFailureResults);
