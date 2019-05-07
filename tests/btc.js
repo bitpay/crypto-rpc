@@ -112,15 +112,40 @@ describe('BTC Tests', function() {
   });
 
   it('should be able to send many transactions', async () => {
-    const address = config.currencyConfig.sendTo;
-    const amount = '1000';
-    const payToArray = [
-      { address, amount },
-    ];
-    const txids = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
-    expect(txids).to.have.lengthOf(1);
-    assert(txids[0]);
-    expect(txids[0]).to.have.lengthOf(64);
+    let payToArray = [];
+    let transaction1 = {
+      address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
+      amount: 10000
+    };
+    let transaction2 = {
+      address: 'mzkjj6fuSFpaBcKy63xdVMvwA6peUEyQzc',
+      amount: 20000
+    };
+    let transaction3 = {
+      address: 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H',
+      amount: 30000
+    };
+    let transaction4 = {
+      address: 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2',
+      amount: 40000
+    };
+    payToArray.push(transaction1);
+    payToArray.push(transaction2);
+    payToArray.push(transaction3);
+    payToArray.push(transaction4);
+    let maxOutputs = 2;
+    let maxValue = 1e8;
+    const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    let data = outputArray[0];
+    let failures = outputArray[1];
+    let successes = outputArray[2];
+    expect(data).to.have.lengthOf(2);
+    expect(failures).to.have.lengthOf(0);
+    expect(successes).to.have.lengthOf(2);
+    for (let txid of successes) {
+      assert(txid);
+      expect(txid).to.have.lengthOf(64);
+    }
   });
 
   it('should reject when one of many transactions fails', async () => {
@@ -131,10 +156,10 @@ describe('BTC Tests', function() {
       { address: 'funkyColdMedina', amount: 1 },
     ];
     try {
-      await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
+      await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
     } catch (error) {
       assert(error.message = 'At least one of many requests Failed');
-      assert(error.data.failure[1]);
+      assert(error.data);
     }
   });
 
@@ -210,35 +235,40 @@ describe('BTC Tests', function() {
     assert(txid);
   });
 
-  it('should be able to unlock wallet and send multiple batched transactions', async() => {
-    let address1 = 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg';
-    let amount1 = '10000';
-    let address2 = 'mzkjj6fuSFpaBcKy63xdVMvwA6peUEyQzc';
-    let amount2 = '20000';
-    const batch1 = {};
-    batch1[address1] = amount1;
-    batch1[address2] = amount2;
+  // it('should be able to unlock wallet and send multiple batched transactions', async() => {
+  //   let payToArray = [];
+  //   let transaction1 = {
+  //     address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
+  //     amount: 10000
+  //   };
+  //   let transaction2 = {
+  //     address: 'mzkjj6fuSFpaBcKy63xdVMvwA6peUEyQzc',
+  //     amount: 20000
+  //   };
+  //   let transaction3 = {
+  //     address: 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H',
+  //     amount: 30000
+  //   };
+  //   let transaction4 = {
+  //     address: 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2',
+  //     amount: 40000
+  //   };
 
-    let address3 = 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H';
-    let amount3 = '30000';
-    let address4 = 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2';
-    let amount4 = '40000';
-    const batch2 = {};
-    batch2[address3] = amount3;
-    batch2[address4] = amount4;
+  //   payToArray.push(transaction1);
+  //   payToArray.push(transaction2);
+  //   payToArray.push(transaction3);
+  //   payToArray.push(transaction4);
 
-    const batchArray = [batch1, batch2];
-
-    let result = await bitcoin.unlockAndSendManyBatched({ batchArray, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
-    expect(result).to.exist;
-    let txidSuccessArr = Object.keys(result.txSuccessResults);
-    let txidFailureArr = Object.keys(result.txFailureResults);
-    expect(txidSuccessArr).to.have.lengthOf(2);
-    expect(txidFailureArr).to.have.lengthOf(0);
-    expect(txidSuccessArr[0]).to.have.lengthOf(64);
-    expect(txidSuccessArr[1]).to.have.lengthOf(64);
-    assert(txidSuccessArr[0]);
-    assert(txidSuccessArr[1]);
-  });
+  //   let result = await bitcoin.unlockAndSendManyBatched({ payToArray, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
+  //   expect(result).to.exist;
+  //   let txidSuccessArr = Object.keys(result.txSuccessResults);
+  //   let txidFailureArr = Object.keys(result.txFailureResults);
+  //   expect(txidSuccessArr).to.have.lengthOf(2);
+  //   expect(txidFailureArr).to.have.lengthOf(0);
+  //   expect(txidSuccessArr[0]).to.have.lengthOf(64);
+  //   expect(txidSuccessArr[1]).to.have.lengthOf(64);
+  //   assert(txidSuccessArr[0]);
+  //   assert(txidSuccessArr[1]);
+  // });
 
 });
