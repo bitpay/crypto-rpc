@@ -235,40 +235,4 @@ describe('BTC Tests', function() {
     assert(txid);
   });
 
-  // it('should be able to unlock wallet and send multiple batched transactions', async() => {
-  //   let payToArray = [];
-  //   let transaction1 = {
-  //     address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
-  //     amount: 10000
-  //   };
-  //   let transaction2 = {
-  //     address: 'mzkjj6fuSFpaBcKy63xdVMvwA6peUEyQzc',
-  //     amount: 20000
-  //   };
-  //   let transaction3 = {
-  //     address: 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H',
-  //     amount: 30000
-  //   };
-  //   let transaction4 = {
-  //     address: 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2',
-  //     amount: 40000
-  //   };
-
-  //   payToArray.push(transaction1);
-  //   payToArray.push(transaction2);
-  //   payToArray.push(transaction3);
-  //   payToArray.push(transaction4);
-
-  //   let result = await bitcoin.unlockAndSendManyBatched({ payToArray, passphrase: currencyConfig.unlockPassword, options: null, time:10800 });
-  //   expect(result).to.exist;
-  //   let txidSuccessArr = Object.keys(result.txSuccessResults);
-  //   let txidFailureArr = Object.keys(result.txFailureResults);
-  //   expect(txidSuccessArr).to.have.lengthOf(2);
-  //   expect(txidFailureArr).to.have.lengthOf(0);
-  //   expect(txidSuccessArr[0]).to.have.lengthOf(64);
-  //   expect(txidSuccessArr[1]).to.have.lengthOf(64);
-  //   assert(txidSuccessArr[0]);
-  //   assert(txidSuccessArr[1]);
-  // });
-
 });
