@@ -118,7 +118,7 @@ describe('BTC Tests', function() {
       amount: 10000
     };
     let transaction2 = {
-      address: 'mzkjj6fuSFpaBcKy63xdVMvwA6peUEyQzc',
+      address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
       amount: 20000
     };
     let transaction3 = {
