@@ -112,15 +112,10 @@ describe('BCH Tests', function() {
     let maxOutputs = 2;
     let maxValue = 1e8;
     const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
-    let data = outputArray[0];
-    let failures = outputArray[1];
-    let successes = outputArray[2];
-    expect(data).to.have.lengthOf(2);
-    expect(failures).to.have.lengthOf(0);
-    expect(successes).to.have.lengthOf(2);
-    for (let txid of successes) {
-      assert(txid);
-      expect(txid).to.have.lengthOf(64);
+    expect(outputArray).to.have.lengthOf(4);
+    for (let transaction of outputArray) {
+      assert(transaction.txid);
+      expect(transaction.txid).to.have.lengthOf(64);
     }
   });
 
@@ -130,15 +125,16 @@ describe('BCH Tests', function() {
         amount: 10000
       },
       { address: 'funkyColdMedina',
-        amount: 1 
+        amount: 1
       },
     ];
+    let outputArray;
     try {
-      await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
+      outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
     } catch (error) {
-      assert(error.message = 'At least one of many requests Failed');
       assert(error.data);
     }
+    assert(outputArray[1].error);
   });
 
   it('should be able to get a transaction', async () => {
