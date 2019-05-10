@@ -112,15 +112,35 @@ describe('BTC Tests', function() {
   });
 
   it('should be able to send many transactions', async () => {
-    const address = config.currencyConfig.sendTo;
-    const amount = '1000';
-    const payToArray = [
-      { address, amount },
-    ];
-    const txids = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
-    expect(txids).to.have.lengthOf(1);
-    assert(txids[0]);
-    expect(txids[0]).to.have.lengthOf(64);
+    let payToArray = [];
+    let transaction1 = {
+      address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
+      amount: 10000
+    };
+    let transaction2 = {
+      address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
+      amount: 20000
+    };
+    let transaction3 = {
+      address: 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H',
+      amount: 30000
+    };
+    let transaction4 = {
+      address: 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2',
+      amount: 40000
+    };
+    payToArray.push(transaction1);
+    payToArray.push(transaction2);
+    payToArray.push(transaction3);
+    payToArray.push(transaction4);
+    let maxOutputs = 2;
+    let maxValue = 1e8;
+    const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    expect(outputArray).to.have.lengthOf(4);
+    for (let transaction of outputArray) {
+      assert(transaction.txid);
+      expect(transaction.txid).to.have.lengthOf(64);
+    }
   });
 
   it('should reject when one of many transactions fails', async () => {
@@ -130,12 +150,13 @@ describe('BTC Tests', function() {
       { address, amount },
       { address: 'funkyColdMedina', amount: 1 },
     ];
+    let outputArray;
     try {
-      await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
+      outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
     } catch (error) {
-      assert(error.message = 'At least one of many requests Failed');
-      assert(error.data.failure[1]);
+      assert(error.data);
     }
+    assert(outputArray[1].error);
   });
 
   it('should be able to get a transaction', async () => {
@@ -192,6 +213,22 @@ describe('BTC Tests', function() {
   it('should not validate bad address', async () => {
     const isValid = await rpcs.validateAddress({ currency, address: 'NOTANADDRESS' });
     assert(isValid === false);
+  });
+
+  it('should be able to send a batched transaction', async() => {
+    let address1 = 'mtXWDB6k5yC5v7TcwKZHB89SUp85yCKshy';
+    let amount1 = '10000';
+    let address2 = 'msngvArStqsSqmkG7W7Fc9jotPcURyLyYu';
+    let amount2 = '20000';
+    const batch = {};
+    batch[address1] = amount1;
+    batch[address2] = amount2;
+
+    await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword, time: 10 });
+    let txid = await bitcoin.sendMany({ batch, options: null });
+    await bitcoin.walletLock();
+    expect(txid).to.have.lengthOf(64);
+    assert(txid);
   });
 
 });

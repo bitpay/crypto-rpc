@@ -84,36 +84,57 @@ describe('BCH Tests', function() {
     txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
     expect(txid).to.have.lengthOf(64);
     assert(txid);
-    await bitcoin.asyncCall('generate', [1]);
+    await bitcoin.asyncCall('generate', [2]);
   });
 
   it('should be able to send many transactions', async () => {
-    const address = config.currencyConfig.sendTo;
-    const amount = '1000';
-    const payToArray = [
-      { address, amount },
-    ];
-    const txids = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
-    expect(txids).to.have.lengthOf(1);
-    assert(txids[0]);
-    expect(txids[0]).to.have.lengthOf(64);
-    await bitcoin.asyncCall('generate', [1]);
-
+    let payToArray = [];
+    let transaction1 = {
+      address: 'bchreg:qrmap3fwpufpzk8j936aetfupppezngfeut6kqqds6',
+      amount: 10000
+    };
+    let transaction2 = {
+      address: 'bchreg:qpmrahuqhpmq4se34zx4lt9lp3l5j4t4ggzf98lk8v',
+      amount: 20000
+    };
+    let transaction3 = {
+      address: 'qz07vf90w70s8d0pfx9qygxxlpgr2vwz65d53p22cr',
+      amount: 30000
+    };
+    let transaction4 = {
+      address: 'qzp2lmc7m49du2n55qmyattncf404vmgnq8gr53aj7',
+      amount: 40000
+    };
+    payToArray.push(transaction1);
+    payToArray.push(transaction2);
+    payToArray.push(transaction3);
+    payToArray.push(transaction4);
+    let maxOutputs = 2;
+    let maxValue = 1e8;
+    const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    expect(outputArray).to.have.lengthOf(4);
+    for (let transaction of outputArray) {
+      assert(transaction.txid);
+      expect(transaction.txid).to.have.lengthOf(64);
+    }
   });
 
   it('should reject when one of many transactions fails', async () => {
-    const address = config.currencyConfig.sendTo;
-    const amount = '1000';
     const payToArray = [
-      { address, amount },
-      { address: 'funkyColdMedina', amount: 1 },
+      { address: 'bchreg:qrmap3fwpufpzk8j936aetfupppezngfeut6kqqds6',
+        amount: 10000
+      },
+      { address: 'funkyColdMedina',
+        amount: 1
+      },
     ];
+    let outputArray;
     try {
-      await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
+      outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
     } catch (error) {
-      assert(error.message = 'At least one of many requests Failed');
-      assert(error.data.failure[1]);
+      assert(error.data);
     }
+    assert(outputArray[1].error);
   });
 
   it('should be able to get a transaction', async () => {
@@ -165,6 +186,22 @@ describe('BCH Tests', function() {
   it('should not validate bad address', async () => {
     const isValid = await rpcs.validateAddress({ currency, address: 'NOTANADDRESS' });
     assert(isValid === false);
+  });
+
+  it('should be able to send a bached transaction', async() => {
+    let address1 = 'bchreg:qq2lqjaeut5ppjkx9339htfed8enx7hmugk37ytwqy';
+    let amount1 = 10000;
+    let address2 = 'bchreg:qq6n0n37mut4353m9k2zm5nh0pejk7vh7u77tan544';
+    let amount2 = 20000;
+    const batch = {};
+    batch[address1] = amount1;
+    batch[address2] = amount2;
+
+    await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword, time: 10 });
+    let txid = await bitcoin.sendMany({ batch, options: null });
+    await bitcoin.walletLock();
+    expect(txid).to.have.lengthOf(64);
+    assert(txid);
   });
 
 });
