@@ -1,32 +1,23 @@
-const { CryptoRpc } = require('../');
+const { CryptoRpc } = require('../..');
+const config = require('./config');
+const sinon = require('sinon');
 const assert = require('assert');
 const mocha = require('mocha');
-const sinon = require('sinon');
 const { expect } = require('chai');
 const { before, describe, it } = mocha;
-const config = {
-  chain: 'BTC',
-  host: 'bitcoin',
-  protocol: 'http',
-  rpcPort: '8333',
-  rpcUser: 'cryptorpc',
-  rpcPass: 'local321',
-  tokens: {},
-};
-
 const currencyConfig = {
-  sendTo: '2NGFWyW3LBPr6StDuDSNFzQF3Jouuup1rua',
+  sendTo: 'bchreg:qq9kqhzxeul20r7nsl2lrwh8d5kw97np9u960ue086',
   unlockPassword: 'password',
   rawTx:
-    '0100000001641ba2d21efa8db1a08c0072663adf4c4bc3be9ee5aabb530b2d4080b8a41cca000000006a4730440220062105df71eb10b5ead104826e388303a59d5d3d134af73cdf0d5e685650f95c0220188c8a966a2d586430d84aa7624152a556550c3243baad5415c92767dcad257f0121037aaa54736c5ffa13132e8ca821be16ce4034ae79472053dde5aa4347034bc0a2ffffffff0240787d010000000017a914c8241f574dfade4d446ec90cc0e534cb120b45e387eada4f1c000000001976a9141576306b9cc227279b2a6c95c2b017bb22b0421f88ac00000000'
+    '0200000001445703d7470ec3e435db0f33da332fc654ae0c8d264572e487bd427125659d7500000000484730440220704a6a336eb930a95b2a6a941b3c43ccb2207db803a2332512ac255c1740b9d7022057c7bc00a188de7f4868774d1e9ff626f8bd6eca8187763b9cb184354ddc5dde41feffffff0200021024010000001976a914db1f764e6a60e4a8cb919c55e95ac41517f5cddc88ac00e1f505000000001976a9140b605c46cf3ea78fd387d5f1bae76d2ce2fa612f88ac66000000'
 };
 
-describe('BTC Tests', function() {
+describe('BCH Tests', function() {
   this.timeout(10000);
   let txid = '';
   let blockHash = '';
-  const currency = 'BTC';
-  const rpcs = new CryptoRpc({BTC: config});
+  const currency = 'BCH';
+  const rpcs = new CryptoRpc(config);
   const bitcoin = rpcs.get(currency);
 
   before(async () => {
@@ -39,40 +30,18 @@ describe('BTC Tests', function() {
     await bitcoin.asyncCall('generate', [101]);
   });
 
-  it('walletUnlock should unlock wallet successfully', async () => {
-    await bitcoin.walletUnlock({ passphrase: currencyConfig.unlockPassword, time: 10 });
-  });
-
-  it('walletUnlock should error on if wrong args', async () => {
-    await bitcoin.walletUnlock({ passphrase: currencyConfig.unlockPassword })
-      .catch(err => {
-        assert(err);
-        expect(typeof err).to.eq('object');
-        expect(err).to.have.property('message');
-        expect(err.message).to.eq('JSON value is not an integer as expected');
-      });
-  });
-
-  it('walletUnlock should error on if wrong passphrase', async () => {
-    await bitcoin.walletUnlock({ passphrase: 'wrong', time: 10 })
-      .catch(err => {
-        assert(err);
-        expect(typeof err).to.eq('object');
-        expect(err).to.have.property('message');
-        expect(err.message).to.eq('Error: The wallet passphrase entered was incorrect.');
-      });
-  });
 
   it('should be able to get a block hash', async () => {
     blockHash = await rpcs.getBestBlockHash({ currency });
     expect(blockHash).to.have.lengthOf('64');
   });
 
+
   it('should be able to estimateFee', async () => {
-    sinon.stub(bitcoin.rpc,'estimateSmartFee').callsFake((nBlocks, cb) => {
-      cb(null, {result: {'feerate': 0.00001234, 'blocks': 2}});
+    sinon.stub(bitcoin.rpc,'estimateFee').callsFake((cb) => {
+      cb(null, {result: 0.00001234});
     });
-    const fee = await bitcoin.estimateFee({nBlocks: 2});
+    const fee = await bitcoin.estimateFee();
     expect(fee).to.be.eq(1.234);
   });
 
@@ -80,9 +49,7 @@ describe('BTC Tests', function() {
     const reqBlock = await rpcs.getBlock({ currency, hash: blockHash });
     expect(reqBlock).to.have.property('hash');
     expect(reqBlock).to.have.property('confirmations');
-    expect(reqBlock).to.have.property('strippedsize');
     expect(reqBlock).to.have.property('size');
-    expect(reqBlock).to.have.property('weight');
     expect(reqBlock).to.have.property('height');
     expect(reqBlock).to.have.property('version');
     expect(reqBlock).to.have.property('versionHex');
@@ -94,7 +61,6 @@ describe('BTC Tests', function() {
     expect(reqBlock).to.have.property('bits');
     expect(reqBlock).to.have.property('difficulty');
     expect(reqBlock).to.have.property('chainwork');
-    expect(reqBlock).to.have.property('nTx');
     expect(reqBlock).to.have.property('previousblockhash');
     assert(reqBlock);
   });
@@ -109,24 +75,25 @@ describe('BTC Tests', function() {
     txid = await rpcs.unlockAndSendToAddress({ currency, address: currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
     expect(txid).to.have.lengthOf(64);
     assert(txid);
+    await bitcoin.asyncCall('generate', [2]);
   });
 
   it('should be able to send many transactions', async () => {
     let payToArray = [];
     let transaction1 = {
-      address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
+      address: 'bchreg:qrmap3fwpufpzk8j936aetfupppezngfeut6kqqds6',
       amount: 10000
     };
     let transaction2 = {
-      address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
+      address: 'bchreg:qpmrahuqhpmq4se34zx4lt9lp3l5j4t4ggzf98lk8v',
       amount: 20000
     };
     let transaction3 = {
-      address: 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H',
+      address: 'qz07vf90w70s8d0pfx9qygxxlpgr2vwz65d53p22cr',
       amount: 30000
     };
     let transaction4 = {
-      address: 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2',
+      address: 'qzp2lmc7m49du2n55qmyattncf404vmgnq8gr53aj7',
       amount: 40000
     };
     payToArray.push(transaction1);
@@ -144,11 +111,13 @@ describe('BTC Tests', function() {
   });
 
   it('should reject when one of many transactions fails', async () => {
-    const address = currencyConfig.sendTo;
-    const amount = '1000';
     const payToArray = [
-      { address, amount },
-      { address: 'funkyColdMedina', amount: 1 },
+      { address: 'bchreg:qrmap3fwpufpzk8j936aetfupppezngfeut6kqqds6',
+        amount: 10000
+      },
+      { address: 'funkyColdMedina',
+        amount: 1
+      },
     ];
     let outputArray;
     try {
@@ -165,7 +134,6 @@ describe('BTC Tests', function() {
     expect(tx).to.have.property('hash');
     expect(tx).to.have.property('version');
     expect(tx).to.have.property('size');
-    expect(tx).to.have.property('vsize');
     expect(tx).to.have.property('locktime');
     expect(tx).to.have.property('vin');
     expect(tx).to.have.property('vout');
@@ -182,7 +150,6 @@ describe('BTC Tests', function() {
     expect(decoded).to.have.property('hash');
     expect(decoded).to.have.property('version');
     expect(decoded).to.have.property('size');
-    expect(decoded).to.have.property('vsize');
     expect(decoded).to.have.property('locktime');
     expect(decoded).to.have.property('vin');
     expect(decoded).to.have.property('vout');
@@ -199,10 +166,7 @@ describe('BTC Tests', function() {
   it('should get confirmations', async () => {
     let confirmations = await rpcs.getConfirmations({ currency, txid });
     assert(confirmations != undefined);
-    expect(confirmations).to.eq(0);
-    await bitcoin.asyncCall('generate', [1]);
-    confirmations = await rpcs.getConfirmations({ currency, txid });
-    expect(confirmations).to.eq(1);
+    expect(confirmations).to.eq(2);
   });
 
   it('should validate address', async () => {
@@ -215,11 +179,11 @@ describe('BTC Tests', function() {
     assert(isValid === false);
   });
 
-  it('should be able to send a batched transaction', async() => {
-    let address1 = 'mtXWDB6k5yC5v7TcwKZHB89SUp85yCKshy';
-    let amount1 = '10000';
-    let address2 = 'msngvArStqsSqmkG7W7Fc9jotPcURyLyYu';
-    let amount2 = '20000';
+  it('should be able to send a bached transaction', async() => {
+    let address1 = 'bchreg:qq2lqjaeut5ppjkx9339htfed8enx7hmugk37ytwqy';
+    let amount1 = 10000;
+    let address2 = 'bchreg:qq6n0n37mut4353m9k2zm5nh0pejk7vh7u77tan544';
+    let amount2 = 20000;
     const batch = {};
     batch[address1] = amount1;
     batch[address2] = amount2;

@@ -1,17 +1,10 @@
-const { CryptoRpc } = require('../');
+const { CryptoRpc } = require('../..');
+const config = require('./config');
 const {assert, expect} = require('chai');
 const mocha = require('mocha');
-const { before, describe, it } = mocha;
 const EthereumTx = require('ethereumjs-tx');
 const util = require('web3-utils');
-const config = {
-  chain: 'ETH',
-  host: 'ganache',
-  protocol: 'http',
-  port: '8545',
-  rpcPort: '8545',
-  account: '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D',
-};
+const { before, describe, it } = mocha;
 
 const currencyConfig = {
   sendTo: '0xA15035277A973d584b1d6150e93C21152D6Af440',
@@ -24,7 +17,7 @@ const currencyConfig = {
 
 describe('ETH Tests', function() {
   const currency = 'ETH';
-  const rpcs = new CryptoRpc({ETH: config});
+  const rpcs = new CryptoRpc(config);
   const ethRPC = rpcs.get(currency);
   let txid = '';
   let blockHash = '';
@@ -45,7 +38,7 @@ describe('ETH Tests', function() {
     // Reset nonce to 0
     const txCount = await rpcs.getTransactionCount({
       currency,
-      address: config.account
+      address: config.ETH.account
     });
 
     // construct the transaction data
@@ -54,7 +47,7 @@ describe('ETH Tests', function() {
       gasLimit: util.toHex(25000),
       gasPrice: util.toHex(2.1*10e9),
       to: currencyConfig.sendTo,
-      from: config.account,
+      from: config.ETH.account,
       value: util.toHex(util.toWei('123', 'wei'))
     };
 

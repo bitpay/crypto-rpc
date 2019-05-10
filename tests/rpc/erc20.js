@@ -1,21 +1,8 @@
-const { CryptoRpc } = require('../');
+const { CryptoRpc } = require('../..');
+const config = require('./config');
 const assert = require('assert');
 const mocha = require('mocha');
 const { before, describe, it } = mocha;
-const ERC20 = require('../blockchain/build/contracts/CryptoErc20.json');
-const config = {
-  chain: 'ETH',
-  host: 'ganache',
-  protocol: 'http',
-  rpcPort: '8545',
-  account: '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D',
-  tokens: {
-    ERC20: {
-      tokenContractAddress: ERC20.networks['5555'].address,
-      type: 'ERC20'
-    }
-  },
-};
 
 const currencyConfig = {
   sendTo: '0xA15035277A973d584b1d6150e93C21152D6Af440',
@@ -29,7 +16,7 @@ const currencyConfig = {
 describe('ERC20 Tests', function() {
   let txid = '';
   const currency = 'ERC20';
-  const rpcs = new CryptoRpc({ETH: config});
+  const rpcs = new CryptoRpc(config);
 
 
   this.timeout(10000);
