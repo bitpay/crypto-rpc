@@ -11,20 +11,20 @@ const config = {
   port: '8545',
   rpcPort: '8545',
   account: '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D',
-  currencyConfig: {
-    sendTo: '0xA15035277A973d584b1d6150e93C21152D6Af440',
-    unlockPassword: '',
-    privateKey:
+};
+
+const currencyConfig = {
+  sendTo: '0xA15035277A973d584b1d6150e93C21152D6Af440',
+  unlockPassword: '',
+  privateKey:
       '117ACF0C71DE079057F4D125948D2F1F12CB3F47C234E43438E1E44C93A9C583',
-    rawTx:
+  rawTx:
       '0xf8978202e38471a14e6382ea6094000000000000000000000000000000000000000080b244432d4c353a4e2b4265736a3770445a46784f6149703630735163757a382f4f672b617361655a3673376543676b6245493d26a04904c712736ce12808f531996007d3eb1c1e1c1dcf5431f6252678b626385e40a043ead01a06044cd86fba04ae1dc5259c5b3b5556a8bd86aeb8867e8f1e41512a'
-  }
 };
 
 describe('ETH Tests', function() {
   const currency = 'ETH';
-  const currencyConfig = config.currencyConfig;
-  const rpcs = new CryptoRpc(config, currencyConfig);
+  const rpcs = new CryptoRpc({ETH: config});
   const ethRPC = rpcs.get(currency);
   let txid = '';
   let blockHash = '';
@@ -53,13 +53,13 @@ describe('ETH Tests', function() {
       nonce: util.toHex(txCount),
       gasLimit: util.toHex(25000),
       gasPrice: util.toHex(2.1*10e9),
-      to: config.currencyConfig.sendTo,
+      to: currencyConfig.sendTo,
       from: config.account,
       value: util.toHex(util.toWei('123', 'wei'))
     };
 
     const rawTx = new EthereumTx(txData);
-    const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
+    const privateKey = Buffer.from(currencyConfig.privateKey, 'hex');
     rawTx.sign(privateKey);
     const serializedTx = rawTx.serialize();
     const sentTx = await rpcs.sendRawTransaction({
@@ -132,7 +132,7 @@ describe('ETH Tests', function() {
   it('should be able to send a transaction', async () => {
     txid = await rpcs.unlockAndSendToAddress({
       currency,
-      address: config.currencyConfig.sendTo,
+      address: currencyConfig.sendTo,
       amount: '10000',
       passphrase: currencyConfig.unlockPassword
     });
@@ -140,7 +140,7 @@ describe('ETH Tests', function() {
   });
 
   it('should be able to send many transactions', async () => {
-    const address = config.currencyConfig.sendTo;
+    const address = currencyConfig.sendTo;
     const amount = '1000';
     const payToArray = [{ address, amount }, {address, amount}];
     const txids = await rpcs.unlockAndSendToAddressMany({
@@ -153,7 +153,7 @@ describe('ETH Tests', function() {
   });
 
   it('should reject when one of many transactions fails', async () => {
-    const address = config.currencyConfig.sendTo;
+    const address = currencyConfig.sendTo;
     const amount = '1000';
     const payToArray = [
       { address, amount },
@@ -178,7 +178,7 @@ describe('ETH Tests', function() {
   });
 
   it('should be able to decode a raw transaction', async () => {
-    const { rawTx } = config.currencyConfig;
+    const { rawTx } = currencyConfig;
     const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
     assert.isDefined(decoded);
   });
@@ -204,9 +204,9 @@ describe('ETH Tests', function() {
   it('should validate address', async () => {
     const isValid = await rpcs.validateAddress({
       currency,
-      address: config.currencyConfig.sendTo
+      address: currencyConfig.sendTo
     });
-    const utilVaildate = util.isAddress(config.currencyConfig.sendTo);
+    const utilVaildate = util.isAddress(currencyConfig.sendTo);
     assert.isTrue(isValid === utilVaildate);
   });
 

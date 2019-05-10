@@ -12,12 +12,13 @@ const config = {
   rpcUser: 'cryptorpc',
   rpcPass: 'local321',
   tokens: {},
-  currencyConfig: {
-    sendTo: 'bchreg:qq9kqhzxeul20r7nsl2lrwh8d5kw97np9u960ue086',
-    unlockPassword: 'password',
-    rawTx:
+};
+
+const currencyConfig = {
+  sendTo: 'bchreg:qq9kqhzxeul20r7nsl2lrwh8d5kw97np9u960ue086',
+  unlockPassword: 'password',
+  rawTx:
     '0200000001445703d7470ec3e435db0f33da332fc654ae0c8d264572e487bd427125659d7500000000484730440220704a6a336eb930a95b2a6a941b3c43ccb2207db803a2332512ac255c1740b9d7022057c7bc00a188de7f4868774d1e9ff626f8bd6eca8187763b9cb184354ddc5dde41feffffff0200021024010000001976a914db1f764e6a60e4a8cb919c55e95ac41517f5cddc88ac00e1f505000000001976a9140b605c46cf3ea78fd387d5f1bae76d2ce2fa612f88ac66000000'
-  }
 };
 
 describe('BCH Tests', function() {
@@ -25,8 +26,7 @@ describe('BCH Tests', function() {
   let txid = '';
   let blockHash = '';
   const currency = 'BCH';
-  const { currencyConfig } = config;
-  const rpcs = new CryptoRpc(config, currencyConfig);
+  const rpcs = new CryptoRpc({BCH: config});
   const bitcoin = rpcs.get(currency);
 
   before(async () => {
@@ -81,7 +81,7 @@ describe('BCH Tests', function() {
   });
 
   it('should be able to send a transaction', async () => {
-    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
+    txid = await rpcs.unlockAndSendToAddress({ currency, address: currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
     expect(txid).to.have.lengthOf(64);
     assert(txid);
     await bitcoin.asyncCall('generate', [2]);
@@ -111,7 +111,7 @@ describe('BCH Tests', function() {
     payToArray.push(transaction4);
     let maxOutputs = 2;
     let maxValue = 1e8;
-    const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
     expect(outputArray).to.have.lengthOf(4);
     for (let transaction of outputArray) {
       assert(transaction.txid);
@@ -130,7 +130,7 @@ describe('BCH Tests', function() {
     ];
     let outputArray;
     try {
-      outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
+      outputArray = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
     } catch (error) {
       assert(error.data);
     }
@@ -152,7 +152,7 @@ describe('BCH Tests', function() {
   });
 
   it('should be able to decode a raw transaction', async () => {
-    const { rawTx } = config.currencyConfig;
+    const { rawTx } = currencyConfig;
     assert(rawTx);
     const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
     expect(decoded).to.have.property('txid');
@@ -179,7 +179,7 @@ describe('BCH Tests', function() {
   });
 
   it('should validate address', async () => {
-    const isValid = await rpcs.validateAddress({ currency, address: config.currencyConfig.sendTo });
+    const isValid = await rpcs.validateAddress({ currency, address: currencyConfig.sendTo });
     assert(isValid === true);
   });
 
@@ -197,7 +197,7 @@ describe('BCH Tests', function() {
     batch[address1] = amount1;
     batch[address2] = amount2;
 
-    await bitcoin.walletUnlock({ passphrase: config.currencyConfig.unlockPassword, time: 10 });
+    await bitcoin.walletUnlock({ passphrase: currencyConfig.unlockPassword, time: 10 });
     let txid = await bitcoin.sendMany({ batch, options: null });
     await bitcoin.walletLock();
     expect(txid).to.have.lengthOf(64);
