@@ -4,7 +4,7 @@
   "description": "rpc wrapper for multiple rpcs",
   "main": "index.js",
   "scripts": {
-    "ci:test": "npm run lint && npm run truffle:compile && npm run truffle:migrate && npm run truffle:test && mocha --recursive ./tests",
+    "ci:test": "npm run lint && npm run truffle:compile && npm run truffle:migrate && npm run truffle:test && npm run test:bats && mocha --recursive ./tests",
     "test": "docker-compose down && docker-compose build && docker-compose run test_runner",
     "test:bats": "tests/bats/cli_runner",
     "lint": "./node_modules/.bin/eslint .",
