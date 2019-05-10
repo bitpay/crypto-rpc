@@ -39,7 +39,7 @@ const SendProgram = {
       amount,
     } = program;
 
-    let rpcs = new CryptoRPC({
+    let rpcs = new CryptoRPC({[chain]: {
       chain,
       host,
       rpcPort: port || rpcPort,
@@ -47,7 +47,7 @@ const SendProgram = {
       rpcPass: password || rpcPass,
       protocol,
       token,
-    });
+    }});
     return rpcs.unlockAndSendToAddress({currency, address, amount});
   }
 };

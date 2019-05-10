@@ -26,14 +26,13 @@ const UnlockSendProgram = {
       const rpcHost = config[node];
       if(rpcHost) {
         const { host, rpcPort, protocol, user, pass } = rpcHost;
-        const currencyConfig = rpcHost.currencies[currency] || {};
-        let rpcs = new CryptoRPC({
+        let rpcs = new CryptoRPC({[currency] :{
           host,
           rpcPort,
           user,
           pass,
           protocol,
-        }, currencyConfig);
+        }});
 
         rpcs.cmdlineUnlock(currency, 6000, (err, relock) => {
           rpcs.sendToAddress(currency, address, amount, (err, tx) => {

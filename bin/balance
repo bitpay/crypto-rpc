@@ -38,7 +38,7 @@ const BalanceProgram = {
       token,
     } = program;
 
-    let rpcs = new CryptoRPC({
+    let rpcs = new CryptoRPC({[chain]: {
       chain,
       host,
       rpcPort: port || rpcPort,
@@ -46,7 +46,7 @@ const BalanceProgram = {
       rpcPass: password || rpcPass,
       protocol,
       token,
-    });
+    }});
     return rpcs.getBalance({currency, address});
   }
 };
