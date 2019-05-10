@@ -6,7 +6,7 @@
     --user cryptorpc \
     --password local321 \
     --port 8333 \
-    --host localhost \
+    --host bitcoin \
     --currency BTC
     )"
   [ "$result" -eq 0 ]
@@ -18,7 +18,7 @@
     --user cryptorpc \
     --password local321 \
     --port 9333 \
-    --host localhost \
+    --host bitcoin-cash \
     --currency BCH
     )"
   [ "$result" -eq 0 ]
