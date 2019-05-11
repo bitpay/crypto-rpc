@@ -53,7 +53,7 @@ const SendProgram = {
 };
 
 if (require.main === module) {
-  const params = require('../lib/args');
+  const params = require('./args');
   SendProgram.start(params)
     .then(balance => process.stdout.write(`${balance}\n`))
     .catch(err => console.error(err));

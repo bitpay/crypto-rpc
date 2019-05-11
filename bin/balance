@@ -52,7 +52,7 @@ const BalanceProgram = {
 };
 
 if (require.main === module) {
-  const params = require('../lib/args');
+  const params = require('./args');
   BalanceProgram.start(params)
     .then(balance => global.console.log(balance))
     .catch(err => console.error(err));
