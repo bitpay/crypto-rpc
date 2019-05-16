@@ -9,7 +9,6 @@
     --host localhost \
     --currency BTC
     )"
-    echo $result
   [ "$result" -eq 5000000000 ]
 }
 
@@ -22,7 +21,6 @@
     --host localhost \
     --currency BCH
     )"
-    echo $result
   [ "$result" -eq 5000000000 ]
 }
 
