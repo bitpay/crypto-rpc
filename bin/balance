@@ -54,7 +54,7 @@ const BalanceProgram = {
 if (require.main === module) {
   const params = require('../lib/args');
   BalanceProgram.start(params)
-    .then(balance => global.console.log(balance))
+    .then(balance => process.stdout.write(`${balance}\n`))
     .catch(err => console.error(err));
 }
 
