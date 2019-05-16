@@ -9,7 +9,8 @@
     --host localhost \
     --currency BTC
     )"
-  [ "$result" -eq 0 ]
+    echo $result
+  [ "$result" -eq 5000000000 ]
 }
 
 @test "get BCH balance" {
@@ -21,5 +22,34 @@
     --host localhost \
     --currency BCH
     )"
-  [ "$result" -eq 0 ]
+    echo $result
+  [ "$result" -eq 5000000000 ]
+}
+
+@test "send some BTC" {
+  result="$(
+    bin/send \
+    --user cryptorpc \
+    --password local321 \
+    --port 8333 \
+    --host localhost \
+    --currency BTC \
+    --address 2NGFWyW3LBPr6StDuDSNFzQF3Jouuup1rua \
+    --amount 1000
+    )"
+  [ "${#result}" -eq 64 ]
+}
+
+@test "send some BCH" {
+  result="$(
+    bin/send \
+    --user cryptorpc \
+    --password local321 \
+    --port 8333 \
+    --host localhost \
+    --currency BTC \
+    --address 2NGFWyW3LBPr6StDuDSNFzQF3Jouuup1rua \
+    --amount 1000
+    )"
+  [ "${#result}" -eq 64 ]
 }
