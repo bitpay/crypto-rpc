@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+/**
+ * ProxyProgram.start
+ */
+const ProxyProgram = {
+  start: (program) => {
+    const CryptoRPC = require('../lib');
+    const {
+      currency,
+      host,
+      port,
+      user,
+      password,
+      chain,
+      protocol,
+      rpcUser,
+      rpcPass,
+      rpcPort,
+      token,
+      params,
+      method,
+    } = program;
+
+    let rpcs = new CryptoRPC({
+      chain,
+      host,
+      rpcPort: port || rpcPort,
+      rpcUser: user || rpcUser,
+      rpcPass: password || rpcPass,
+      protocol,
+      token,
+    });
+    const proxy = rpcs.get(currency);
+    return proxy.asyncCall(method, [...params.split(/,/)]);
+  }
+};
+
+if (require.main === module) {
+  const params = require('../lib/args');
+  ProxyProgram.start(params)
+    .then(result => process.stdout.write(`${result}\n`))
+    .catch(err => console.error(err));
+}
+
+
+module.exports = ProxyProgram;
