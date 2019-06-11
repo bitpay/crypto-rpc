@@ -3,6 +3,25 @@
 BTC_CONTAINER=$(docker-compose run -p8333:8333 -d bitcoin)
 BCH_CONTAINER=$(docker-compose run -p9333:9333 -d bitcoin-cash)
 sleep 1
+
+bin/proxy \
+  --method generate \
+  --params 101 \
+  --user cryptorpc \
+  --password local321 \
+  --port 8333 \
+  --host localhost \
+  --currency BTC 2>&1 1>/dev/null
+
+bin/proxy \
+  --method generate \
+  --params 101 \
+  --user cryptorpc \
+  --password local321 \
+  --port 9333 \
+  --host localhost \
+  --currency BCH 2>&1 1>/dev/null
+
 npx bats tests/cli
 result=$?
 docker stop ${BTC_CONTAINER} ${BCH_CONTAINER}

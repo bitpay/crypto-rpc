@@ -37,6 +37,7 @@ const SendProgram = {
       rpcPort,
       token,
       amount,
+      unlock,
     } = program;
 
     let rpcs = new CryptoRPC({
@@ -48,7 +49,12 @@ const SendProgram = {
       protocol,
       token,
     });
-    return rpcs.unlockAndSendToAddress({currency, address, amount});
+
+    const sendParams = { currency, address, amount };
+    if (unlock) {
+      return rpcs.unlockAndSendToAddress(sendParams);
+    }
+    return rpcs.sendToAddress(sendParams);
   }
 };
 
