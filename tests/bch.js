@@ -188,7 +188,7 @@ describe('BCH Tests', function() {
     assert(isValid === false);
   });
 
-  it('should be able to send a bached transaction', async() => {
+  it('should be able to send a batched transaction', async() => {
     let address1 = 'bchreg:qq2lqjaeut5ppjkx9339htfed8enx7hmugk37ytwqy';
     let amount1 = 10000;
     let address2 = 'bchreg:qq6n0n37mut4353m9k2zm5nh0pejk7vh7u77tan544';
