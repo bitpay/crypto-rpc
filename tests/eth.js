@@ -6,16 +6,16 @@ const EthereumTx = require('ethereumjs-tx');
 const util = require('web3-utils');
 const config = {
   chain: 'ETH',
-  host: 'ganache',
+  host: 'parity',
   protocol: 'http',
   port: '8545',
   rpcPort: '8545',
-  account: '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D',
+  account: '0x00a329c0648769A73afAc7F9381E08FB43dBEA72',
   currencyConfig: {
     sendTo: '0xA15035277A973d584b1d6150e93C21152D6Af440',
     unlockPassword: '',
     privateKey:
-      '117ACF0C71DE079057F4D125948D2F1F12CB3F47C234E43438E1E44C93A9C583',
+      '4d5db4107d237df6a3d58ee5f70ae63d73d7658d4026f2eefd2f204c81682cb7',
     rawTx:
       '0xf8978202e38471a14e6382ea6094000000000000000000000000000000000000000080b244432d4c353a4e2b4265736a3770445a46784f6149703630735163757a382f4f672b617361655a3673376543676b6245493d26a04904c712736ce12808f531996007d3eb1c1e1c1dcf5431f6252678b626385e40a043ead01a06044cd86fba04ae1dc5259c5b3b5556a8bd86aeb8867e8f1e41512a'
   }
@@ -39,7 +39,6 @@ describe('ETH Tests', function() {
     const fee = await rpcs.estimateFee({ currency, nBlocks: 4 });
     assert.isTrue(fee === 20000000000);
   });
-
 
   it('should send raw transaction', async () => {
     // Reset nonce to 0
@@ -80,9 +79,6 @@ describe('ETH Tests', function() {
     expect(sentTx).to.have.property('logs');
     expect(sentTx).to.have.property('status');
     expect(sentTx).to.have.property('logsBloom');
-    expect(sentTx).to.have.property('v');
-    expect(sentTx).to.have.property('r');
-    expect(sentTx).to.have.property('s');
   });
 
 
@@ -104,8 +100,6 @@ describe('ETH Tests', function() {
     expect(reqBlock).to.have.property('number');
     expect(reqBlock).to.have.property('hash');
     expect(reqBlock).to.have.property('parentHash');
-    expect(reqBlock).to.have.property('mixHash');
-    expect(reqBlock).to.have.property('nonce');
     expect(reqBlock).to.have.property('sha3Uncles');
     expect(reqBlock).to.have.property('logsBloom');
     expect(reqBlock).to.have.property('transactionsRoot');
