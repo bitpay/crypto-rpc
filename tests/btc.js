@@ -135,11 +135,26 @@ describe('BTC Tests', function() {
     payToArray.push(transaction4);
     let maxOutputs = 2;
     let maxValue = 1e8;
+    let eventEmitter = rpcs.rpcs.BTC.emitter;
+    let emitResults = [];
+    eventEmitter.on('success', (emitData) => {
+      emitResults.push(emitData);
+    });
     const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
     expect(outputArray).to.have.lengthOf(4);
     for (let transaction of outputArray) {
       assert(transaction.txid);
       expect(transaction.txid).to.have.lengthOf(64);
+    }
+    for (let emitData of emitResults) {
+      assert(emitData.address);
+      assert(emitData.amount);
+      assert(emitData.txid);
+      assert(emitData.batchData);
+      expect(emitData.error === null);
+      expect(emitData.vout === 0 || emitData.vout === 1);
+      let transactionObj = {address: emitData.address, amount: emitData.amount};
+      expect(payToArray.includes(transactionObj));
     }
   });
 

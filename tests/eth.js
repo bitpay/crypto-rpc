@@ -143,13 +143,23 @@ describe('ETH Tests', function() {
     const address = config.currencyConfig.sendTo;
     const amount = '1000';
     const payToArray = [{ address, amount }, {address, amount}];
-    const txids = await rpcs.unlockAndSendToAddressMany({
+    let eventEmitter = rpcs.rpcs.ETH.emitter;
+    eventEmitter.on('success', (emitData) => {
+      assert(emitData.txid);
+      expect(emitData.error === null);
+      expect(emitData.address === address);
+      expect(emitData.amount === amount);
+    });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({
       currency,
       payToArray,
       passphrase: currencyConfig.unlockPassword
     });
-    assert.isTrue(util.isHex(txids[0]));
-    assert.isTrue(txids.length === 2);
+    assert.isTrue(outputArray.length === 2);
+    assert.isTrue(util.isHex(outputArray[0].txid));
+    assert.isTrue(util.isHex(outputArray[1].txid));
+    expect(outputArray[0].txid).to.have.lengthOf(66);
+    expect(outputArray[1].txid).to.have.lengthOf(66);
   });
 
   it('should reject when one of many transactions fails', async () => {
