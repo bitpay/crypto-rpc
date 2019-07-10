@@ -143,18 +143,32 @@ describe('ETH Tests', function() {
     const address = config.currencyConfig.sendTo;
     const amount = '1000';
     const payToArray = [{ address, amount }, {address, amount}];
-    let eventEmitter = rpcs.rpcs.ETH.emitter;
-    eventEmitter.on('success', (emitData) => {
-      assert(emitData.txid);
-      expect(emitData.error === null);
-      expect(emitData.address === address);
-      expect(emitData.amount === amount);
+    const eventEmitter = rpcs.rpcs.ETH.emitter;
+    let eventCounter = 0;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('success', (emitData) => {
+        eventCounter++;
+        emitResults.push(emitData);
+        if (eventCounter === 2) {
+          resolve(emitResults);
+        }
+      });
     });
     const outputArray = await rpcs.unlockAndSendToAddressMany({
       currency,
       payToArray,
       passphrase: currencyConfig.unlockPassword
     });
+    await emitPromise;
+    assert(emitResults[0].txid);
+    expect(emitResults[0].error === null);
+    expect(emitResults[0].address === address);
+    expect(emitResults[0].amount === amount);
+    assert(emitResults[1].txid);
+    expect(emitResults[1].error === null);
+    expect(emitResults[1].address === address);
+    expect(emitResults[1].amount === amount);
     assert.isTrue(outputArray.length === 2);
     assert.isTrue(util.isHex(outputArray[0].txid));
     assert.isTrue(util.isHex(outputArray[1].txid));
