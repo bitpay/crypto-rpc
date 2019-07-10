@@ -113,19 +113,19 @@ describe('BTC Tests', function() {
 
   it('should be able to send many transactions', async () => {
     let payToArray = [];
-    let transaction1 = {
+    const transaction1 = {
       address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
       amount: 10000
     };
-    let transaction2 = {
+    const transaction2 = {
       address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
       amount: 20000
     };
-    let transaction3 = {
+    const transaction3 = {
       address: 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H',
       amount: 30000
     };
-    let transaction4 = {
+    const transaction4 = {
       address: 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2',
       amount: 40000
     };
@@ -133,13 +133,36 @@ describe('BTC Tests', function() {
     payToArray.push(transaction2);
     payToArray.push(transaction3);
     payToArray.push(transaction4);
-    let maxOutputs = 2;
-    let maxValue = 1e8;
+    const maxOutputs = 2;
+    const maxValue = 1e8;
+    const eventEmitter = rpcs.rpcs.BTC.emitter;
+    let eventCounter = 0;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('success', (emitData) => {
+        eventCounter++;
+        emitResults.push(emitData);
+        if (eventCounter === 3) {
+          resolve();
+        }
+      });
+    });
     const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    await emitPromise;
     expect(outputArray).to.have.lengthOf(4);
     for (let transaction of outputArray) {
       assert(transaction.txid);
       expect(transaction.txid).to.have.lengthOf(64);
+    }
+    for (let emitData of emitResults) {
+      assert(emitData.address);
+      assert(emitData.amount);
+      assert(emitData.txid);
+      assert(emitData.batchData);
+      expect(emitData.error === null);
+      expect(emitData.vout === 0 || emitData.vout === 1);
+      let transactionObj = {address: emitData.address, amount: emitData.amount};
+      expect(payToArray.includes(transactionObj));
     }
   });
 

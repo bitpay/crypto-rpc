@@ -1,6 +1,7 @@
 const { CryptoRpc } = require('../');
-const assert = require('assert');
+const {assert, expect} = require('chai');
 const mocha = require('mocha');
+const util = require('web3-utils');
 const { before, describe, it } = mocha;
 const ERC20 = require('../blockchain/build/contracts/CryptoErc20.json');
 const config = {
@@ -56,11 +57,38 @@ describe('ERC20 Tests', function() {
   it('should be able to send many transactions', async () => {
     const address = config.currencyConfig.sendTo;
     const amount = '1000';
-    const payToArray = [
-      { address, amount },
-    ];
-    const txids = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword });
-    assert(txids[0]);
+    const payToArray = [{ address, amount }, {address, amount}];
+    const eventEmitter = rpcs.rpcs.ERC20.emitter;
+    let eventCounter = 0;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('success', (emitData) => {
+        eventCounter++;
+        emitResults.push(emitData);
+        if (eventCounter === 2) {
+          resolve(emitResults);
+        }
+      });
+    });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({
+      currency,
+      payToArray,
+      passphrase: currencyConfig.unlockPassword
+    });
+    await emitPromise;
+    assert(emitResults[0].txid);
+    expect(emitResults[0].error === null);
+    expect(emitResults[0].address === address);
+    expect(emitResults[0].amount === amount);
+    assert(emitResults[1].txid);
+    expect(emitResults[1].error === null);
+    expect(emitResults[1].address === address);
+    expect(emitResults[1].amount === amount);
+    assert.isTrue(outputArray.length === 2);
+    assert.isTrue(util.isHex(outputArray[0].txid));
+    assert.isTrue(util.isHex(outputArray[1].txid));
+    expect(outputArray[0].txid).to.have.lengthOf(66);
+    expect(outputArray[1].txid).to.have.lengthOf(66);
   });
 
   it('should reject when one of many transactions fails', async () => {
