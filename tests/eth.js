@@ -174,6 +174,7 @@ describe('ETH Tests', function() {
     assert.isTrue(util.isHex(outputArray[1].txid));
     expect(outputArray[0].txid).to.have.lengthOf(66);
     expect(outputArray[1].txid).to.have.lengthOf(66);
+    expect(outputArray[1].txid).to.not.equal(outputArray[0].txid);
   });
 
   it('should reject when one of many transactions fails', async () => {

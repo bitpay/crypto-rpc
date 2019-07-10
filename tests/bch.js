@@ -109,13 +109,39 @@ describe('BCH Tests', function() {
     payToArray.push(transaction2);
     payToArray.push(transaction3);
     payToArray.push(transaction4);
-    let maxOutputs = 2;
-    let maxValue = 1e8;
+    const maxOutputs = 2;
+    const maxValue = 1e8;
+    const eventEmitter = rpcs.rpcs.BCH.emitter;
+    let eventCounter = 0;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('success', (emitData) => {
+        eventCounter++;
+        emitResults.push(emitData);
+        if (eventCounter === 3) {
+          resolve();
+        }
+      });
+    });
     const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    await emitPromise;
     expect(outputArray).to.have.lengthOf(4);
+    expect(outputArray[0].txid).to.equal(outputArray[1].txid);
+    expect(outputArray[2].txid).to.equal(outputArray[3].txid);
+    expect(outputArray[1].txid).to.not.equal(outputArray[2].txid);
     for (let transaction of outputArray) {
       assert(transaction.txid);
       expect(transaction.txid).to.have.lengthOf(64);
+    }
+    for (let emitData of emitResults) {
+      assert(emitData.address);
+      assert(emitData.amount);
+      assert(emitData.txid);
+      assert(emitData.batchData);
+      expect(emitData.error === null);
+      expect(emitData.vout === 0 || emitData.vout === 1);
+      let transactionObj = {address: emitData.address, amount: emitData.amount};
+      expect(payToArray.includes(transactionObj));
     }
   });
 
