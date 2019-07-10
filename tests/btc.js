@@ -150,6 +150,9 @@ describe('BTC Tests', function() {
     const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
     await emitPromise;
     expect(outputArray).to.have.lengthOf(4);
+    expect(outputArray[0].txid).to.equal(outputArray[1].txid);
+    expect(outputArray[2].txid).to.equal(outputArray[3].txid);
+    expect(outputArray[1].txid).to.not.equal(outputArray[2].txid);
     for (let transaction of outputArray) {
       assert(transaction.txid);
       expect(transaction.txid).to.have.lengthOf(64);
