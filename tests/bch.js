@@ -137,7 +137,6 @@ describe('BCH Tests', function() {
       assert(emitData.address);
       assert(emitData.amount);
       assert(emitData.txid);
-      assert(emitData.batchData);
       expect(emitData.error === null);
       expect(emitData.vout === 0 || emitData.vout === 1);
       let transactionObj = {address: emitData.address, amount: emitData.amount};
