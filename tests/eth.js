@@ -184,16 +184,24 @@ describe('ETH Tests', function() {
       { address, amount },
       { address: 'funkyColdMedina', amount: 1 }
     ];
-    try {
-      await rpcs.unlockAndSendToAddressMany({
-        currency,
-        payToArray,
-        passphrase: currencyConfig.unlockPassword
+    const eventEmitter = rpcs.rpcs.ETH.emitter;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('failure', (emitData) => {
+        emitResults.push(emitData);
+        resolve();
       });
-    } catch (error) {
-      assert((error.message = 'At least one of many requests Failed'));
-      assert(error.data.failure[1]);
-    }
+    });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({
+      currency,
+      payToArray,
+      passphrase: currencyConfig.unlockPassword
+    });
+    await emitPromise;
+    assert(!outputArray[1].txid);
+    expect(outputArray[1].error).to.equal(emitResults[0].error);
+    expect(emitResults.length).to.equal(1);
+    assert(emitResults[0].error);
   });
 
   it('should be able to get a transaction', async () => {

@@ -137,7 +137,6 @@ describe('BCH Tests', function() {
       assert(emitData.address);
       assert(emitData.amount);
       assert(emitData.txid);
-      assert(emitData.batchData);
       expect(emitData.error === null);
       expect(emitData.vout === 0 || emitData.vout === 1);
       let transactionObj = {address: emitData.address, amount: emitData.amount};
@@ -154,13 +153,24 @@ describe('BCH Tests', function() {
         amount: 1
       },
     ];
-    let outputArray;
-    try {
-      outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
-    } catch (error) {
-      assert(error.data);
-    }
-    assert(outputArray[1].error);
+    const eventEmitter = rpcs.rpcs.BCH.emitter;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('failure', (emitData) => {
+        emitResults.push(emitData);
+        resolve();
+      });
+    });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({
+      currency,
+      payToArray,
+      passphrase: currencyConfig.unlockPassword
+    });
+    await emitPromise;
+    assert(!outputArray[1].txid);
+    expect(outputArray[1].error).to.equal(emitResults[0].error);
+    expect(emitResults.length).to.equal(1);
+    assert(emitResults[0].error);
   });
 
   it('should be able to get a transaction', async () => {
