@@ -10,6 +10,7 @@ services:
       - bitcoin
       - bitcoin-cash
       - ganache
+      - rippled
 
   bitcoin:
     image: ruimarinho/bitcoin-core:0.16
@@ -56,6 +57,11 @@ services:
     build:
       context: .
       dockerfile: ./tests/docker/ganache.Dockerfile
+
+  rippled:
+    build:
+      context: .
+      dockerfile: ./tests/docker/rippled.Dockerfile
 
 networks:
   default:
