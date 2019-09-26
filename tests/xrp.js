@@ -1,15 +1,16 @@
 const { CryptoRpc } = require('../');
-const {assert} = require('chai');
+const {assert, expect} = require('chai');
 const mocha = require('mocha');
 const {describe, it} = mocha;
 const config = {
   chain: 'XRP',
+  currency: 'XRP',
   host: 'rippled',
   protocol: 'ws',
   port: '6006',
+  address: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
   currencyConfig: {
-    sendTo: '0xA15035277A973d584b1d6150e93C21152D6Af440',
-    unlockPassword: '',
+    sendTo: 'rDFrG4CgPFMnQFJBmZH7oqTjLuiB3HS4eu',
     privateKey:
       '117ACF0C71DE079057F4D125948D2F1F12CB3F47C234E43438E1E44C93A9C583',
     rawTx:
@@ -19,155 +20,108 @@ const config = {
 
 describe('XRP Tests', function() {
   const currency = 'XRP';
-  //const currencyConfig = config.currencyConfig;
   const rpcs = new CryptoRpc(config);
   const xrpRPC = rpcs.get(currency);
-  //let txid = '';
-  //let blockHash = '';
+  let blockHash = '';
+  let txid = '';
+
+  it('should be able to get a block hash', async () => {
+    blockHash = await rpcs.getBestBlockHash({ currency });
+    expect(blockHash).to.have.lengthOf('64');
+  });
 
   it('should estimate fee', async () => {
     let fee = await xrpRPC.estimateFee();
-    console.log(fee); // eslint-disable-line no-console
-    assert.isOk(fee, 'fee not returned by estimateFee()');
-  });
-
-
-  /*it('should send raw transaction', async () => {
-    // Reset nonce to 0
-    console.log('getTransactionCount'); // eslint-disable-line no-console
-    const txCount = await rpcs.getTransaction({
-      currency,
-      address: config.account
-    });
-    console.log(`Transaction: ${txCount}`); // eslint-disable-line no-console
-
-    // construct the transaction data
-    const txData = {
-      nonce: util.toHex(txCount),
-      gasLimit: util.toHex(25000),
-      gasPrice: util.toHex(2.1*10e9),
-      to: config.currencyConfig.sendTo,
-      from: config.account,
-      value: util.toHex(util.toWei('123', 'wei'))
-    };
-
-    const rawTx = new EthereumTx(txData);
-    const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
-    rawTx.sign(privateKey);
-    const serializedTx = rawTx.serialize();
-    const sentTx = await rpcs.sendRawTransaction({
-      currency,
-      rawTx: '0x' + serializedTx.toString('hex')
-    });
-    assert.isTrue(sentTx.from === txData.from.toLowerCase());
-    assert.isTrue(sentTx.to === txData.to.toLowerCase());
-    expect(sentTx).to.have.property('transactionHash');
-    expect(sentTx).to.have.property('transactionIndex');
-    expect(sentTx).to.have.property('blockHash');
-    expect(sentTx).to.have.property('blockNumber');
-    expect(sentTx).to.have.property('gasUsed');
-    expect(sentTx).to.have.property('from');
-    expect(sentTx).to.have.property('to');
-    expect(sentTx).to.have.property('cumulativeGasUsed');
-    expect(sentTx).to.have.property('contractAddress');
-    expect(sentTx).to.have.property('logs');
-    expect(sentTx).to.have.property('status');
-    expect(sentTx).to.have.property('logsBloom');
-    expect(sentTx).to.have.property('v');
-    expect(sentTx).to.have.property('r');
-    expect(sentTx).to.have.property('s');
-  });
-
-
-  it('should estimate gas price', async () => {
-    const gasPrice = await xrpRPC.estimateGasPrice();
-    assert.isDefined(gasPrice);
-    expect(gasPrice).to.be.eq(2.1 * 10e9);
-  });
-
-  it('should be able to get a block hash', async () => {
-    const block = await rpcs.getBestBlockHash({ currency });
-    blockHash = block;
-    assert.isTrue(util.isHex(block));
+    assert.isTrue(fee === '0.000012');
   });
 
   it('should get block', async () => {
     const reqBlock = await rpcs.getBlock({ currency, hash: blockHash });
-    assert(reqBlock.hash === blockHash);
-    expect(reqBlock).to.have.property('number');
-    expect(reqBlock).to.have.property('hash');
-    expect(reqBlock).to.have.property('parentHash');
-    expect(reqBlock).to.have.property('mixHash');
-    expect(reqBlock).to.have.property('nonce');
-    expect(reqBlock).to.have.property('sha3Uncles');
-    expect(reqBlock).to.have.property('logsBloom');
-    expect(reqBlock).to.have.property('transactionsRoot');
-    expect(reqBlock).to.have.property('stateRoot');
-    expect(reqBlock).to.have.property('receiptsRoot');
-    expect(reqBlock).to.have.property('miner');
-    expect(reqBlock).to.have.property('difficulty');
-    expect(reqBlock).to.have.property('totalDifficulty');
-    expect(reqBlock).to.have.property('extraData');
-    expect(reqBlock).to.have.property('size');
-    expect(reqBlock).to.have.property('gasLimit');
-    expect(reqBlock).to.have.property('gasUsed');
-    expect(reqBlock).to.have.property('timestamp');
-    expect(reqBlock).to.have.property('transactions');
-    expect(reqBlock).to.have.property('uncles');
+    expect(reqBlock).to.have.property('ledger');
+    let ledger = reqBlock.ledger;
+    expect(ledger).to.have.property('accepted');
+    expect(ledger.accepted).to.equal(true);
+    expect(ledger).to.have.property('ledger_hash');
+    expect(ledger).to.have.property('ledger_index');
+    expect(ledger).to.have.property('parent_hash');
+    expect(ledger).to.have.property('transactions');
+    expect(ledger.transactions).to.deep.equal([]);
+    expect(reqBlock).to.have.property('ledger_hash');
+    expect(reqBlock).to.have.property('ledger_index');
+    expect(reqBlock.ledger_hash).to.equal(ledger.ledger_hash);
+    expect(reqBlock.ledger_index.toString()).to.equal(ledger.ledger_index);
+    expect(reqBlock).to.have.property('validated');
+    expect(reqBlock.validated).to.equal(true);
+    assert(reqBlock);
   });
 
   it('should be able to get a balance', async () => {
-    const balance = await rpcs.getBalance({ currency });
-    assert(util.isAddress(balance[0].account));
-    assert.hasAllKeys(balance[0], ['account', 'balance']);
+    const balance = await rpcs.getBalance({ currency, address: config.address });
+    expect(balance).to.eq(100000000000);
+    assert(balance != undefined);
   });
 
   it('should be able to send a transaction', async () => {
-    txid = await rpcs.unlockAndSendToAddress({
-      currency,
-      address: config.currencyConfig.sendTo,
-      amount: '10000',
-      passphrase: currencyConfig.unlockPassword
-    });
-    assert.isTrue(util.isHex(txid));
+    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb' });
+    expect(txid).to.have.lengthOf(64);
+    assert(txid);
   });
 
+
   it('should be able to send many transactions', async () => {
-    const address = config.currencyConfig.sendTo;
-    const amount = '1000';
-    const payToArray = [{ address, amount }, {address, amount}];
-    const eventEmitter = rpcs.rpcs.ETH.emitter;
+    let payToArray = [];
+    const transaction1 = {
+      address: 'r38UsJxHSJKajC8qcNmofxJvCESnzmx7Ke',
+      amount: 10000
+    };
+    const transaction2 = {
+      address: 'rMGhv5SNsk81QN1fGu6RybDkUi2of36dua',
+      amount: 20000
+    };
+    const transaction3 = {
+      address: 'r4ip6t3NUe4UWguLUJCbyojxG6PdPZg9EJ',
+      amount: 30000
+    };
+    const transaction4 = {
+      address: 'rwtFtAMNXPoq4xgxn3FzKKGgVZErdcuLST',
+      amount: 40000
+    };
+    payToArray.push(transaction1);
+    payToArray.push(transaction2);
+    payToArray.push(transaction3);
+    payToArray.push(transaction4);
+    const eventEmitter = rpcs.rpcs.XRP.emitter;
     let eventCounter = 0;
     let emitResults = [];
     const emitPromise = new Promise(resolve => {
       eventEmitter.on('success', (emitData) => {
         eventCounter++;
         emitResults.push(emitData);
-        if (eventCounter === 2) {
-          resolve(emitResults);
+        if (eventCounter === 3) {
+          resolve();
         }
       });
     });
-    const outputArray = await rpcs.unlockAndSendToAddressMany({
-      currency,
-      payToArray,
-      passphrase: currencyConfig.unlockPassword
-    });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb' });
     await emitPromise;
-    assert(emitResults[0].txid);
-    expect(emitResults[0].error === null);
-    expect(emitResults[0].address === address);
-    expect(emitResults[0].amount === amount);
-    assert(emitResults[1].txid);
-    expect(emitResults[1].error === null);
-    expect(emitResults[1].address === address);
-    expect(emitResults[1].amount === amount);
-    assert.isTrue(outputArray.length === 2);
-    assert.isTrue(util.isHex(outputArray[0].txid));
-    assert.isTrue(util.isHex(outputArray[1].txid));
-    expect(outputArray[0].txid).to.have.lengthOf(66);
-    expect(outputArray[1].txid).to.have.lengthOf(66);
-    expect(outputArray[1].txid).to.not.equal(outputArray[0].txid);
+    expect(outputArray).to.have.lengthOf(4);
+    expect(outputArray[0]).to.have.property('txid');
+    expect(outputArray[1]).to.have.property('txid');
+    expect(outputArray[2]).to.have.property('txid');
+    expect(outputArray[3]).to.have.property('txid');
+    for (let transaction of outputArray) {
+      assert(transaction.txid);
+      expect(transaction.txid).to.have.lengthOf(64);
+    }
+    for (let emitData of emitResults) {
+      assert(emitData.address);
+      assert(emitData.amount);
+      assert(emitData.txid);
+      expect(emitData.error === null);
+      expect(emitData.vout === 0 || emitData.vout === 1);
+      let transactionObj = {address: emitData.address, amount: emitData.amount};
+      expect(payToArray.includes(transactionObj));
+    }
   });
 
   it('should reject when one of many transactions fails', async () => {
@@ -177,7 +131,7 @@ describe('XRP Tests', function() {
       { address, amount },
       { address: 'funkyColdMedina', amount: 1 }
     ];
-    const eventEmitter = rpcs.rpcs.ETH.emitter;
+    const eventEmitter = rpcs.rpcs.XRP.emitter;
     let emitResults = [];
     const emitPromise = new Promise(resolve => {
       eventEmitter.on('failure', (emitData) => {
@@ -188,7 +142,7 @@ describe('XRP Tests', function() {
     const outputArray = await rpcs.unlockAndSendToAddressMany({
       currency,
       payToArray,
-      passphrase: currencyConfig.unlockPassword
+      secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb'
     });
     await emitPromise;
     assert(!outputArray[1].txid);
@@ -199,49 +153,44 @@ describe('XRP Tests', function() {
 
   it('should be able to get a transaction', async () => {
     const tx = await rpcs.getTransaction({ currency, txid });
-    assert.isDefined(tx);
-    assert.isObject(tx);
-  });
-
-  it('should be able to decode a raw transaction', async () => {
-    const { rawTx } = config.currencyConfig;
-    const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
-    assert.isDefined(decoded);
+    expect(tx).to.have.property('Account');
+    expect(tx).to.have.property('Amount');
+    expect(tx).to.have.property('Destination');
+    expect(tx).to.have.property('Fee');
+    expect(tx).to.have.property('Flags');
+    expect(tx).to.have.property('LastLedgerSequence');
+    expect(tx).to.have.property('Sequence');
+    expect(tx).to.have.property('hash');
+    expect(tx.hash).to.equal(txid);
+    assert(tx);
+    assert(typeof tx === 'object');
   });
 
   it('should get the tip', async () => {
     const tip = await rpcs.getTip({ currency });
-    assert.hasAllKeys(tip, ['height', 'hash']);
+    assert(tip != undefined);
+    expect(tip).to.have.property('hash');
+    expect(tip).to.have.property('height');
   });
 
   it('should get confirmations', async () => {
-    const confirmations = await rpcs.getConfirmations({ currency, txid });
-    assert.isDefined(confirmations);
-  });
-
-  it('should not get confirmations with invalid txid', async () => {
-    try {
-      await rpcs.getConfirmations({ currency, txid: 'wrongtxid' });
-    } catch (err) {
-      assert.isDefined(err);
-    }
+    let confirmations = await rpcs.getConfirmations({ currency, txid });
+    assert(confirmations != undefined);
+    expect(confirmations).to.eq(0);
+    let acceptance = await xrpRPC.asyncRequest('ledger_accept');
+    assert(acceptance);
+    expect(acceptance).to.have.property('ledger_current_index');
+    confirmations = await rpcs.getConfirmations({ currency, txid });
+    expect(confirmations).to.eq(1);
   });
 
   it('should validate address', async () => {
-    const isValid = await rpcs.validateAddress({
-      currency,
-      address: config.currencyConfig.sendTo
-    });
-    const utilVaildate = util.isAddress(config.currencyConfig.sendTo);
-    assert.isTrue(isValid === utilVaildate);
+    const isValid = await rpcs.validateAddress({ currency, address: config.currencyConfig.sendTo });
+    assert(isValid === true);
   });
 
   it('should not validate bad address', async () => {
-    const isValid = await rpcs.validateAddress({
-      currency,
-      address: 'NOTANADDRESS'
-    });
-    const utilVaildate = util.isAddress('NOTANADDRESS');
-    assert.isTrue(isValid === utilVaildate);
-  });*/
+    const isValid = await rpcs.validateAddress({ currency, address: 'NOTANADDRESS' });
+    assert(isValid === false);
+  });
 });
