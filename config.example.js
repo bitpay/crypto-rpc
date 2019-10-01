@@ -19,7 +19,7 @@ module.exports = {
     chain: 'XRP',
     host: 'localhost',
     protocol: 'ws',
-    port: '6006',
+    rpcPort: '6006',
   },
   ETHNode: {
     chain: 'ETH',
