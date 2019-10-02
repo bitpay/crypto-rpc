@@ -7,7 +7,7 @@ const config = {
   currency: 'XRP',
   host: 'rippled',
   protocol: 'ws',
-  port: '6006',
+  rpcPort: '6006',
   address: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
   currencyConfig: {
     sendTo: 'rDFrG4CgPFMnQFJBmZH7oqTjLuiB3HS4eu',
