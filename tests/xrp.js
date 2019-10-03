@@ -145,10 +145,10 @@ describe('XRP Tests', function() {
       secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb'
     });
     await emitPromise;
-    assert(!outputArray[1].txid);
-    expect(outputArray[1].error).to.equal(emitResults[0].error);
     expect(emitResults.length).to.equal(1);
     assert(emitResults[0].error);
+    assert(!outputArray[1].txid);
+    expect(outputArray[1].error).to.equal(emitResults[0].error);
   });
 
   it('should be able to get a transaction', async () => {
