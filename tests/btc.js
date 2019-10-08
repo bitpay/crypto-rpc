@@ -113,19 +113,19 @@ describe('BTC Tests', function() {
 
   it('should be able to send many transactions', async () => {
     let payToArray = [];
-    let transaction1 = {
+    const transaction1 = {
       address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
       amount: 10000
     };
-    let transaction2 = {
+    const transaction2 = {
       address: 'mm7mGjBBe1sUF8SFXCW779DX8XrmpReBTg',
       amount: 20000
     };
-    let transaction3 = {
+    const transaction3 = {
       address: 'mgoVRuvgbgyZL8iQWfS6TLPZzQnpRMHg5H',
       amount: 30000
     };
-    let transaction4 = {
+    const transaction4 = {
       address: 'mv5XmsNbK2deMDhkVq5M28BAD14hvpQ9b2',
       amount: 40000
     };
@@ -133,13 +133,38 @@ describe('BTC Tests', function() {
     payToArray.push(transaction2);
     payToArray.push(transaction3);
     payToArray.push(transaction4);
-    let maxOutputs = 2;
-    let maxValue = 1e8;
+    const maxOutputs = 2;
+    const maxValue = 1e8;
+    const eventEmitter = rpcs.rpcs.BTC.emitter;
+    let eventCounter = 0;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('success', (emitData) => {
+        eventCounter++;
+        emitResults.push(emitData);
+        if (eventCounter === 3) {
+          resolve();
+        }
+      });
+    });
     const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    await emitPromise;
     expect(outputArray).to.have.lengthOf(4);
+    expect(outputArray[0].txid).to.equal(outputArray[1].txid);
+    expect(outputArray[2].txid).to.equal(outputArray[3].txid);
+    expect(outputArray[1].txid).to.not.equal(outputArray[2].txid);
     for (let transaction of outputArray) {
       assert(transaction.txid);
       expect(transaction.txid).to.have.lengthOf(64);
+    }
+    for (let emitData of emitResults) {
+      assert(emitData.address);
+      assert(emitData.amount);
+      assert(emitData.txid);
+      expect(emitData.error === null);
+      expect(emitData.vout === 0 || emitData.vout === 1);
+      let transactionObj = {address: emitData.address, amount: emitData.amount};
+      expect(payToArray.includes(transactionObj));
     }
   });
 
@@ -148,15 +173,26 @@ describe('BTC Tests', function() {
     const amount = '1000';
     const payToArray = [
       { address, amount },
-      { address: 'funkyColdMedina', amount: 1 },
+      { address: 'funkyColdMedina', amount: 1 }
     ];
-    let outputArray;
-    try {
-      outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000 });
-    } catch (error) {
-      assert(error.data);
-    }
-    assert(outputArray[1].error);
+    const eventEmitter = rpcs.rpcs.BTC.emitter;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('failure', (emitData) => {
+        emitResults.push(emitData);
+        resolve();
+      });
+    });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({
+      currency,
+      payToArray,
+      passphrase: currencyConfig.unlockPassword
+    });
+    await emitPromise;
+    assert(!outputArray[1].txid);
+    expect(outputArray[1].error).to.equal(emitResults[0].error);
+    expect(emitResults.length).to.equal(1);
+    assert(emitResults[0].error);
   });
 
   it('should be able to get a transaction', async () => {

@@ -15,6 +15,12 @@ module.exports = {
     rpcUser: 'bitpaytest',
     rpcPass: 'local321'
   },
+  XRPNode: {
+    chain: 'XRP',
+    host: 'localhost',
+    protocol: 'ws',
+    rpcPort: '6006',
+  },
   ETHNode: {
     chain: 'ETH',
     host: 'localhost',

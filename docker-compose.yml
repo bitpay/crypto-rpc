@@ -10,6 +10,7 @@ services:
       - bitcoin
       - bitcoin-cash
       - parity 
+      - rippled
 
   bitcoin:
     image: ruimarinho/bitcoin-core:0.16
@@ -65,6 +66,11 @@ services:
       --network-id=5555
       --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
       --password /data/pw
+      
+  rippled:
+    build:
+      context: .
+      dockerfile: ./tests/docker/rippled.Dockerfile
 
 networks:
   default:

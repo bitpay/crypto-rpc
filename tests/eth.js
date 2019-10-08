@@ -85,7 +85,7 @@ describe('ETH Tests', function() {
   it('should estimate gas price', async () => {
     const gasPrice = await ethRPC.estimateGasPrice();
     assert.isDefined(gasPrice);
-    expect(gasPrice).to.be.eq(2.1 * 10e9);
+    expect(gasPrice).to.be.eq(20300000000);
   });
 
   it('should be able to get a block hash', async () => {
@@ -137,13 +137,38 @@ describe('ETH Tests', function() {
     const address = config.currencyConfig.sendTo;
     const amount = '1000';
     const payToArray = [{ address, amount }, {address, amount}];
-    const txids = await rpcs.unlockAndSendToAddressMany({
+    const eventEmitter = rpcs.rpcs.ETH.emitter;
+    let eventCounter = 0;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('success', (emitData) => {
+        eventCounter++;
+        emitResults.push(emitData);
+        if (eventCounter === 2) {
+          resolve(emitResults);
+        }
+      });
+    });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({
       currency,
       payToArray,
       passphrase: currencyConfig.unlockPassword
     });
-    assert.isTrue(util.isHex(txids[0]));
-    assert.isTrue(txids.length === 2);
+    await emitPromise;
+    assert(emitResults[0].txid);
+    expect(emitResults[0].error === null);
+    expect(emitResults[0].address === address);
+    expect(emitResults[0].amount === amount);
+    assert(emitResults[1].txid);
+    expect(emitResults[1].error === null);
+    expect(emitResults[1].address === address);
+    expect(emitResults[1].amount === amount);
+    assert.isTrue(outputArray.length === 2);
+    assert.isTrue(util.isHex(outputArray[0].txid));
+    assert.isTrue(util.isHex(outputArray[1].txid));
+    expect(outputArray[0].txid).to.have.lengthOf(66);
+    expect(outputArray[1].txid).to.have.lengthOf(66);
+    expect(outputArray[1].txid).to.not.equal(outputArray[0].txid);
   });
 
   it('should reject when one of many transactions fails', async () => {
@@ -153,16 +178,24 @@ describe('ETH Tests', function() {
       { address, amount },
       { address: 'funkyColdMedina', amount: 1 }
     ];
-    try {
-      await rpcs.unlockAndSendToAddressMany({
-        currency,
-        payToArray,
-        passphrase: currencyConfig.unlockPassword
+    const eventEmitter = rpcs.rpcs.ETH.emitter;
+    let emitResults = [];
+    const emitPromise = new Promise(resolve => {
+      eventEmitter.on('failure', (emitData) => {
+        emitResults.push(emitData);
+        resolve();
       });
-    } catch (error) {
-      assert((error.message = 'At least one of many requests Failed'));
-      assert(error.data.failure[1]);
-    }
+    });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({
+      currency,
+      payToArray,
+      passphrase: currencyConfig.unlockPassword
+    });
+    await emitPromise;
+    assert(!outputArray[1].txid);
+    expect(outputArray[1].error).to.equal(emitResults[0].error);
+    expect(emitResults.length).to.equal(1);
+    assert(emitResults[0].error);
   });
 
   it('should be able to get a transaction', async () => {
