@@ -65,20 +65,7 @@ describe('ETH Tests', function() {
       currency,
       rawTx: '0x' + serializedTx.toString('hex')
     });
-    assert.isTrue(sentTx.from === txData.from.toLowerCase());
-    assert.isTrue(sentTx.to === txData.to.toLowerCase());
-    expect(sentTx).to.have.property('transactionHash');
-    expect(sentTx).to.have.property('transactionIndex');
-    expect(sentTx).to.have.property('blockHash');
-    expect(sentTx).to.have.property('blockNumber');
-    expect(sentTx).to.have.property('gasUsed');
-    expect(sentTx).to.have.property('from');
-    expect(sentTx).to.have.property('to');
-    expect(sentTx).to.have.property('cumulativeGasUsed');
-    expect(sentTx).to.have.property('contractAddress');
-    expect(sentTx).to.have.property('logs');
-    expect(sentTx).to.have.property('status');
-    expect(sentTx).to.have.property('logsBloom');
+    expect(sentTx.length).to.equal(66);
   });
 
 
