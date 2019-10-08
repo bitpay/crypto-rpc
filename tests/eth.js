@@ -89,7 +89,7 @@ describe('ETH Tests', function() {
   it('should estimate gas price', async () => {
     const gasPrice = await ethRPC.estimateGasPrice();
     assert.isDefined(gasPrice);
-    expect(gasPrice).to.be.eq(2 * 10e9);
+    expect(gasPrice).to.be.eq(20300000000);
   });
 
   it('should be able to get a block hash', async () => {
