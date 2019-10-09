@@ -7,14 +7,14 @@ const config = {
   currency: 'XRP',
   host: 'rippled',
   protocol: 'ws',
-  port: '6006',
+  rpcPort: '6006',
   address: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
   currencyConfig: {
     sendTo: 'rDFrG4CgPFMnQFJBmZH7oqTjLuiB3HS4eu',
     privateKey:
       '117ACF0C71DE079057F4D125948D2F1F12CB3F47C234E43438E1E44C93A9C583',
     rawTx:
-      ''
+      '12000322800000002400000017201B0086955368400000000000000C732102F89EAEC7667B30F33D0687BBA86C3FE2A08CCA40A9186C5BDE2DAA6FA97A37D874473045022100BDE09A1F6670403F341C21A77CF35BA47E45CDE974096E1AA5FC39811D8269E702203D60291B9A27F1DCABA9CF5DED307B4F23223E0B6F156991DB601DFB9C41CE1C770A726970706C652E636F6D81145E7B112523F68D2F5E879DB4EAC51C6698A69304'
   }
 };
 
@@ -145,10 +145,10 @@ describe('XRP Tests', function() {
       secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb'
     });
     await emitPromise;
-    assert(!outputArray[1].txid);
-    expect(outputArray[1].error).to.equal(emitResults[0].error);
     expect(emitResults.length).to.equal(1);
     assert(emitResults[0].error);
+    assert(!outputArray[1].txid);
+    expect(outputArray[1].error).to.equal(emitResults[0].error);
   });
 
   it('should be able to get a transaction', async () => {
@@ -164,6 +164,21 @@ describe('XRP Tests', function() {
     expect(tx.hash).to.equal(txid);
     assert(tx);
     assert(typeof tx === 'object');
+  });
+
+  it('should be able to decode a raw transaction', async () => {
+    const { rawTx } = config.currencyConfig;
+    assert(rawTx);
+    const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
+    expect(decoded).to.have.property('Fee');
+    expect(decoded).to.have.property('Sequence');
+    expect(decoded).to.have.property('Account');
+    expect(decoded).to.have.property('TxnSignature');
+    expect(decoded).to.have.property('SigningPubKey');
+    expect(decoded).to.have.property('Sequence');
+    expect(decoded).to.have.property('TransactionType');
+    expect(decoded.TransactionType).to.deep.equal('AccountSet');
+    assert(decoded);
   });
 
   it('should get the tip', async () => {
