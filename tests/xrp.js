@@ -18,7 +18,7 @@ const config = {
   }
 };
 
-describe('XRP Tests', function() {
+describe.skip('XRP Tests', function() {
   let currency = 'XRP';
   let blockHash = '';
   let txid = '';
