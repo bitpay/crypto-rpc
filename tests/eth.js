@@ -68,6 +68,31 @@ describe('ETH Tests', function() {
     expect(sentTx.length).to.equal(66);
   });
 
+  it('should catch failed send raw transaction', async () => {
+    try {
+      // construct the transaction data
+      const txData = {
+        nonce: util.toHex(null),
+        gasLimit: util.toHex(25000),
+        gasPrice: util.toHex(2.1*10e9),
+        to: config.currencyConfig.sendTo,
+        from: config.account,
+        value: util.toHex(util.toWei('123', 'wei'))
+      };
+
+      const rawTx = new EthereumTx(txData);
+      const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
+      rawTx.sign(privateKey);
+      const serializedTx = rawTx.serialize();
+      await rpcs.sendRawTransaction({
+        currency,
+        rawTx: '0x' + serializedTx.toString('hex')
+      });
+    } catch(err) {
+      expect(err.message).to.include('Transaction nonce is too low');
+    }
+  });
+
 
   it('should estimate gas price', async () => {
     const gasPrice = await ethRPC.estimateGasPrice();
