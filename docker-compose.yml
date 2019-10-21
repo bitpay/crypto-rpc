@@ -9,7 +9,7 @@ services:
     depends_on:
       - bitcoin
       - bitcoin-cash
-      - ganache
+      - parity 
       - rippled
 
   bitcoin:
@@ -53,11 +53,20 @@ services:
       -rpcpassword=local321
     restart: always
 
-  ganache:
-    build:
-      context: .
-      dockerfile: ./tests/docker/ganache.Dockerfile
-
+  parity:
+    image: parity/parity:v2.4.6
+    ports:
+      - "8545:8545"
+    volumes:
+      - ./tests/pw:/data/pw
+    command:
+      --config=dev
+      --jsonrpc-interface=0.0.0.0
+      --jsonrpc-apis=all
+      --network-id=5555
+      --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
+      --password /data/pw
+      
   rippled:
     build:
       context: .
