@@ -33,7 +33,7 @@ services:
 
 
   bitcoin-cash:
-    image: zquestz/bitcoin-abc:0.19.5
+    image: zquestz/bitcoin-abc:0.20.5
     command:
       bitcoind
       -printtoconsole
@@ -41,7 +41,6 @@ services:
       -txindex=1
       -listen=1
       -server=1
-      -irc=0
       -dnsseed=0
       -upnp=0
       -port=9332
