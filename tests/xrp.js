@@ -38,7 +38,7 @@ describe('XRP Tests', function() {
 
   it('should estimate fee', async () => {
     let fee = await xrpRPC.estimateFee();
-    assert.isTrue(fee === '0.000012');
+    assert.isTrue(fee === '12');
   });
 
   it('should get block', async () => {
