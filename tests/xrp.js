@@ -214,4 +214,13 @@ describe('XRP Tests', function() {
     const isValid = await rpcs.validateAddress({ currency, address: 'NOTANADDRESS' });
     assert(isValid === false);
   });
+
+  it('should disconnect from rpc when idle', async () => {
+    const rpc = new CryptoRpc(config).get(currency);
+    rpc.connectionIdleMs = 250;
+    await rpc.getTip();
+    assert(rpc.connectionHandled === true);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    assert(rpc.connectionHandled === false);
+  });
 });
