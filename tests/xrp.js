@@ -216,8 +216,7 @@ describe('XRP Tests', function() {
   });
 
   it('should disconnect from rpc when idle', async () => {
-    const rpc = new CryptoRpc(config).get(currency);
-    rpc.connectionIdleMs = 250;
+    const rpc = new CryptoRpc({ ...config, connectionIdleMs: 250 }).get(currency);
     await rpc.getTip();
     assert(rpc.connectionHandled === true);
     await new Promise((resolve) => setTimeout(resolve, 300));
