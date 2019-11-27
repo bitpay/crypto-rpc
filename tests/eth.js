@@ -145,6 +145,21 @@ describe('ETH Tests', function() {
     assert.isTrue(util.isHex(txid));
   });
 
+  it('should be able to send a transaction and specify a custom nonce and gasPrice', async () => {
+    txid = await rpcs.unlockAndSendToAddress({
+      currency,
+      address: config.currencyConfig.sendTo,
+      amount: '10000',
+      passphrase: currencyConfig.unlockPassword,
+      gasPrice: 30000000000,
+      nonce: 25
+    });
+    let decodedParams = await rpcs.getTransaction({ txid });
+    expect(decodedParams.nonce).to.equal(25);
+    expect(decodedParams.gasPrice).to.equal('30000000000');
+    assert.isTrue(util.isHex(txid));
+  });
+
   it('should be able to send many transactions', async () => {
     const address = config.currencyConfig.sendTo;
     const amount = '1000';
