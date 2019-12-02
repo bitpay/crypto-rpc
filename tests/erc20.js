@@ -49,6 +49,21 @@ describe('ERC20 Tests', function() {
     assert(txid);
   });
 
+  it('should be able to send a transaction and specify a custom nonce and gasPrice', async () => {
+    txid = await rpcs.unlockAndSendToAddress({
+      currency,
+      address: config.currencyConfig.sendTo,
+      amount: '10000',
+      passphrase: currencyConfig.unlockPassword,
+      gasPrice: 30000000000,
+      nonce: 24
+    });
+    let decodedParams = await rpcs.getTransaction({ txid });
+    expect(decodedParams.nonce).to.equal(24);
+    expect(decodedParams.gasPrice).to.equal('30000000000');
+    assert.isTrue(util.isHex(txid));
+  });
+
   it('should be able to send a big transaction', async () => {
     txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: 1e23, passphrase: currencyConfig.unlockPassword });
     assert(txid);
