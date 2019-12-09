@@ -24,7 +24,7 @@
     "ripple-binary-codec": "0.2.4",
     "ripple-hashes": "0.3.4",
     "ripple-lib": "1.4.2",
-    "web3": "^1.2.3"
+    "web3": "^1.2.2"
   },
   "devDependencies": {
     "assert": "^1.4.1",
