@@ -15,7 +15,8 @@ const config = {
     '117ACF0C71DE079057F4D125948D2F1F12CB3F47C234E43438E1E44C93A9C583',
     rawTx:
     '12000322800000002400000017201B0086955368400000000000000C732102F89EAEC7667B30F33D0687BBA86C3FE2A08CCA40A9186C5BDE2DAA6FA97A37D874473045022100BDE09A1F6670403F341C21A77CF35BA47E45CDE974096E1AA5FC39811D8269E702203D60291B9A27F1DCABA9CF5DED307B4F23223E0B6F156991DB601DFB9C41CE1C770A726970706C652E636F6D81145E7B112523F68D2F5E879DB4EAC51C6698A69304'
-  }
+  },
+  connectionIdleMs: 250
 };
 
 describe('XRP Tests', function() {
@@ -213,5 +214,12 @@ describe('XRP Tests', function() {
   it('should not validate bad address', async () => {
     const isValid = await rpcs.validateAddress({ currency, address: 'NOTANADDRESS' });
     assert(isValid === false);
+  });
+
+  it('should disconnect from rpc when idle', async () => {
+    await rpcs.getTip({ currency });
+    assert(xrpRPC.connectionHandled === true, 'connection should be handled');
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    assert(xrpRPC.connectionHandled === false, 'connection should not be handled anymore');
   });
 });
