@@ -1,7 +1,9 @@
 const { CryptoRpc } = require('../');
 const {assert, expect} = require('chai');
 const mocha = require('mocha');
-const {describe, it, before} = mocha;
+const sinon = require('sinon');
+const {describe, it, before, afterEach} = mocha;
+const sandbox = sinon.createSandbox();
 const config = {
   chain: 'XRP',
   currency: 'XRP',
@@ -31,6 +33,10 @@ describe('XRP Tests', function() {
     rpcs = new CryptoRpc(config);
     xrpRPC = rpcs.get(currency);
   });
+
+  afterEach(() => {
+    sandbox.restore();
+  }); 
 
   it('should be able to get a block hash', async () => {
     blockHash = await rpcs.getBestBlockHash({ currency });
@@ -73,7 +79,6 @@ describe('XRP Tests', function() {
     expect(txid).to.have.lengthOf(64);
     assert(txid);
   });
-
 
   it('should be able to send many transactions', async () => {
     let payToArray = [];
@@ -221,5 +226,49 @@ describe('XRP Tests', function() {
     assert(xrpRPC.connectionHandled === true, 'connection should be handled');
     await new Promise((resolve) => setTimeout(resolve, 300));
     assert(xrpRPC.connectionHandled === false, 'connection should not be handled anymore');
+  });
+
+  it('should fail on poll for tx tesSUCCESS if sumbit tx results in terQUEUED and stays terQUEUED throughout', async () => {
+    sandbox.stub(xrpRPC, 'asyncCall').withArgs('submit', [config.currencyConfig.rawTx]).resolves({
+      resultCode: 'terQUEUED',
+      resultMessage: 'Held until escalated fee drops',
+      tx_json: {
+        hash: 'fake'
+      }
+    });
+    sandbox.stub(xrpRPC, 'asyncRequest').withArgs('tx', { transaction: 'fake' }).resolves({
+      meta: {
+        TransactionResult: 'terQUEUED'
+      }
+    });
+    rpcs.rpcs.XRP.emitter.on('error', () => { }); // ignore emitted errors
+    try {
+      await rpcs.sendRawTransaction({ rawTx: config.currencyConfig.rawTx, pollCountMax: 4, pollIntervalMs: 20 });
+      throw new Error('should not pass');
+    } catch (error) {
+      expect(error).to.exist;
+      expect(error.message).to.equal('Failed to submit transaction: Held until escalated fee drops');
+    }
+  });
+
+  it('should succeed on poll for tx tesSUCCESS if submit tx results in terQUEUED then succeeds within timeout', async () => {
+    sandbox.stub(xrpRPC, 'asyncCall').withArgs('submit', [config.currencyConfig.rawTx]).resolves({
+      resultCode: 'terQUEUED',
+      resultMessage: 'Held until escalated fee drops',
+      tx_json: {
+        hash: 'fake'
+      }
+    });
+    const stubAsyncRequest = sandbox.stub(xrpRPC, 'asyncRequest');
+    stubAsyncRequest.withArgs('tx', { transaction: 'fake' }).resolves({
+      ledger_index: null,
+      meta: {
+        TransactionResult: 'tesSUCCESS'
+      }
+    });  
+    stubAsyncRequest.withArgs('ledger', { ledger_index: null }).resolves({
+      ledger_hash: 'ledger_fake'
+    });  
+    await rpcs.sendRawTransaction({ rawTx: config.currencyConfig.rawTx, pollCountMax: 4, pollIntervalMs: 20 });
   });
 });
