@@ -218,8 +218,12 @@ describe('XRP Tests', function() {
 
   it('should disconnect from rpc when idle', async () => {
     await rpcs.getTip({ currency });
-    assert(xrpRPC.connectionHandled === true, 'connection should be handled');
+    assert(xrpRPC.rpc.isConnected() === true, 'connection should be connected');
     await new Promise((resolve) => setTimeout(resolve, 300));
-    assert(xrpRPC.connectionHandled === false, 'connection should not be handled anymore');
+    assert(xrpRPC.rpc.isConnected() === false, 'connection should be disconnected');
+  });
+
+  it('should handle emitted connection errors from rpc with noop', async () => {
+    xrpRPC.rpc.emit('error', new Error('connection error xrp'));
   });
 });
