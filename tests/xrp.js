@@ -218,7 +218,7 @@ describe('XRP Tests', function() {
 
   it('should disconnect from rpc when idle', async () => {
     await rpcs.getTip({ currency });
-    assert(xrpRPC.rpc.isConnected() === true, 'connection should be connection');
+    assert(xrpRPC.rpc.isConnected() === true, 'connection should be connected');
     await new Promise((resolve) => setTimeout(resolve, 300));
     assert(xrpRPC.rpc.isConnected() === false, 'connection should be disconnected');
   });
