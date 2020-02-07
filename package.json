@@ -23,7 +23,7 @@
     "promptly": "0.2.0",
     "ripple-binary-codec": "0.2.4",
     "ripple-hashes": "0.3.4",
-    "ripple-lib": "1.6.2",
+    "ripple-lib": "^1.6.3",
     "web3": "1.2.4"
   },
   "devDependencies": {
