@@ -3,7 +3,7 @@ const assert = require('assert');
 const mocha = require('mocha');
 const sinon = require('sinon');
 const { expect } = require('chai');
-const { before, describe, it } = mocha;
+const { describe, it } = mocha;
 const config = {
   chain: 'BTC',
   host: 'bitcoin',
@@ -29,13 +29,15 @@ describe('BTC Tests', function() {
   const rpcs = new CryptoRpc(config, currencyConfig);
   const bitcoin = rpcs.get(currency);
 
-  before(async () => {
+  it('should determine if wallet is encrypted', async () => {
+    expect(await bitcoin.isWalletEncrypted()).to.eq(false);
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
+      await new Promise(resolve => setTimeout(resolve, 5000));
     } catch (e) {
       console.warn('wallet already encrypted');
     }
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    expect(await bitcoin.isWalletEncrypted()).to.eq(true);
     await bitcoin.asyncCall('generate', [101]);
   });
 
