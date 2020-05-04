@@ -46,4 +46,24 @@ contract('SendToMany', (accounts) => {
     }
   });
 
+
+  it('should send many different tokens', async() => {
+    const batcher = await SendToMany.deployed();
+    const token = await CryptoErc20.deployed();
+    const receivers = accounts.slice(1);
+    const amounts = new Array(receivers.length).fill(1e18.toString());
+    const sum = (1e18*receivers.length).toString();
+    const balanceBefore = await token.balanceOf(accounts[0]);
+    console.log('Token balance before', balanceBefore.toString());
+    await token.approve(batcher.address, sum);
+    const tokens = new Array(receivers.length).fill(token.address)
+    await batcher.batchSend(receivers, amounts, tokens);
+    const balanceAfter = await token.balanceOf(accounts[0]);
+    console.log('Token balance after', balanceAfter.toString());
+    for(const receiver of receivers) {
+      const balance = await token.balanceOf(receiver);
+      console.log('Token Balance', receiver, ':',  balance.toString());
+    }
+  });
+
 });

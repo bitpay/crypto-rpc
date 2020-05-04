@@ -4,7 +4,7 @@ import "./IERC20.sol";
 contract SendToMany {
   address owner;
 
-  constructor() {
+  constructor() public {
     owner = msg.sender;
   }
 
@@ -29,6 +29,23 @@ contract SendToMany {
       require((address(this).balance + msg.value) >= sum, "ETH balance too low for this batch");
       for(i = 0; i < addresses.length; i++) {
         addresses[i].transfer(amounts[i]);
+      }
+    }
+  }
+
+
+  function batchSend(address[] addresses, uint[] amounts, address[] tokenContracts) public payable isOwner {
+    require(addresses.length == amounts.length);
+    require(addresses.length == tokenContracts.length);
+    for(uint i = 0; i < addresses.length; i++) {
+      address tokenContract = tokenContracts[i];
+      address recipient = addresses[i];
+      uint amount = amounts[i];
+      if(tokenContract != 0x0) {
+        IERC20 token = IERC20(tokenContract);
+        require(token.transferFrom(msg.sender, recipient, amount), "token transfer failed");
+      } else {
+        recipient.transfer(amount);
       }
     }
   }
