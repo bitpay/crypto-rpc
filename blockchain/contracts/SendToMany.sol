@@ -45,7 +45,7 @@ contract SendToMany {
         IERC20 token = IERC20(tokenContract);
         require(token.transferFrom(msg.sender, recipient, amount), "token transfer failed");
       } else {
-        require(msg.value + address(this).balance > amount, "must send enough ETH");
+        require(msg.value + address(this).balance >= amount, "must send enough ETH");
         recipient.transfer(amount);
       }
     }
