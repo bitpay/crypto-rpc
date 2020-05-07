@@ -28,7 +28,7 @@ contract SendToMany {
         require(token.transferFrom(msg.sender, addresses[i], amounts[i]), "token transfer failed");
       }
     } else {
-      require((address(this).balance + msg.value) >= sum, "ETH balance too low for this batch");
+      require((msg.value) >= sum, "must send enough ETH");
       for(i = 0; i < addresses.length; i++) {
         addresses[i].transfer(amounts[i]);
       }
@@ -65,7 +65,7 @@ contract SendToMany {
         IERC20 token = IERC20(tokenContract);
         require(token.transferFrom(msg.sender, recipient, amount), "token transfer failed");
       } else {
-        require(msg.value + address(this).balance >= amount, "must send enough ETH");
+        require(msg.value >= amount, "must send enough ETH");
         recipient.transfer(amount);
       }
     }
