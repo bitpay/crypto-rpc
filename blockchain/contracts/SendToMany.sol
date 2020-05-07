@@ -57,6 +57,7 @@ contract SendToMany {
   function batchSend(address[] memory addresses, uint[] memory amounts, address[] memory tokenContracts) public payable {
     require(addresses.length == amounts.length, "must provide same length addresses and amounts");
     require(addresses.length == tokenContracts.length, "must provide same length addresses and tokenContracts");
+    uint ethSum = 0;
     for(uint i = 0; i < addresses.length; i++) {
       address tokenContract = tokenContracts[i];
       address recipient = addresses[i];
@@ -65,7 +66,8 @@ contract SendToMany {
         IERC20 token = IERC20(tokenContract);
         require(token.transferFrom(msg.sender, recipient, amount), "token transfer failed");
       } else {
-        require(msg.value >= amount, "must send enough ETH");
+        ethSum += amount;
+        require(msg.value >= ethSum, "must send enough ETH");
         recipient.transfer(amount);
       }
     }
