@@ -115,5 +115,19 @@ contract('SendToMany', (accounts) => {
       console.log("Validate threw");
       assert(e, "Validate threw");
     }
+
+    let threw = false;
+    try {
+      await token.approve(batcher.address, sum);
+      await batcher.validateBatch(receivers, amounts, tokens, 1e18.toString());
+      await batcher.validateBatch(receivers, amounts, tokens, 1e18.toString());
+      await batcher.validateBatch.call(receivers, amounts, tokens, 1e18.toString());
+    } catch(e) {
+      threw = true;
+      console.log(e);
+      console.log("Validate (send) threw");
+      assert(e, "Validate threw");
+    }
+    assert(threw === false, "validateBatch should not throw");
   });
 });
