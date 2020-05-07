@@ -24,7 +24,7 @@ contract SendToMany {
     if(tokenContract != 0x0) {
       IERC20 token = IERC20(tokenContract);
       require(token.allowance(msg.sender, address(this)) >= sum, "This contract is not allowed enough funds for this batch");
-      for(uint i = 0; i < addresses.length; i++) {
+      for(i = 0; i < addresses.length; i++) {
         require(token.transferFrom(msg.sender, addresses[i], amounts[i]), "token transfer failed");
       }
     } else {
