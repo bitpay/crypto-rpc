@@ -9,7 +9,7 @@ contract SendToMany {
   }
 
   modifier isOwner() {
-    require(msg.sender == owner);
+    require(msg.sender == owner, "must be the owner address");
     _;
   }
 
@@ -34,9 +34,9 @@ contract SendToMany {
   }
 
 
-  function batchSend(address[] addresses, uint[] amounts, address[] tokenContracts) public payable isOwner {
-    require(addresses.length == amounts.length);
-    require(addresses.length == tokenContracts.length);
+  function batchSend(address[] addresses, uint[] amounts, address[] tokenContracts) public payable {
+    require(addresses.length == amounts.length, "must provide same length addresses and amounts");
+    require(addresses.length == tokenContracts.length, "must provide same length addresses and tokenContracts");
     for(uint i = 0; i < addresses.length; i++) {
       address tokenContract = tokenContracts[i];
       address recipient = addresses[i];
@@ -45,6 +45,7 @@ contract SendToMany {
         IERC20 token = IERC20(tokenContract);
         require(token.transferFrom(msg.sender, recipient, amount), "token transfer failed");
       } else {
+        require(msg.value + address(this).balance > amount, "must send enough ETH");
         recipient.transfer(amount);
       }
     }
