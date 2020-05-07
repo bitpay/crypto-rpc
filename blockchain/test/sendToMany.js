@@ -79,4 +79,41 @@ contract('SendToMany', (accounts) => {
       }
     }
   });
+
+
+  it('should validate a batch', async() => {
+    const batcher = await SendToMany.deployed();
+    const token = await CryptoErc20.deployed();
+    const balances = await Promise.all(receivers.map( r => token.balanceOf(r)));
+    const amounts = new Array(receivers.length).fill(1e18.toString());
+    const sum = (1e18*receivers.length).toString();
+    await token.approve(batcher.address, sum);
+    const tokens = new Array(receivers.length).fill(token.address)
+
+    //send one ETH
+    tokens[0] = ZERO_ADDR;
+    balances[0] = await web3.eth.getBalance(receivers[0]);
+
+    const isValid = await batcher.validateBatch.call(receivers, amounts, tokens, 1e18.toString());
+    assert(isValid, "Validate should return true");
+    console.log("Validate returned true");
+
+    try {
+      const isNotValid = await batcher.validateBatch.call(receivers, amounts, tokens, 1e17.toString());
+      assert(true == false, "Validate should have thrown");
+    } catch(e) {
+      console.log("Validate threw");
+      assert(e, "Validate threw");
+    }
+
+
+    try {
+      await token.approve(batcher.address, 0);
+      const isNotValid = await batcher.validateBatch.call(receivers, amounts, tokens, 1e18.toString());
+      assert(true == false, "Validate should have thrown");
+    } catch(e) {
+      console.log("Validate threw");
+      assert(e, "Validate threw");
+    }
+  });
 });
