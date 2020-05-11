@@ -94,12 +94,12 @@ contract('SendToMany', (accounts) => {
     tokens[0] = ZERO_ADDR;
     balances[0] = await web3.eth.getBalance(receivers[0]);
 
-    const isValid = await batcher.validateBatch.call(receivers, amounts, tokens, 1e18.toString());
+    const isValid = await batcher.validateBatch.call(receivers, amounts, tokens, 1e18.toString(), accounts[0]);
     assert(isValid, "Validate should return true");
     console.log("Validate returned true");
 
     try {
-      const isNotValid = await batcher.validateBatch.call(receivers, amounts, tokens, 1e17.toString());
+      const isNotValid = await batcher.validateBatch.call(receivers, amounts, tokens, 1e17.toString(), accounts[0]);
       assert(true == false, "Validate should have thrown");
     } catch(e) {
       console.log("Validate threw");
@@ -109,7 +109,7 @@ contract('SendToMany', (accounts) => {
 
     try {
       await token.approve(batcher.address, 0);
-      const isNotValid = await batcher.validateBatch.call(receivers, amounts, tokens, 1e18.toString());
+      const isNotValid = await batcher.validateBatch.call(receivers, amounts, tokens, 1e18.toString(), accounts[0]);
       assert(true == false, "Validate should have thrown");
     } catch(e) {
       console.log("Validate threw");
@@ -119,9 +119,9 @@ contract('SendToMany', (accounts) => {
     let threw = false;
     try {
       await token.approve(batcher.address, sum);
-      await batcher.validateBatch(receivers, amounts, tokens, 1e18.toString());
-      await batcher.validateBatch(receivers, amounts, tokens, 1e18.toString());
-      await batcher.validateBatch.call(receivers, amounts, tokens, 1e18.toString());
+      await batcher.validateBatch(receivers, amounts, tokens, 1e18.toString(), accounts[0]);
+      await batcher.validateBatch(receivers, amounts, tokens, 1e18.toString(), accounts[0]);
+      await batcher.validateBatch.call(receivers, amounts, tokens, 1e18.toString(), accounts[0]);
     } catch(e) {
       threw = true;
       console.log(e);

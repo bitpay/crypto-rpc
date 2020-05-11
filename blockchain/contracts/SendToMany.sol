@@ -36,7 +36,7 @@ contract SendToMany {
   }
 
 
-  function validateBatch(address[] memory addresses, uint[] memory amounts, address[] memory tokenContracts, uint sentValue) public view returns(bool) {
+  function validateBatch(address[] memory addresses, uint[] memory amounts, address[] memory tokenContracts, uint sentValue, address sender) public view returns(bool) {
     require(addresses.length == amounts.length, "must provide same length addresses and amounts");
     require(addresses.length == tokenContracts.length, "must provide same length addresses and tokenContracts");
     for(uint i = 0; i < addresses.length; i++) {
@@ -46,7 +46,7 @@ contract SendToMany {
       uint sum = tokenSums[tokenContract];
       if(tokenContract != 0x0) {
         IERC20 token = IERC20(tokenContract);
-        require(token.allowance(msg.sender, address(this)) >= sum, "This contract is not allowed enough funds for this batch");
+        require(token.allowance(sender, address(this)) >= sum, "This contract is not allowed enough funds for this batch");
       } else {
         require(sentValue >= sum, "must send enough ETH");
       }
