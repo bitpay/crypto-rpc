@@ -31,9 +31,8 @@ services:
       -rpcpassword=local321
     restart: always
 
-
   bitcoin-cash:
-    image: zquestz/bitcoin-abc:0.21.5
+    image: zquestz/bitcoin-abc:0.21.7
     command:
       bitcoind
       -printtoconsole
@@ -46,7 +45,8 @@ services:
       -port=9332
       -rpcport=9333
       -rpcallowip=172.0.0.0/8
-      -rpcbind=0.0.0.0
+      -rpcbind="bitcoin-cash"
+      -deprecatedrpc=generate
       -discover=0
       -rpcuser=cryptorpc
       -rpcpassword=local321
