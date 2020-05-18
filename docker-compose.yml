@@ -33,7 +33,7 @@ services:
 
 
   bitcoin-cash:
-    image: zquestz/bitcoin-abc:0.20.5
+    image: zquestz/bitcoin-abc:0.21.5
     command:
       bitcoind
       -printtoconsole
