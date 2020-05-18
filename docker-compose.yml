@@ -49,9 +49,7 @@ services:
       -upnp=0
       -port=9332
       -rpcport=9333
-      -rpcallowip=172.0.0.0/8
-      -rpcallowip=127.0.0.0
-      -rpcbind=127.0.0.1
+      -rpcallowip="172.0.0.0/8"
       -rpcbind="bitcoin-cash"
       -deprecatedrpc=generate
       -discover=0
