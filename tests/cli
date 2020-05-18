@@ -43,9 +43,9 @@
     bin/send \
     --user cryptorpc \
     --password local321 \
-    --port 8333 \
+    --port 9333 \
     --host localhost \
-    --currency BTC \
+    --currency BCH \
     --address 2NGFWyW3LBPr6StDuDSNFzQF3Jouuup1rua \
     --amount 1000
     )"

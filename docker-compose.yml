@@ -14,6 +14,8 @@ services:
 
   bitcoin:
     image: ruimarinho/bitcoin-core:0.16
+    ports:
+      - "8333:8333"
     command:
       -printtoconsole
       -regtest=1
@@ -34,6 +36,8 @@ services:
 
   bitcoin-cash:
     image: zquestz/bitcoin-abc:0.21.7
+    ports:
+      - "9333:9333"
     command:
       bitcoind
       -printtoconsole
