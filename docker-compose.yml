@@ -14,6 +14,8 @@ services:
 
   bitcoin:
     image: ruimarinho/bitcoin-core:0.16
+    ports:
+      - "8333:8333"
     command:
       -printtoconsole
       -regtest=1
@@ -31,8 +33,11 @@ services:
       -rpcpassword=local321
     restart: always
 
+
   bitcoin-cash:
     image: zquestz/bitcoin-abc:0.21.7
+    ports:
+      - "9333:9333"
     command:
       bitcoind
       -printtoconsole
@@ -44,7 +49,7 @@ services:
       -upnp=0
       -port=9332
       -rpcport=9333
-      -rpcallowip=172.0.0.0/8
+      -rpcallowip="172.0.0.0/8"
       -rpcbind="bitcoin-cash"
       -deprecatedrpc=generate
       -discover=0
