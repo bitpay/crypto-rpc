@@ -21,7 +21,7 @@ const config = {
 };
 
 describe('BCH Tests', function() {
-  this.timeout(10000);
+  this.timeout(20000);
   let txid = '';
   let blockHash = '';
   const currency = 'BCH';

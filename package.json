@@ -6,7 +6,6 @@
   "scripts": {
     "ci:test": "npm run lint && npm run truffle:compile && npm run truffle:migrate && npm run truffle:test && mocha --recursive ./tests",
     "test": "docker-compose down && docker-compose build && docker-compose run test_runner",
-    "test:bats": "tests/cli_runner",
     "lint": "./node_modules/.bin/eslint .",
     "truffle:compile": "cd blockchain/ && ../node_modules/.bin/truffle compile",
     "truffle:test": "cd blockchain/ && ../node_modules/.bin/truffle test",
@@ -28,7 +27,6 @@
   },
   "devDependencies": {
     "assert": "^1.4.1",
-    "bats": "^1.1.0",
     "chai": "^4.2.0",
     "eslint": "^5.16.0",
     "eslint-config-standard": "^12.0.0",
