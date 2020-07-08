@@ -93,11 +93,47 @@ describe('ETH Tests', function() {
     }
   });
 
+  it('should succeed send raw transaction already broadcast', async () => {
+
+    const txCount = await rpcs.getTransactionCount({
+      currency,
+      address: config.account
+    });
+
+    try {
+      // construct the transaction data
+      const txData = {
+        nonce: util.toHex(txCount),
+        gasLimit: util.toHex(25000),
+        gasPrice: util.toHex(2.1*10e9),
+        to: config.currencyConfig.sendTo,
+        from: config.account,
+        value: util.toHex(util.toWei('123', 'wei'))
+      };
+
+      const rawTx = new EthereumTx(txData);
+      const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
+      rawTx.sign(privateKey);
+      const serializedTx = rawTx.serialize();
+      const txSend1 = await rpcs.sendRawTransaction({
+        currency,
+        rawTx: '0x' + serializedTx.toString('hex')
+      });
+      const txSend2 = await rpcs.sendRawTransaction({
+        currency,
+        rawTx: '0x' + serializedTx.toString('hex')
+      });
+      expect(txSend1).to.equal(txSend2);
+    } catch(err) {
+      expect(err.toString()).to.not.exist();
+    }
+  });
+
 
   it('should estimate gas price', async () => {
     const gasPrice = await ethRPC.estimateGasPrice();
     assert.isDefined(gasPrice);
-    expect(gasPrice).to.be.eq(20300000000);
+    expect(gasPrice).to.be.eq(20600000000);
   });
 
   it('should be able to get a block hash', async () => {
