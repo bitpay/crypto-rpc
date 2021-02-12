@@ -22,7 +22,6 @@ const config = {
 
 describe('BCH Tests', function() {
   this.timeout(20000);
-  let txid = '';
   let blockHash = '';
   const currency = 'BCH';
   const { currencyConfig } = config;
@@ -81,10 +80,31 @@ describe('BCH Tests', function() {
   });
 
   it('should be able to send a transaction', async () => {
-    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
+    const txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
     expect(txid).to.have.lengthOf(64);
     assert(txid);
     await bitcoin.asyncCall('generate', [2]);
+
+    it('should get confirmations', async () => {
+      let confirmations = await rpcs.getConfirmations({ currency, txid });
+      assert(confirmations != undefined);
+      expect(confirmations).to.eq(2);
+    });
+
+
+    it('should be able to get a transaction', async () => {
+      const tx = await rpcs.getTransaction({ currency, txid });
+      expect(tx).to.have.property('txid');
+      expect(tx).to.have.property('hash');
+      expect(tx).to.have.property('version');
+      expect(tx).to.have.property('size');
+      expect(tx).to.have.property('locktime');
+      expect(tx).to.have.property('vin');
+      expect(tx).to.have.property('vout');
+      expect(tx).to.have.property('hex');
+      assert(tx);
+      assert(typeof tx === 'object');
+    });
   });
 
   it('should be able to send many transactions', async () => {
@@ -142,6 +162,8 @@ describe('BCH Tests', function() {
       let transactionObj = {address: emitData.address, amount: emitData.amount};
       expect(payToArray.includes(transactionObj));
     }
+
+    await bitcoin.asyncCall('generate', [10]);
   });
 
   it('should reject when one of many transactions fails', async () => {
@@ -173,19 +195,6 @@ describe('BCH Tests', function() {
     assert(emitResults[0].error);
   });
 
-  it('should be able to get a transaction', async () => {
-    const tx = await rpcs.getTransaction({ currency, txid });
-    expect(tx).to.have.property('txid');
-    expect(tx).to.have.property('hash');
-    expect(tx).to.have.property('version');
-    expect(tx).to.have.property('size');
-    expect(tx).to.have.property('locktime');
-    expect(tx).to.have.property('vin');
-    expect(tx).to.have.property('vout');
-    expect(tx).to.have.property('hex');
-    assert(tx);
-    assert(typeof tx === 'object');
-  });
 
   it('should be able to decode a raw transaction', async () => {
     const { rawTx } = config.currencyConfig;
@@ -206,12 +215,6 @@ describe('BCH Tests', function() {
     assert(tip != undefined);
     expect(tip).to.have.property('hash');
     expect(tip).to.have.property('height');
-  });
-
-  it('should get confirmations', async () => {
-    let confirmations = await rpcs.getConfirmations({ currency, txid });
-    assert(confirmations != undefined);
-    expect(confirmations).to.eq(2);
   });
 
   it('should validate address', async () => {
