@@ -10,7 +10,8 @@ services:
       - bitcoin
       - bitcoin-cash
       - parity
-      - rippled
+      - dogecoin
+      #- rippled
 
   bitcoin:
     image: ruimarinho/bitcoin-core:0.16
@@ -35,7 +36,7 @@ services:
 
 
   bitcoin-cash:
-    image: zquestz/bitcoin-abc:0.21.7
+    image: zquestz/bitcoin-cash-node
     ports:
       - "9333:9333"
     command:
@@ -57,6 +58,29 @@ services:
       -rpcpassword=local321
     restart: always
 
+  dogecoin:
+    image: casperstack/dogecoin
+    ports:
+      - "22555:22555"
+    command:
+      dogecoind
+      -printtoconsole
+      -regtest=1
+      -txindex=1
+      -listen=1
+      -server=1
+      -dnsseed=0
+      -upnp=0
+      -port=22555
+      -rpcport=22555
+      -rpcallowip="172.0.0.0/8"
+      -rpcbind="dogecoin"
+      -deprecatedrpc=generate
+      -discover=0
+      -rpcuser=cryptorpc
+      -rpcpassword=local321
+    restart: always
+
   parity:
     image: parity/parity:v2.4.6
     ports:
@@ -71,10 +95,10 @@ services:
       --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
       --password /data/pw
 
-  rippled:
-    build:
-      context: .
-      dockerfile: ./tests/docker/rippled.Dockerfile
+  #rippled:
+  #  build:
+  #    context: .
+  #    dockerfile: ./tests/docker/rippled.Dockerfile
 
 networks:
   default:
