@@ -11,7 +11,7 @@ services:
       - bitcoin-cash
       - parity
       - dogecoin
-      #- rippled
+      - rippled
 
   bitcoin:
     image: ruimarinho/bitcoin-core:0.16
