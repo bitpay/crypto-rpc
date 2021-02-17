@@ -46,10 +46,10 @@ describe('DOGE Tests', function() {
 
 
   it('should be able to estimateFee', async () => {
-    sinon.stub(bitcoin.rpc,'estimateFee').callsFake((cb) => {
-      cb(null, {result: 0.00001234});
+    sinon.stub(bitcoin.rpc,'estimateSmartFee').callsFake((nBlocks, cb) => {
+      cb(null, {result: {'feerate': 0.00001234, 'blocks': 2}});
     });
-    const fee = await bitcoin.estimateFee();
+    const fee = await bitcoin.estimateFee({nBlocks: 2});
     expect(fee).to.be.eq(1.234);
   });
 
