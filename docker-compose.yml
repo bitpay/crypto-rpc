@@ -36,7 +36,7 @@ services:
 
 
   bitcoin-cash:
-    image: zquestz/bitcoin-cash-node:22.1.0
+    image: zquestz/bitcoin-abc:0.21.7
     ports:
       - "9333:9333"
     command:
