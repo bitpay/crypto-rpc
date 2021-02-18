@@ -10,6 +10,7 @@ services:
       - bitcoin
       - bitcoin-cash
       - parity
+      - dogecoin
       - rippled
 
   bitcoin:
@@ -51,6 +52,29 @@ services:
       -rpcport=9333
       -rpcallowip="172.0.0.0/8"
       -rpcbind="bitcoin-cash"
+      -deprecatedrpc=generate
+      -discover=0
+      -rpcuser=cryptorpc
+      -rpcpassword=local321
+    restart: always
+
+  dogecoin:
+    image: casperstack/dogecoin
+    ports:
+      - "22555:22555"
+    command:
+      dogecoind
+      -printtoconsole
+      -regtest=1
+      -txindex=1
+      -listen=1
+      -server=1
+      -dnsseed=0
+      -upnp=0
+      -port=22555
+      -rpcport=22555
+      -rpcallowip="172.0.0.0/8"
+      -rpcbind="dogecoin"
       -deprecatedrpc=generate
       -discover=0
       -rpcuser=cryptorpc

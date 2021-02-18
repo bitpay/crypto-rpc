@@ -15,6 +15,14 @@ module.exports = {
     rpcUser: 'bitpaytest',
     rpcPass: 'local321'
   },
+  DogeNode: {
+    chain: 'DOGE',
+    host: 'localhost',
+    protocol: 'http',
+    rpcPort: '20004',
+    rpcUser: 'bitpaytest',
+    rpcPass: 'local321'
+  },
   XRPNode: {
     chain: 'XRP',
     host: 'localhost',
