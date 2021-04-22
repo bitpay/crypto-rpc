@@ -1,6 +1,8 @@
 from node:8
 WORKDIR /crypto-rpc
 COPY package.json .
+RUN mkdir ~/.ssh
+RUN ssh-keyscan github.com >> ~/.ssh/known_hosts
 RUN npm install
 ADD . .
 CMD ["npm", "run", "ci:test"]
