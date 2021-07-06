@@ -12,6 +12,7 @@ services:
       - parity
       - dogecoin
       - rippled
+      - litecoin
 
   bitcoin:
     image: ruimarinho/bitcoin-core:0.16
@@ -99,6 +100,27 @@ services:
     build:
       context: .
       dockerfile: ./tests/docker/rippled.Dockerfile
+
+  litecoin:
+    image: uphold/litecoin-core:0.16.3
+    ports:
+      - "10333:10333"
+    command:
+      -printtoconsole
+      -regtest=1
+      -txindex=1
+      -listen=1
+      -server=1
+      -irc=0
+      -dnsseed=0
+      -upnp=0
+      -port=10332
+      -rpcport=10333
+      -rpcallowip=172.0.0.0/8
+      -rpcbind="litecoin"
+      -rpcuser=cryptorpc
+      -rpcpassword=local321
+    restart: always
 
 networks:
   default:
