@@ -28,6 +28,12 @@ describe('BTC Tests', function() {
   const { currencyConfig } = config;
   const rpcs = new CryptoRpc(config, currencyConfig);
   const bitcoin = rpcs.get(currency);
+  let walletAddress = '';
+
+  before(async () => {
+    await bitcoin.asyncCall('createwallet', ['wallet0']);
+    walletAddress = await bitcoin.asyncCall('getnewaddress', []);
+  });
 
   it('should determine if wallet is encrypted', async () => {
     expect(await bitcoin.isWalletEncrypted()).to.eq(false);
@@ -38,7 +44,7 @@ describe('BTC Tests', function() {
       console.warn('wallet already encrypted');
     }
     expect(await bitcoin.isWalletEncrypted()).to.eq(true);
-    await bitcoin.asyncCall('generate', [101]);
+    await bitcoin.asyncCall('generatetoaddress', [101, walletAddress]);
   });
 
   it('walletUnlock should unlock wallet successfully', async () => {
@@ -212,6 +218,14 @@ describe('BTC Tests', function() {
     assert(typeof tx === 'object');
   });
 
+  it('should be able to get a transaction with detail', async() => {
+    const tx = await rpcs.getTransaction({ txid, detail: true });
+    expect(tx).to.exist;
+    expect(tx.txid).to.equal(txid);
+    expect(tx.vin[0].address).to.exist;
+    expect(tx.vin[0].value).to.exist;
+  });
+
   it('should be able to decode a raw transaction', async () => {
     const { rawTx } = config.currencyConfig;
     assert(rawTx);
@@ -238,7 +252,7 @@ describe('BTC Tests', function() {
     let confirmations = await rpcs.getConfirmations({ currency, txid });
     assert(confirmations != undefined);
     expect(confirmations).to.eq(0);
-    await bitcoin.asyncCall('generate', [1]);
+    await bitcoin.asyncCall('generatetoaddress', [1, walletAddress]);
     confirmations = await rpcs.getConfirmations({ currency, txid });
     expect(confirmations).to.eq(1);
   });
@@ -267,6 +281,18 @@ describe('BTC Tests', function() {
     await bitcoin.walletLock();
     expect(txid).to.have.lengthOf(64);
     assert(txid);
+  });
+
+  it('should get tx output info', async() => {
+    const output = await rpcs.getTxOutputInfo({ txid, vout: 0 });
+    expect(output.value).to.equal(0.0001);
+    expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
+  });
+
+  it('should get tx output info for bitcore', async() => {
+    const output = await rpcs.getTxOutputInfo({ txid, vout: 0, transformToBitcore: true });
+    expect(output.value).to.equal(0.0001);
+    expect(output.address).to.equal(config.currencyConfig.sendTo);
   });
 
 });
