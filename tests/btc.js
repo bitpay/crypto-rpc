@@ -257,6 +257,18 @@ describe('BTC Tests', function() {
     expect(confirmations).to.eq(1);
   });
 
+  it('should get tx output info', async() => {
+    const output = await rpcs.getTxOutputInfo({ txid, vout: 0 });
+    expect(output.value).to.equal(0.0001);
+    expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
+  });
+
+  it('should get tx output info for bitcore', async() => {
+    const output = await rpcs.getTxOutputInfo({ txid, vout: 0, transformToBitcore: true });
+    expect(output.value).to.equal(0.0001);
+    expect(output.address).to.equal(config.currencyConfig.sendTo);
+  });
+
   it('should validate address', async () => {
     const isValid = await rpcs.validateAddress({ currency, address: config.currencyConfig.sendTo });
     assert(isValid === true);
@@ -281,18 +293,6 @@ describe('BTC Tests', function() {
     await bitcoin.walletLock();
     expect(txid).to.have.lengthOf(64);
     assert(txid);
-  });
-
-  it('should get tx output info', async() => {
-    const output = await rpcs.getTxOutputInfo({ txid, vout: 0 });
-    expect(output.value).to.equal(0.0001);
-    expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
-  });
-
-  it('should get tx output info for bitcore', async() => {
-    const output = await rpcs.getTxOutputInfo({ txid, vout: 0, transformToBitcore: true });
-    expect(output.value).to.equal(0.0001);
-    expect(output.address).to.equal(config.currencyConfig.sendTo);
   });
 
 });
