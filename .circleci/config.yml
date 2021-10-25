@@ -14,7 +14,8 @@ jobs:
       - checkout
       - node/install
       - run:
-          command: cat /etc/resolv.conf
+          name: Add nameservers
+          command: sudo echo "nameserver 8.8.8.8" >> /etc/resolv.conf && sudo echo "nameserver 8.8.4.4" >> /etc/resolv.conf
       - run:
           name: Build service
           command: npm test
