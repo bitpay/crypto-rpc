@@ -14,5 +14,7 @@ jobs:
       - checkout
       - node/install
       - run:
+          command: cat /etc/resolv.conf
+      - run:
           name: Build service
           command: npm test
