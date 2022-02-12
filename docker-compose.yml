@@ -6,6 +6,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-test
+    volumes:
+      - my_data1:/root/.lnd
+      - my_data2:/root/.lnd2
+    networks:
+      default:
+        ipv4_address: 172.28.0.2
     depends_on:
       - bitcoin
       - bitcoin-cash
@@ -13,11 +19,16 @@ services:
       - dogecoin
       - rippled
       - litecoin
+      - lightning
+      - lightning2
 
   bitcoin:
     image: kajoseph/bitcoin-core:22.0
     ports:
       - "8333:8333"
+    networks:
+      default:
+        ipv4_address: 172.28.0.3
     command:
       -printtoconsole
       -regtest=1
@@ -33,6 +44,8 @@ services:
       -rpcuser=cryptorpc
       -rpcpassword=local321
       -fallbackfee=0.0002
+      -zmqpubrawblock=tcp://0.0.0.0:38332
+      -zmqpubrawtx=tcp://0.0.0.0:38333
     restart: always
 
 
@@ -40,6 +53,9 @@ services:
     image: zquestz/bitcoin-abc:0.21.7
     ports:
       - "9333:9333"
+    networks:
+      default:
+        ipv4_address: 172.28.0.4
     command:
       bitcoind
       -printtoconsole
@@ -63,6 +79,9 @@ services:
     image: casperstack/dogecoin
     ports:
       - "22555:22555"
+    networks:
+      default:
+        ipv4_address: 172.28.0.6
     command:
       dogecoind
       -printtoconsole
@@ -85,7 +104,10 @@ services:
   parity:
     image: parity/parity:v2.4.6
     ports:
-      - "8545:8545"
+      - "9545:8545"
+    networks:
+      default:
+        ipv4_address: 172.28.0.7
     volumes:
       - ./tests/pw:/data/pw
     command:
@@ -97,6 +119,9 @@ services:
       --password /data/pw
 
   rippled:
+    networks:
+      default:
+        ipv4_address: 172.28.0.8
     build:
       context: .
       dockerfile: ./tests/docker/rippled.Dockerfile
@@ -105,6 +130,9 @@ services:
     image: uphold/litecoin-core:0.16.3
     ports:
       - "10333:10333"
+    networks:
+      default:
+        ipv4_address: 172.28.0.9
     command:
       -printtoconsole
       -regtest=1
@@ -121,6 +149,59 @@ services:
       -rpcuser=cryptorpc
       -rpcpassword=local321
     restart: always
+
+  lightning:
+    image: lightninglabs/lnd:v0.14.1-beta
+    ports:
+      - "10009:10009"
+    volumes:
+      - my_data1:/root/.lnd
+    networks:
+      default:
+        ipv4_address: 172.28.0.5
+    command:
+      --tlsextraip=172.28.0.5
+      --tlsextradomain=lightning
+      --rpclisten=0.0.0.0:10009
+      --bitcoin.active
+      --bitcoin.regtest
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=bitcoin:8333
+      --bitcoind.rpcuser=cryptorpc
+      --bitcoind.rpcpass=local321
+      --bitcoind.zmqpubrawblock=tcp://bitcoin:38332
+      --bitcoind.zmqpubrawtx=tcp://bitcoin:38333
+    restart: always
+
+  lightning2:
+    image: sbhat96/lnd-v0.14.1-beta:latest
+    ports:
+      - "10010:10010"
+    volumes:
+      - my_data2:/root/.lnd2
+    networks:
+      default:
+        ipv4_address: 172.28.0.10
+    command:
+      --lnddir=/root/.lnd2
+      --tlsextraip=172.28.0.10
+      --tlsextradomain=lightning
+      --rpclisten=0.0.0.0:10010
+      --bitcoin.active
+      --bitcoin.regtest
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=bitcoin:8333
+      --bitcoind.rpcuser=cryptorpc
+      --bitcoind.rpcpass=local321
+      --bitcoind.zmqpubrawblock=tcp://bitcoin:38332
+      --bitcoind.zmqpubrawtx=tcp://bitcoin:38333
+    restart: always
+
+volumes:
+  my_data1:
+    driver: local
+  my_data2:
+    driver: local
 
 networks:
   default:
