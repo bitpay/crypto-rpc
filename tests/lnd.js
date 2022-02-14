@@ -7,13 +7,13 @@ const assert = require('assert');
 const { describe, it } = mocha;
 
 const config1 = {
-  chain: 'LBTC',
+  chain: 'LNBTC',
   rpcPort: '10009',
   host: '172.28.0.5',
   cert: ''
 };
 const config2 = {
-  chain: 'LBTC',
+  chain: 'LNBTC',
   rpcPort: '10010',
   host: '172.28.0.10',
   cert: ''
@@ -36,7 +36,7 @@ const btcConfig = {
 
 describe('LND Tests', function() {
   this.timeout(30000);
-  const currency = 'LBTC';
+  const currency = 'LNBTC';
   const passphrase = 'password';
   let lightning1;
   let lightning2;
@@ -148,14 +148,12 @@ describe('LND Tests', function() {
       socket: `${config2.host}:${config2.rpcPort}`
     });
     const pendingChannel = await lightning1.asyncCall('getPendingChannels');
-    console.log(pendingChannel);
     expect(pendingChannel.pending_channels.length).to.equal(1);
     expect(pendingChannel.pending_channels[0].capacity).to.equal(1000000);
     expect(pendingChannel.pending_channels[0].partner_public_key).to.equal(lightningPublicKey2);
     await bitcoin.asyncCall('generatetoaddress', [6, bitcoinWalletAddress]);
     await new Promise(resolve => setTimeout(resolve, 1000));
     const { channels } = await lightning1.asyncCall('getChannels', []);
-    console.log(channels);
     expect(channels.length).to.equal(1);
     expect(channels[0].is_active).to.equal(true);
     expect(channels[0].capacity).to.equal(1000000);
@@ -172,61 +170,22 @@ describe('LND Tests', function() {
   it('should be able to pay an invoice and detect payment', async () => {
     const invoiceListener = await lightning2.asyncCall('subscribeToInvoice', [{ id: invoice.id }]);
     invoiceListener.on('invoice_updated', (data) => {
-      console.log(data);
+      expect(data.tokens).to.equal(1000);
     });
     const payment = await lightning1.asyncCall('pay', [{
       request: invoice.request,
     }]);
-    console.log('Payment:', payment);
+    assert(payment.confirmed_at);
+    expect(payment.paths.length).to.equal(1); // should have used one hop over channel
+    expect(payment.mtokens).to.equal('1000000'); // total channel capacity
+    expect(payment.tokens).to.equal(1000); // amount invoice was paid for
   });
 
   it('should be able to get past payments', async () => {
     await bitcoin.asyncCall('generatetoaddress', [6, bitcoinWalletAddress]);
     await new Promise(resolve => setTimeout(resolve, 1000));
     const payments = await lightning1.asyncCall('getPayment', [{ id: invoice.id }]);
-    console.log(payments);
+    expect(payments.failed).to.not.exist;
+    expect(payments.payment.tokens).to.equal(1000);
   });
-
-  it('should be able to get a balance', async () => {
-  });
-
-  it('should be able to send a transaction', async () => {
-  });
-
-  it('should be able to send many transactions', async () => {
-  });
-
-  it('should reject when one of many transactions fails', async () => {
-  });
-
-  it('should be able to get a transaction', async () => {
-  });
-
-  it('should be able to get a transaction with detail', async() => {
-  });
-
-  it('should be able to decode a raw transaction', async () => {
-  });
-
-  it('should get the tip', async () => {
-  });
-
-  it('should get confirmations', async () => {
-  });
-
-  it('should get tx output info', async() => {
-  });
-
-  it('should get tx output info for bitcore', async() => {
-  });
-
-  it('should validate address', async () => {
-  });
-
-  it('should not validate bad address', async () => {
-  });
-
-  it('should be able to send a batched transaction', async() => {
-  });
-
 });
