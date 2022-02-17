@@ -8,13 +8,13 @@ const { describe, it } = mocha;
 
 const config1 = {
   chain: 'LNBTC',
-  rpcPort: '10009',
+  rpcPort: '11009',
   host: '172.28.0.5',
   cert: ''
 };
 const config2 = {
   chain: 'LNBTC',
-  rpcPort: '10010',
+  rpcPort: '11010',
   host: '172.28.0.10',
   cert: ''
 };

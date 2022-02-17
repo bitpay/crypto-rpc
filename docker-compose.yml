@@ -153,7 +153,7 @@ services:
   lightning:
     image: lightninglabs/lnd:v0.14.1-beta
     ports:
-      - "10009:10009"
+      - "11009:11009"
     volumes:
       - my_data1:/root/.lnd
     networks:
@@ -162,7 +162,7 @@ services:
     command:
       --tlsextraip=172.28.0.5
       --tlsextradomain=lightning
-      --rpclisten=0.0.0.0:10009
+      --rpclisten=0.0.0.0:11009
       --bitcoin.active
       --bitcoin.regtest
       --bitcoin.node=bitcoind
@@ -176,7 +176,7 @@ services:
   lightning2:
     image: sbhat96/lnd-v0.14.1-beta:latest
     ports:
-      - "10010:10010"
+      - "11010:11010"
     volumes:
       - my_data2:/root/.lnd2
     networks:
@@ -186,7 +186,7 @@ services:
       --lnddir=/root/.lnd2
       --tlsextraip=172.28.0.10
       --tlsextradomain=lightning
-      --rpclisten=0.0.0.0:10010
+      --rpclisten=0.0.0.0:11010
       --bitcoin.active
       --bitcoin.regtest
       --bitcoin.node=bitcoind
