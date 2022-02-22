@@ -88,6 +88,7 @@ describe('ETH Tests', function() {
         currency,
         rawTx: '0x' + serializedTx.toString('hex')
       });
+      throw new Error('should have thrown');
     } catch(err) {
       expect(err.message).to.include('Transaction nonce is too low');
     }
@@ -100,33 +101,29 @@ describe('ETH Tests', function() {
       address: config.account
     });
 
-    try {
-      // construct the transaction data
-      const txData = {
-        nonce: util.toHex(txCount),
-        gasLimit: util.toHex(25000),
-        gasPrice: util.toHex(2.1*10e9),
-        to: config.currencyConfig.sendTo,
-        from: config.account,
-        value: util.toHex(util.toWei('123', 'wei'))
-      };
+    // construct the transaction data
+    const txData = {
+      nonce: util.toHex(txCount),
+      gasLimit: util.toHex(25000),
+      gasPrice: util.toHex(2.1*10e9),
+      to: config.currencyConfig.sendTo,
+      from: config.account,
+      value: util.toHex(util.toWei('123', 'wei'))
+    };
 
-      const rawTx = new EthereumTx(txData);
-      const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
-      rawTx.sign(privateKey);
-      const serializedTx = rawTx.serialize();
-      const txSend1 = await rpcs.sendRawTransaction({
-        currency,
-        rawTx: '0x' + serializedTx.toString('hex')
-      });
-      const txSend2 = await rpcs.sendRawTransaction({
-        currency,
-        rawTx: '0x' + serializedTx.toString('hex')
-      });
-      expect(txSend1).to.equal(txSend2);
-    } catch(err) {
-      expect(err.toString()).to.not.exist();
-    }
+    const rawTx = new EthereumTx(txData);
+    const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
+    rawTx.sign(privateKey);
+    const serializedTx = rawTx.serialize();
+    const txSend1 = await rpcs.sendRawTransaction({
+      currency,
+      rawTx: '0x' + serializedTx.toString('hex')
+    });
+    const txSend2 = await rpcs.sendRawTransaction({
+      currency,
+      rawTx: '0x' + serializedTx.toString('hex')
+    });
+    expect(txSend1).to.equal(txSend2);
   });
 
 
@@ -286,6 +283,7 @@ describe('ETH Tests', function() {
   it('should not get confirmations with invalid txid', async () => {
     try {
       await rpcs.getConfirmations({ currency, txid: 'wrongtxid' });
+      throw new Error('should have thrown');
     } catch (err) {
       assert.isDefined(err);
     }
