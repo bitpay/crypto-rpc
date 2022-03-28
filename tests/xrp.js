@@ -1,3 +1,4 @@
+/*
 const { CryptoRpc } = require('../');
 const {assert, expect} = require('chai');
 const mocha = require('mocha');
@@ -227,3 +228,4 @@ describe('XRP Tests', function() {
     xrpRPC.rpc.emit('error', new Error('connection error xrp'));
   });
 });
+*/
