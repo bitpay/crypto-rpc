@@ -21,6 +21,7 @@ services:
       - litecoin
       - lightning
       - lightning2
+      - ganache
 
   bitcoin:
     image: kajoseph/bitcoin-core:22.0
@@ -117,6 +118,19 @@ services:
       --network-id=5555
       --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
       --password /data/pw
+
+  ganache:
+    image: trufflesuite/ganache-cli:v6.12.2
+    ports:
+      - "10545:8545"
+    networks:
+      default:
+        ipv4_address: 172.28.0.11
+    command:
+      --mnemonic "dose youth patient boring disagree tuna random tower tornado version violin around"
+      -b 20
+      -g 100000000000
+      -p 8545
 
   rippled:
     networks:
