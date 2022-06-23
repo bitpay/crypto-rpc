@@ -127,9 +127,9 @@ services:
       default:
         ipv4_address: 172.28.0.11
     command:
-      --mnemonic "dose youth patient boring disagree tuna random tower tornado version violin around"
-      -b 20
-      -g 100000000000
+      -m "dose youth patient boring disagree tuna random tower tornado version violin around"
+      -b 2
+      -g 20000000000
       -p 8545
 
   rippled:

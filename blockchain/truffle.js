@@ -46,8 +46,14 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
-    development: {
+    development_parity: {
       host: 'parity',     // Localhost (default: none)
+      port: 8545,            // Standard Ethereum port (default: none)
+      gas: 4700000,        // Ropsten has a lower block limit than mainnet
+      network_id: '*'       // Any network (default: none)
+    },
+    development_matic: {
+      host: 'ganache',     // Localhost (default: none)
       port: 8545,            // Standard Ethereum port (default: none)
       gas: 4700000,        // Ropsten has a lower block limit than mainnet
       network_id: '*'       // Any network (default: none)
