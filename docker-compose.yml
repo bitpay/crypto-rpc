@@ -15,14 +15,13 @@ services:
     depends_on:
       - bitcoin
       - bitcoin-cash
-      - parity
       - dogecoin
       - rippled
       - litecoin
       - lightning
       - lightning2
+      - geth
       - ganache
-
   bitcoin:
     image: kajoseph/bitcoin-core:22.0
     ports:
@@ -102,22 +101,30 @@ services:
       -rpcpassword=local321
     restart: always
 
-  parity:
-    image: parity/parity:v2.4.6
+  geth:
+    image: 0labs/geth:v1.10.21
+    volumes:
+      - ./tests/docker/geth-keystore:/keystore
     ports:
       - "9545:8545"
     networks:
       default:
         ipv4_address: 172.28.0.7
-    volumes:
-      - ./tests/pw:/data/pw
     command:
-      --config=dev
-      --jsonrpc-interface=0.0.0.0
-      --jsonrpc-apis=all
-      --network-id=5555
-      --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
-      --password /data/pw
+      geth
+      --dev
+      --datadir=/home/kjoseph/nodes/dev/geth
+      --networkid=5555
+      --http
+      --http.api=web3,eth,debug,personal,net
+      --http.corsdomain='*'
+      --http.vhosts='*'
+      --http.addr=0.0.0.0
+      --http.port=8545
+      --keystore=/keystore
+      --allow-insecure-unlock
+      --unlock=00a329c0648769a73afac7f9381e08fb43dbea72
+      --password=/keystore/pw
 
   ganache:
     image: trufflesuite/ganache-cli:v6.12.2

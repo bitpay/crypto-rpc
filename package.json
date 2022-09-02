@@ -7,9 +7,9 @@
     "ci:test": "npm run lint && npm run truffle:compile && npm run truffle:migrate && npm run truffle:test && mocha --recursive ./tests",
     "test": "docker-compose down && docker-compose build && docker-compose run test_runner",
     "lint": "./node_modules/.bin/eslint .",
-    "truffle:compile": "cd blockchain/ && ../node_modules/.bin/truffle compile --network development_parity && ../node_modules/.bin/truffle compile --network development_matic",
-    "truffle:test": "cd blockchain/ && ../node_modules/.bin/truffle test --network development_parity && ../node_modules/.bin/truffle test --network development_matic",
-    "truffle:migrate": "cd blockchain/ && ../node_modules/.bin/truffle migrate --network development_parity && ../node_modules/.bin/truffle migrate --network development_matic"
+    "truffle:compile": "cd blockchain/ && ../node_modules/.bin/truffle compile --network development_geth && ../node_modules/.bin/truffle compile --network development_matic",
+    "truffle:test": "cd blockchain/ && ../node_modules/.bin/truffle test --network development_geth && ../node_modules/.bin/truffle test --network development_matic",
+    "truffle:migrate": "cd blockchain/ && ../node_modules/.bin/truffle migrate --network development_geth && ../node_modules/.bin/truffle migrate --network development_matic"
   },
   "author": "Micah Riggan",
   "license": "ISC",
