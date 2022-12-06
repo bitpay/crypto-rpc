@@ -22,6 +22,7 @@ const config = {
 describe('XRP Tests', function() {
   let currency = 'XRP';
   let blockHash = '';
+  let block;
   let txid = '';
 
   let rpcs;
@@ -32,20 +33,35 @@ describe('XRP Tests', function() {
     xrpRPC = rpcs.get(currency);
   });
 
-  it('should be able to get a block hash', async () => {
-    blockHash = await rpcs.getBestBlockHash({ currency });
+  it('should be able to get best block hash', async () => {
+    try {
+      blockHash = await rpcs.getBestBlockHash({ currency });
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
+
     expect(blockHash).to.have.lengthOf('64');
   });
 
   it('should estimate fee', async () => {
-    let fee = await xrpRPC.estimateFee();
-    assert.isTrue(fee === '12');
+    let fee;
+    try {
+      fee = await xrpRPC.estimateFee();
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
+    assert.isTrue(fee === '10');
   });
 
   it('should get block', async () => {
-    const reqBlock = await rpcs.getBlock({ currency, hash: blockHash });
-    expect(reqBlock).to.have.property('ledger');
-    let ledger = reqBlock.ledger;
+    try {
+      block = await rpcs.getBlock({ currency, hash: blockHash });
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
+
+    expect(block).to.have.property('ledger');
+    let ledger = block.ledger;
     expect(ledger).to.have.property('accepted');
     expect(ledger.accepted).to.equal(true);
     expect(ledger).to.have.property('ledger_hash');
@@ -53,25 +69,55 @@ describe('XRP Tests', function() {
     expect(ledger).to.have.property('parent_hash');
     expect(ledger).to.have.property('transactions');
     expect(ledger.transactions).to.deep.equal([]);
-    expect(reqBlock).to.have.property('ledger_hash');
-    expect(reqBlock).to.have.property('ledger_index');
-    expect(reqBlock.ledger_hash).to.equal(ledger.ledger_hash);
-    expect(reqBlock.ledger_index.toString()).to.equal(ledger.ledger_index);
-    expect(reqBlock).to.have.property('validated');
-    expect(reqBlock.validated).to.equal(true);
-    assert(reqBlock);
+    expect(block).to.have.property('ledger_hash');
+    expect(block).to.have.property('ledger_index');
+    expect(block.ledger_hash).to.equal(ledger.ledger_hash);
+    expect(block.ledger_index.toString()).to.equal(ledger.ledger_index);
+    expect(block).to.have.property('validated');
+    expect(block.validated).to.equal(true);
+    assert(block);
+  });
+
+  it('should return nothing for unknown block', async () => {
+    let unknownBlock;
+    try {
+      unknownBlock = await rpcs.getBlock({ currency, hash: '1723099E269C77C4BDE86C83FA6415D71CF20AA5CB4A94E5C388ED97123FB55B' });
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
+    expect(unknownBlock).to.be.null;
   });
 
   it('should be able to get a balance', async () => {
-    const balance = await rpcs.getBalance({ currency, address: config.address });
+    let balance;
+    try {
+      balance = await rpcs.getBalance({ currency, address: config.address });
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
     expect(balance).to.eq(100000000000);
     assert(balance != undefined);
   });
 
   it('should be able to send a transaction', async () => {
-    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb' });
+    let beforeToBalance;
+    try {
+      beforeToBalance = await rpcs.getBalance({ currency, address: config.currencyConfig.sendTo });
+    } catch (err) {
+      beforeToBalance = 0;
+    }
+    try {
+      txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb' });
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
+
     expect(txid).to.have.lengthOf(64);
     assert(txid);
+    await xrpRPC.asyncRequest('ledger_accept');
+    // await xrpRPC.asyncRequest('ledger_accept');
+    let afterToBalance = await rpcs.getBalance({ currency, address: config.currencyConfig.sendTo });
+    expect(afterToBalance - beforeToBalance).to.eq(10000);
   });
 
 
@@ -159,7 +205,12 @@ describe('XRP Tests', function() {
   });
 
   it('should be able to get a transaction', async () => {
-    const tx = await rpcs.getTransaction({ currency, txid });
+    let tx;
+    try {
+      tx = await rpcs.getTransaction({ currency, txid });
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
     expect(tx).to.have.property('Account');
     expect(tx).to.have.property('Amount');
     expect(tx).to.have.property('Destination');
@@ -171,6 +222,36 @@ describe('XRP Tests', function() {
     expect(tx.hash).to.equal(txid);
     assert(tx);
     assert(typeof tx === 'object');
+  });
+
+  it('should return nothing for unknown transaction', async () => {
+    let unknownTx;
+    try {
+      unknownTx = await rpcs.getTransaction({ currency, txid });
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
+    expect(unknownTx === null);
+  });
+
+  it('should be able to get a raw transaction', async () => {
+    let tx;
+    try {
+      tx = await rpcs.getRawTransaction({ currency, txid });
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
+    expect(tx.length).to.be.greaterThan(300);
+  });
+
+  it('should return nothing for unknown raw transaction', async () => {
+    let tx;
+    try {
+      tx = await rpcs.getRawTransaction({ currency, txid: 'E08D6E9754025BA2534A78707605E0601F03ACE063687A0CA1BDDACFCD1698C7' });
+    } catch (err) {
+      expect(err).to.not.exist();
+    }
+    expect(tx === null);
   });
 
   it('should be able to decode a raw transaction', async () => {
@@ -196,14 +277,18 @@ describe('XRP Tests', function() {
   });
 
   it('should get confirmations', async () => {
-    let confirmations = await rpcs.getConfirmations({ currency, txid });
-    assert(confirmations != undefined);
-    expect(confirmations).to.eq(0);
-    let acceptance = await xrpRPC.asyncRequest('ledger_accept');
+    let confirmationsBefore = await rpcs.getConfirmations({ currency, txid });
+    assert(confirmationsBefore != undefined);
+    let { result:acceptance} = await xrpRPC.asyncRequest('ledger_accept');
     assert(acceptance);
     expect(acceptance).to.have.property('ledger_current_index');
-    confirmations = await rpcs.getConfirmations({ currency, txid });
-    expect(confirmations).to.eq(1);
+    let confirmationsAfter = await rpcs.getConfirmations({ currency, txid });
+    expect(confirmationsAfter - confirmationsBefore).to.eq(1);
+  });
+
+  it('should not return confirmations for unknown transaction', async () => {
+    let confirmations = await rpcs.getConfirmations({ currency, txid });
+    expect(confirmations === null);
   });
 
   it('should validate address', async () => {
@@ -214,6 +299,19 @@ describe('XRP Tests', function() {
   it('should not validate bad address', async () => {
     const isValid = await rpcs.validateAddress({ currency, address: 'NOTANADDRESS' });
     assert(isValid === false);
+  });
+
+  it('should get account info', async () => {
+    const accountInfo = await rpcs.getAccountInfo({ currency, address: config.address });
+    expect(accountInfo).to.have.property('account_data');
+    expect(accountInfo.account_data).to.have.property('Balance');
+    expect(accountInfo.account_data).to.have.property('Flags');
+    expect(accountInfo.account_data).to.have.property('index');
+    expect(accountInfo.account_data).to.have.property('LedgerEntryType');
+    expect(accountInfo.account_data).to.have.property('OwnerCount');
+    expect(accountInfo.account_data).to.have.property('PreviousTxnID');
+    expect(accountInfo.account_data).to.have.property('PreviousTxnLgrSeq');
+    expect(accountInfo.account_data).to.have.property('Sequence');
   });
 
   it('should disconnect from rpc when idle', async () => {
