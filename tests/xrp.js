@@ -115,7 +115,6 @@ describe('XRP Tests', function() {
     expect(txid).to.have.lengthOf(64);
     assert(txid);
     await xrpRPC.asyncRequest('ledger_accept');
-    // await xrpRPC.asyncRequest('ledger_accept');
     let afterToBalance = await rpcs.getBalance({ currency, address: config.currencyConfig.sendTo });
     expect(afterToBalance - beforeToBalance).to.eq(10000);
   });
