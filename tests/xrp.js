@@ -100,6 +100,7 @@ describe('XRP Tests', function() {
   });
 
   it('should be able to send a transaction', async () => {
+    await xrpRPC.asyncRequest('ledger_accept');
     let beforeToBalance;
     try {
       beforeToBalance = await rpcs.getBalance({ currency, address: config.currencyConfig.sendTo });
