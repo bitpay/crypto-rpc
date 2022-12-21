@@ -220,8 +220,8 @@ describe('XRP Tests', function() {
     expect(tx).to.have.property('Sequence');
     expect(tx).to.have.property('hash');
     expect(tx.hash).to.equal(txid);
-    assert(tx);
-    assert(typeof tx === 'object');
+    expect(tx).to.have.property('blockHash');
+    expect(tx.blockHash).to.not.be.undefined;
   });
 
   it('should return nothing for unknown transaction', async () => {
