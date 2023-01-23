@@ -1,4 +1,4 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.4.24;
 
 import "./IERC20.sol";
 import "./SafeMath.sol";
@@ -22,7 +22,7 @@ contract ERC20 is IERC20 {
 	/**
 	* @dev Total number of tokens in existence
 	*/
-	function totalSupply() public view override returns (uint256) {
+	function totalSupply() public view returns (uint256) {
 		return _totalSupply;
 	}
 
@@ -31,7 +31,7 @@ contract ERC20 is IERC20 {
 	* @param owner The address to query the balance of.
 		* @return An uint256 representing the amount owned by the passed address.
 		*/
-	function balanceOf(address owner) public view override returns (uint256) {
+	function balanceOf(address owner) public view returns (uint256) {
 		return _balances[owner];
 	}
 
@@ -47,7 +47,6 @@ contract ERC20 is IERC20 {
 	)
 	public
 	view
-	override
 	returns (uint256)
 	{
 		return _allowed[owner][spender];
@@ -58,7 +57,7 @@ contract ERC20 is IERC20 {
 	* @param to The address to transfer to.
 		* @param value The amount to be transferred.
 			*/
-	function transfer(address to, uint256 value) public override returns (bool) {
+	function transfer(address to, uint256 value) public returns (bool) {
 		require(value <= _balances[msg.sender]);
 		require(to != address(0));
 
@@ -77,7 +76,7 @@ contract ERC20 is IERC20 {
 	* @param spender The address which will spend the funds.
 		* @param value The amount of tokens to be spent.
 		*/
-	function approve(address spender, uint256 value) public override returns (bool) {
+	function approve(address spender, uint256 value) public returns (bool) {
 		require(spender != address(0));
 
 		_allowed[msg.sender][spender] = value;
@@ -97,7 +96,6 @@ contract ERC20 is IERC20 {
 		uint256 value
 	)
 	public
-	override
 	returns (bool)
 	{
 		require(value <= _balances[from]);
@@ -168,7 +166,7 @@ contract ERC20 is IERC20 {
 	 * @param amount The amount that will be created.
 	 */
 	function _mint(address account, uint256 amount) internal {
-		require(account != address(0));
+		require(account != 0);
 		_totalSupply = _totalSupply.add(amount);
 		_balances[account] = _balances[account].add(amount);
 		emit Transfer(address(0), account, amount);
@@ -181,7 +179,7 @@ contract ERC20 is IERC20 {
 	 * @param amount The amount that will be burnt.
 	 */
 	function _burn(address account, uint256 amount) internal {
-		require(account != address(0));
+		require(account != 0);
 		require(amount <= _balances[account]);
 
 		_totalSupply = _totalSupply.sub(amount);
