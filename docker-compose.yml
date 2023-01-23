@@ -22,6 +22,7 @@ services:
       - lightning2
       - geth
       - ganache
+
   bitcoin:
     image: kajoseph/bitcoin-core:22.0
     ports:
@@ -47,7 +48,6 @@ services:
       -zmqpubrawblock=tcp://0.0.0.0:38332
       -zmqpubrawtx=tcp://0.0.0.0:38333
     restart: always
-
 
   bitcoin-cash:
     image: zquestz/bitcoin-abc:0.21.7
@@ -110,6 +110,8 @@ services:
     networks:
       default:
         ipv4_address: 172.28.0.7
+    depends_on:
+      - solc
     command:
       geth
       --dev
@@ -133,11 +135,19 @@ services:
     networks:
       default:
         ipv4_address: 172.28.0.11
+    depends_on:
+      - solc
     command:
       -m "dose youth patient boring disagree tuna random tower tornado version violin around"
       -b 2
       -g 20000000000
       -p 8545
+
+  solc:
+    image: ethereum/solc:v0.4.24
+    networks:
+      default:
+        ipv4_address: 172.28.0.12
 
   rippled:
     networks:
