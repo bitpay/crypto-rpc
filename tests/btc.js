@@ -89,7 +89,7 @@ describe('BTC Tests', function() {
   });
 
   it('should be able to send a transaction', async () => {
-    const txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
+    const txid = await rpcs.unlockAndSendToAddress({ currency, address: walletAddress, amount: '10000', passphrase: currencyConfig.unlockPassword });
     expect(txid).to.have.lengthOf(64);
     assert(txid);
   });
@@ -261,7 +261,7 @@ describe('BTC Tests', function() {
   describe('Get Transactions', function() {
     let txid;
     before(async () => {
-      txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
+      txid = await rpcs.unlockAndSendToAddress({ currency, address: walletAddress, amount: '10000', passphrase: currencyConfig.unlockPassword });
       expect(txid).to.have.lengthOf(64);
       assert(txid);
     });
@@ -309,7 +309,7 @@ describe('BTC Tests', function() {
     it('should get tx output info from mempool', async() => {
       const output1 = await rpcs.getTxOutputInfo({ txid, vout: 0, includeMempool: true });
       const output2 = await rpcs.getTxOutputInfo({ txid, vout: 1, includeMempool: true });
-      let output = [output1, output2].find(v => v.value = 0.0001);
+      let output = [output1, output2].find(v => v.value === 0.0001);
       expect(output).to.exist;
       expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
     });
@@ -337,7 +337,7 @@ describe('BTC Tests', function() {
       it('should get tx output info', async() => {
         const output1 = await rpcs.getTxOutputInfo({ txid, vout: 0 });
         const output2 = await rpcs.getTxOutputInfo({ txid, vout: 1 });
-        let output = [output1, output2].find(v => v.value = 0.0001);
+        let output = [output1, output2].find(v => v.value === 0.0001);
         expect(output).to.exist;
         expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
       });
@@ -345,7 +345,7 @@ describe('BTC Tests', function() {
       it('should get tx output info for bitcore', async() => {
         const output1 = await rpcs.getTxOutputInfo({ txid, vout: 0, transformToBitcore: true });
         const output2 = await rpcs.getTxOutputInfo({ txid, vout: 1, transformToBitcore: true });
-        let output = [output1, output2].find(v => v.value = 0.0001);
+        let output = [output1, output2].find(v => v.value === 0.0001);
         expect(output).to.exist;
         expect(output.address).to.equal(config.currencyConfig.sendTo);
         expect(output.mintTxid).to.equal(txid);
