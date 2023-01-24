@@ -114,7 +114,7 @@ services:
       geth
       --dev
       --datadir=/home/kjoseph/nodes/dev/geth
-      --networkid=5555
+      --networkid=1337
       --http
       --http.api=web3,eth,debug,personal,net
       --http.corsdomain='*'

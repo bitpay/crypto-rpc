@@ -12,7 +12,7 @@ const config = {
   account: '0x00a329c0648769A73afAc7F9381E08FB43dBEA72',
   tokens: {
     ERC20: {
-      tokenContractAddress: ERC20.networks['5555'].address,
+      tokenContractAddress: ERC20.networks['1337'].address,
       type: 'ERC20'
     }
   },
