@@ -22,6 +22,7 @@ services:
       - lightning2
       - geth
       - ganache
+      
   bitcoin:
     image: kajoseph/bitcoin-core:22.0
     ports:
@@ -47,7 +48,6 @@ services:
       -zmqpubrawblock=tcp://0.0.0.0:38332
       -zmqpubrawtx=tcp://0.0.0.0:38333
     restart: always
-
 
   bitcoin-cash:
     image: zquestz/bitcoin-abc:0.21.7
