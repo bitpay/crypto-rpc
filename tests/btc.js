@@ -22,8 +22,6 @@ const config = {
 
 describe('BTC Tests', function() {
   this.timeout(10000);
-  let txid = '';
-  let blockHash = '';
   const currency = 'BTC';
   const { currencyConfig } = config;
   const rpcs = new CryptoRpc(config, currencyConfig);
@@ -72,7 +70,7 @@ describe('BTC Tests', function() {
   });
 
   it('should be able to get a block hash', async () => {
-    blockHash = await rpcs.getBestBlockHash({ currency });
+    const blockHash = await rpcs.getBestBlockHash({ currency });
     expect(blockHash).to.have.lengthOf('64');
   });
 
@@ -84,29 +82,6 @@ describe('BTC Tests', function() {
     expect(fee).to.be.eq(1.234);
   });
 
-  it('should get block', async () => {
-    const reqBlock = await rpcs.getBlock({ currency, hash: blockHash });
-    expect(reqBlock).to.have.property('hash');
-    expect(reqBlock).to.have.property('confirmations');
-    expect(reqBlock).to.have.property('strippedsize');
-    expect(reqBlock).to.have.property('size');
-    expect(reqBlock).to.have.property('weight');
-    expect(reqBlock).to.have.property('height');
-    expect(reqBlock).to.have.property('version');
-    expect(reqBlock).to.have.property('versionHex');
-    expect(reqBlock).to.have.property('merkleroot');
-    expect(reqBlock).to.have.property('tx');
-    expect(reqBlock).to.have.property('time');
-    expect(reqBlock).to.have.property('mediantime');
-    expect(reqBlock).to.have.property('nonce');
-    expect(reqBlock).to.have.property('bits');
-    expect(reqBlock).to.have.property('difficulty');
-    expect(reqBlock).to.have.property('chainwork');
-    expect(reqBlock).to.have.property('nTx');
-    expect(reqBlock).to.have.property('previousblockhash');
-    assert(reqBlock);
-  });
-
   it('should be able to get a balance', async () => {
     const balance = await rpcs.getBalance({ currency });
     expect(balance).to.eq(5000000000);
@@ -114,7 +89,7 @@ describe('BTC Tests', function() {
   });
 
   it('should be able to send a transaction', async () => {
-    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
+    const txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
     expect(txid).to.have.lengthOf(64);
     assert(txid);
   });
@@ -203,29 +178,6 @@ describe('BTC Tests', function() {
     assert(emitResults[0].error);
   });
 
-  it('should be able to get a transaction', async () => {
-    const tx = await rpcs.getTransaction({ currency, txid });
-    expect(tx).to.have.property('txid');
-    expect(tx).to.have.property('hash');
-    expect(tx).to.have.property('version');
-    expect(tx).to.have.property('size');
-    expect(tx).to.have.property('vsize');
-    expect(tx).to.have.property('locktime');
-    expect(tx).to.have.property('vin');
-    expect(tx).to.have.property('vout');
-    expect(tx).to.have.property('hex');
-    assert(tx);
-    assert(typeof tx === 'object');
-  });
-
-  it('should be able to get a transaction with detail', async() => {
-    const tx = await rpcs.getTransaction({ txid, detail: true });
-    expect(tx).to.exist;
-    expect(tx.txid).to.equal(txid);
-    expect(tx.vin[0].address).to.exist;
-    expect(tx.vin[0].value).to.exist;
-  });
-
   it('should be able to decode a raw transaction', async () => {
     const { rawTx } = config.currencyConfig;
     assert(rawTx);
@@ -246,27 +198,6 @@ describe('BTC Tests', function() {
     assert(tip != undefined);
     expect(tip).to.have.property('hash');
     expect(tip).to.have.property('height');
-  });
-
-  it('should get confirmations', async () => {
-    let confirmations = await rpcs.getConfirmations({ currency, txid });
-    assert(confirmations != undefined);
-    expect(confirmations).to.eq(0);
-    await bitcoin.asyncCall('generatetoaddress', [1, walletAddress]);
-    confirmations = await rpcs.getConfirmations({ currency, txid });
-    expect(confirmations).to.eq(1);
-  });
-
-  it('should get tx output info', async() => {
-    const output = await rpcs.getTxOutputInfo({ txid, vout: 0 });
-    expect(output.value).to.equal(0.0001);
-    expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
-  });
-
-  it('should get tx output info for bitcore', async() => {
-    const output = await rpcs.getTxOutputInfo({ txid, vout: 0, transformToBitcore: true });
-    expect(output.value).to.equal(0.0001);
-    expect(output.address).to.equal(config.currencyConfig.sendTo);
   });
 
   it('should validate address', async () => {
@@ -295,4 +226,130 @@ describe('BTC Tests', function() {
     assert(txid);
   });
 
+  describe('Get Blocks', function() {
+    let blockHash;
+    before(async () => {
+      blockHash = await rpcs.getBestBlockHash({ currency });
+      expect(blockHash).to.have.lengthOf('64');
+    });
+    
+    it('should get block', async () => {
+      const reqBlock = await rpcs.getBlock({ currency, hash: blockHash });
+      expect(reqBlock).to.have.property('hash');
+      expect(reqBlock).to.have.property('confirmations');
+      expect(reqBlock).to.have.property('strippedsize');
+      expect(reqBlock).to.have.property('size');
+      expect(reqBlock).to.have.property('weight');
+      expect(reqBlock).to.have.property('height');
+      expect(reqBlock).to.have.property('version');
+      expect(reqBlock).to.have.property('versionHex');
+      expect(reqBlock).to.have.property('merkleroot');
+      expect(reqBlock).to.have.property('tx');
+      expect(reqBlock).to.have.property('time');
+      expect(reqBlock).to.have.property('mediantime');
+      expect(reqBlock).to.have.property('nonce');
+      expect(reqBlock).to.have.property('bits');
+      expect(reqBlock).to.have.property('difficulty');
+      expect(reqBlock).to.have.property('chainwork');
+      expect(reqBlock).to.have.property('nTx');
+      expect(reqBlock).to.have.property('previousblockhash');
+      assert(reqBlock);
+    });
+  
+  });
+
+  describe('Get Transactions', function() {
+    let txid;
+    before(async () => {
+      txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
+      expect(txid).to.have.lengthOf(64);
+      assert(txid);
+    });
+
+    it('should be able to get a transaction', async () => {
+      const tx = await rpcs.getTransaction({ currency, txid });
+      expect(tx).to.have.property('txid');
+      expect(tx).to.have.property('hash');
+      expect(tx).to.have.property('version');
+      expect(tx).to.have.property('size');
+      expect(tx).to.have.property('vsize');
+      expect(tx).to.have.property('locktime');
+      expect(tx).to.have.property('vin');
+      expect(tx).to.have.property('vout');
+      expect(tx).to.have.property('hex');
+      assert(tx);
+      assert(typeof tx === 'object');
+    });
+  
+    it('should be able to get a transaction with detail', async() => {
+      const tx = await rpcs.getTransaction({ txid, detail: true });
+      expect(tx).to.exist;
+      expect(tx.txid).to.equal(txid);
+      expect(tx.vin[0].address).to.exist;
+      expect(tx.vin[0].value).to.exist;
+    });
+
+    it('should get confirmations', async () => {
+      let confirmations = await rpcs.getConfirmations({ currency, txid });
+      assert(confirmations != undefined);
+      expect(confirmations).to.eq(0);
+      await bitcoin.asyncCall('generatetoaddress', [1, config.currencyConfig.sendTo]);
+      confirmations = await rpcs.getConfirmations({ currency, txid });
+      expect(confirmations).to.eq(1);
+    });
+  });
+
+  describe('Tx outputs', function() {
+    let txid;
+    before(async () => {
+      txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
+      expect(txid).to.have.lengthOf(64);
+      assert(txid);
+    });
+    it('should get tx output info from mempool', async() => {
+      const output1 = await rpcs.getTxOutputInfo({ txid, vout: 0, includeMempool: true });
+      const output2 = await rpcs.getTxOutputInfo({ txid, vout: 1, includeMempool: true });
+      let output = [output1, output2].find(v => v.value = 0.0001);
+      expect(output).to.exist;
+      expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
+    });
+
+    it('should fail to get tx output when not in mempool', async() => {
+      let output = null;
+      try {
+        output = await rpcs.getTxOutputInfo({ txid, vout: 0, includeMempool: false });
+      } catch (e) {
+        expect(e.message).to.include('No info found for');
+      }
+      expect(output).to.be.null;
+    });
+    
+    describe('Tx output after confirmation',function() {
+      before(async () => {
+        let confirmations = await rpcs.getConfirmations({ currency, txid });
+        assert(confirmations != undefined);
+        expect(confirmations).to.eq(0);
+        await bitcoin.asyncCall('generatetoaddress', [1, config.currencyConfig.sendTo]);
+        confirmations = await rpcs.getConfirmations({ currency, txid });
+        expect(confirmations).to.eq(1);
+      });
+
+      it('should get tx output info', async() => {
+        const output1 = await rpcs.getTxOutputInfo({ txid, vout: 0 });
+        const output2 = await rpcs.getTxOutputInfo({ txid, vout: 1 });
+        let output = [output1, output2].find(v => v.value = 0.0001);
+        expect(output).to.exist;
+        expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
+      });
+    
+      it('should get tx output info for bitcore', async() => {
+        const output1 = await rpcs.getTxOutputInfo({ txid, vout: 0, transformToBitcore: true });
+        const output2 = await rpcs.getTxOutputInfo({ txid, vout: 1, transformToBitcore: true });
+        let output = [output1, output2].find(v => v.value = 0.0001);
+        expect(output).to.exist;
+        expect(output.address).to.equal(config.currencyConfig.sendTo);
+        expect(output.mintTxid).to.equal(txid);
+      });
+    });
+  });
 });
