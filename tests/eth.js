@@ -4,6 +4,7 @@ const mocha = require('mocha');
 const { before, describe, it } = mocha;
 const EthereumTx = require('ethereumjs-tx');
 const util = require('web3-utils');
+const sinon = require('sinon');
 const config = {
   chain: 'ETH',
   host: 'geth',
@@ -33,6 +34,30 @@ describe('ETH Tests', function() {
 
   before(done => {
     setTimeout(done, 5000);
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should estimate gas price', async () => {
+    sinon.spy(ethRPC.web3.eth, 'getBlock');
+    sinon.spy(ethRPC.blockGasPriceCache, 'get');
+    const gasPrice = await ethRPC.estimateGasPrice();
+    assert.isDefined(gasPrice);
+    expect(gasPrice).to.be.gt(0);
+    expect(ethRPC.blockGasPriceCache.get.callCount).to.equal(0);
+    expect(ethRPC.web3.eth.getBlock.callCount).to.equal(10);
+  });
+
+  it('should estimate gas price with cache', async () => {
+    sinon.spy(ethRPC.web3.eth, 'getBlock');
+    sinon.spy(ethRPC.blockGasPriceCache, 'get');
+    const gasPrice = await ethRPC.estimateGasPrice();
+    assert.isDefined(gasPrice);
+    expect(gasPrice).to.be.gt(0);
+    expect(ethRPC.blockGasPriceCache.get.callCount).to.be.gt(0);
+    expect(ethRPC.web3.eth.getBlock.callCount).to.be.lt(10);
   });
 
   it('should estimate fee', async () => {
@@ -128,13 +153,6 @@ describe('ETH Tests', function() {
     } catch(err) {
       expect(err.toString()).to.not.exist();
     }
-  });
-
-
-  it('should estimate gas price', async () => {
-    const gasPrice = await ethRPC.estimateGasPrice();
-    assert.isDefined(gasPrice);
-    expect(gasPrice).to.be.gt(0);
   });
 
   it('should be able to get a block hash', async () => {
