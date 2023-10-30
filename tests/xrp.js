@@ -62,8 +62,11 @@ describe('XRP Tests', function() {
 
     expect(block).to.have.property('ledger');
     let ledger = block.ledger;
-    expect(ledger).to.have.property('accepted');
-    expect(ledger.accepted).to.equal(true);
+    // from xrpl documentation: https://xrpl.org/ledger.html (9/26/2023)
+    // The following fields are deprecated and may be removed without further notice: accepted, totalCoins (use total_coins instead).
+    // as a result the following is commented out
+    // expect(ledger).to.have.property('accepted');
+    // expect(ledger.accepted).to.equal(true);
     expect(ledger).to.have.property('ledger_hash');
     expect(ledger).to.have.property('ledger_index');
     expect(ledger).to.have.property('parent_hash');
