@@ -60,6 +60,31 @@ describe('ETH Tests', function() {
     expect(ethRPC.web3.eth.getBlock.callCount).to.be.lt(10);
   });
 
+  it('should estimate fee for type 2 transaction', async () => {
+    sinon.spy(ethRPC.web3.eth, 'getBlock');
+    let maxFee = await ethRPC.estimateFee({txType: 2, priority: 5});
+    assert.isDefined(maxFee);
+    expect(maxFee).to.be.equal(5154455240);
+    expect(ethRPC.web3.eth.getBlock.callCount).to.equal(1);
+  });
+
+  it('should estimate max fee', async () => {
+    sinon.spy(ethRPC.web3.eth, 'getBlock');
+    let maxFee = await ethRPC.estimateMaxFee({});
+    assert.isDefined(maxFee);
+    expect(maxFee).to.be.equal(2654455240);
+    expect(ethRPC.web3.eth.getBlock.callCount).to.equal(1);
+  });
+
+  it('should estimate max priority fee', async () => {
+    sinon.spy(ethRPC.blockMaxPriorityFeeCache, 'set');
+    const maxPriorityFee = await ethRPC.estimateMaxPriorityFee({});
+    assert.isDefined(maxPriorityFee);
+    expect(maxPriorityFee).to.be.gt(0);
+    expect(maxPriorityFee).to.be.equal(2500000000);
+    expect(ethRPC.blockMaxPriorityFeeCache.set.callCount).to.equal(0);
+  });
+
   it('should estimate fee', async () => {
     const fee = await rpcs.estimateFee({ currency, nBlocks: 4 });
     assert.isTrue(fee === 20000000000);
