@@ -55,7 +55,7 @@ describe('LND Tests', function() {
       await lightning1.walletCreate({ passphrase });
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (err) {
-      if (!err[2].err.message.includes('wallet already exists')) {
+      if (!err[2] || !err[2].err.message.includes('wallet already exists')) {
         throw err;
       }
     }
@@ -73,7 +73,7 @@ describe('LND Tests', function() {
       await lightning2.walletCreate({ passphrase });
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (err) {
-      if (!err[2].err.message.includes('wallet already exists')) {
+      if (!err[2] || !err[2].err.message.includes('wallet already exists')) {
         throw err;
       }
     }
@@ -112,7 +112,7 @@ describe('LND Tests', function() {
           syncing = false;
         }
       } catch (err) {
-        if (err[2].err.message.includes('wallet locked')) {
+        if (err[2] && err[2].err.message.includes('wallet locked')) {
           await lightning1.walletUnlock({ passphrase });
           await lightning2.walletUnlock({ passphrase });
         } else {
