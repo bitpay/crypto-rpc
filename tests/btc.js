@@ -75,10 +75,20 @@ describe('BTC Tests', function() {
   });
 
   it('should be able to estimateFee', async () => {
-    sinon.stub(bitcoin.rpc,'estimateSmartFee').callsFake((nBlocks, cb) => {
-      cb(null, {result: {'feerate': 0.00001234, 'blocks': 2}});
+    const fee = await bitcoin.estimateFee({ nBlocks: 2 });
+    expect(fee).to.be.gte(1);
+  });
+
+  it('should be able to estimateFee with mode', async () => {
+    const fee = await bitcoin.estimateFee({ nBlocks: 2, mode: 'economical' });
+    expect(fee).to.be.gte(1);
+  });
+
+  it('should convert fee to satoshis per kilobyte with estimateFee', async () => {
+    sinon.stub(bitcoin.rpc, 'estimateSmartFee').callsFake((nBlocks, cb) => {
+      cb(null, { result: { feerate: 0.00001234, blocks: 2 } });
     });
-    const fee = await bitcoin.estimateFee({nBlocks: 2});
+    const fee = await bitcoin.estimateFee({ nBlocks: 2 });
     expect(fee).to.be.eq(1.234);
   });
 
