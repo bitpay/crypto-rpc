@@ -45,7 +45,7 @@ describe('BCH Tests', function() {
   });
 
 
-  it('should be able to estimateFee', async () => {
+  it('should convert fee to satoshis per kilobyte with estimateFee', async () => {
     sinon.stub(bitcoin.rpc,'estimateFee').callsFake((cb) => {
       cb(null, {result: 0.00001234});
     });

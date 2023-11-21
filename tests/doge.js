@@ -45,8 +45,8 @@ describe('DOGE Tests', function() {
   });
 
 
-  it('should be able to estimateFee', async () => {
-    sinon.stub(bitcoin.rpc,'estimateSmartFee').callsFake((nBlocks, cb) => {
+  it('should convert fee to satoshis per kilobyte with estimateFee', async () => {
+    sinon.stub(bitcoin.rpc,'estimateSmartFee').callsFake((nBlocks, mode, cb) => {
       cb(null, {result: {'feerate': 0.00001234, 'blocks': 2}});
     });
     const fee = await bitcoin.estimateFee({nBlocks: 2});
