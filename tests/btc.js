@@ -74,6 +74,7 @@ describe('BTC Tests', function() {
     expect(blockHash).to.have.lengthOf('64');
   });
 
+  /* These tests don't work in the pipeline because the docker regtest blockchain isn't mature enough to give a fee */
   // it('should be able to estimateFee', async () => {
   //   const fee = await bitcoin.estimateFee({ nBlocks: 2 });
   //   expect(fee).to.be.gte(1);
