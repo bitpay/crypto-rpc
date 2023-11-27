@@ -86,7 +86,7 @@ describe('BTC Tests', function() {
   // });
 
   it('should convert fee to satoshis per kilobyte with estimateFee', async () => {
-    sinon.stub(bitcoin.rpc, 'estimateSmartFee').callsFake((nBlocks, mode, cb) => {
+    sinon.stub(bitcoin.rpc, 'estimateSmartFee').callsFake((nBlocks, cb) => {
       cb(null, { result: { feerate: 0.00001234, blocks: 2 } });
     });
     const fee = await bitcoin.estimateFee({ nBlocks: 2 });
