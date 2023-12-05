@@ -2,7 +2,7 @@ const { CryptoRpc } = require('../');
 const {assert, expect} = require('chai');
 const mocha = require('mocha');
 const { before, describe, it } = mocha;
-const EthereumTx = require('ethereumjs-tx');
+const ethers = require('ethers');
 const util = require('web3-utils');
 const sinon = require('sinon');
 const config = {
@@ -109,22 +109,19 @@ describe('ETH Tests', function() {
 
     // construct the transaction data
     const txData = {
-      nonce: util.toHex(txCount),
+      nonce: txCount,
       chainId: 1337,
-      gasLimit: util.toHex(25000),
-      gasPrice: util.toHex(2.1*10e9),
+      gasLimit: 25000,
+      gasPrice: 2.1*10e9,
       to: config.currencyConfig.sendTo,
-      from: config.account,
-      value: util.toHex(util.toWei('123', 'wei'))
+      value: Number(util.toWei('123', 'wei'))
     };
-
-    const rawTx = new EthereumTx(txData);
     const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
-    rawTx.sign(privateKey);
-    const serializedTx = rawTx.serialize();
+    const signer = new ethers.Wallet(privateKey);
+    const signedTx = signer.signTransaction(txData);
     const sentTx = await rpcs.sendRawTransaction({
       currency,
-      rawTx: '0x' + serializedTx.toString('hex')
+      rawTx: signedTx
     });
     expect(sentTx.length).to.equal(66);
   });
@@ -133,22 +130,19 @@ describe('ETH Tests', function() {
     try {
       // construct the transaction data
       const txData = {
-        nonce: util.toHex(null),
+        nonce: null,
         chainId: 1337,
-        gasLimit: util.toHex(25000),
-        gasPrice: util.toHex(2.1*10e9),
+        gasLimit: 25000,
+        gasPrice: 2.1*10e9,
         to: config.currencyConfig.sendTo,
-        from: config.account,
-        value: util.toHex(util.toWei('123', 'wei'))
+        value: Number(util.toWei('123', 'wei'))
       };
-
-      const rawTx = new EthereumTx(txData);
       const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
-      rawTx.sign(privateKey);
-      const serializedTx = rawTx.serialize();
+      const signer = new ethers.Wallet(privateKey);
+      const signedTx = signer.signTransaction(txData);
       await rpcs.sendRawTransaction({
         currency,
-        rawTx: '0x' + serializedTx.toString('hex')
+        rawTx: signedTx
       });
     } catch(err) {
       expect(err.message).to.include('nonce too low');
@@ -166,23 +160,21 @@ describe('ETH Tests', function() {
         // add to nonce so that the first tx isn't auto-mined before second tx is sent
         nonce: util.toHex(txCount + 1),
         chainId: 1337,
-        gasLimit: util.toHex(25000),
-        gasPrice: util.toHex(2.1*10e9),
+        gasLimit: 25000,
+        gasPrice: 2.1*10e9,
         to: config.currencyConfig.sendTo,
-        from: config.account,
-        value: util.toHex(util.toWei('123', 'wei'))
+        value: Number(util.toWei('123', 'wei'))
       };
-      const rawTx = new EthereumTx(txData);
       const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
-      rawTx.sign(privateKey);
-      const serializedTx = rawTx.serialize();
+      const signer = new ethers.Wallet(privateKey);
+      const signedTx = signer.signTransaction(txData);
       const txSend1 = await rpcs.sendRawTransaction({
         currency,
-        rawTx: '0x' + serializedTx.toString('hex')
+        rawTx: signedTx
       });
       const txSend2 = await rpcs.sendRawTransaction({
         currency,
-        rawTx: '0x' + serializedTx.toString('hex')
+        rawTx: signedTx
       });
       expect(txSend1).to.equal(txSend2);
     } catch(err) {
