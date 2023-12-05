@@ -118,7 +118,7 @@ describe('ETH Tests', function() {
     };
     const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
     const signer = new ethers.Wallet(privateKey);
-    const signedTx = signer.signTransaction(txData);
+    const signedTx = await signer.signTransaction(txData);
     const sentTx = await rpcs.sendRawTransaction({
       currency,
       rawTx: signedTx
@@ -139,11 +139,12 @@ describe('ETH Tests', function() {
       };
       const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
       const signer = new ethers.Wallet(privateKey);
-      const signedTx = signer.signTransaction(txData);
+      const signedTx = await signer.signTransaction(txData);
       await rpcs.sendRawTransaction({
         currency,
         rawTx: signedTx
       });
+      return signedTx;
     } catch(err) {
       expect(err.message).to.include('nonce too low');
     }
@@ -158,7 +159,7 @@ describe('ETH Tests', function() {
       // construct the transaction data
       const txData = {
         // add to nonce so that the first tx isn't auto-mined before second tx is sent
-        nonce: util.toHex(txCount + 1),
+        nonce: txCount + 1,
         chainId: 1337,
         gasLimit: 25000,
         gasPrice: 2.1*10e9,
@@ -167,7 +168,7 @@ describe('ETH Tests', function() {
       };
       const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
       const signer = new ethers.Wallet(privateKey);
-      const signedTx = signer.signTransaction(txData);
+      const signedTx = await signer.signTransaction(txData);
       const txSend1 = await rpcs.sendRawTransaction({
         currency,
         rawTx: signedTx
@@ -177,6 +178,39 @@ describe('ETH Tests', function() {
         rawTx: signedTx
       });
       expect(txSend1).to.equal(txSend2);
+    } catch(err) {
+      expect(err.toString()).to.not.exist();
+    }
+  });
+
+  it('should succeed send raw type 2 transaction', async () => {
+    const txCount = await rpcs.getTransactionCount({
+      currency,
+      address: config.account
+    });
+    try {
+      // construct the transaction data
+      const txData = {
+        nonce: txCount,
+        chainId: 1337,
+        gasLimit: 25000,
+        type: 2,
+        maxFeePerGas: Number(util.toWei('10', 'gwei')),
+        to: config.currencyConfig.sendTo,
+        value: Number(util.toWei('321', 'wei'))
+      };
+      const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
+      const signer = new ethers.Wallet(privateKey);
+      const signedTx = await signer.signTransaction(txData);
+      const decoded = await rpcs.decodeRawTransaction({ currency, rawTx: signedTx });
+      assert.isDefined(decoded);
+      assert.isObject(decoded);
+      expect(decoded.type).to.equal(2);
+      const txSend1 = await rpcs.sendRawTransaction({
+        currency,
+        rawTx: signedTx
+      });
+      expect(txSend1).to.equal('0x94266a12747ccea60d7566777d22c8e3b7bbaa71e16e69468c547c2bab0b9f90');      
     } catch(err) {
       expect(err.toString()).to.not.exist();
     }

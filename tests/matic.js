@@ -57,7 +57,7 @@ describe('MATIC Tests', function() {
     };
     const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
     const signer = new ethers.Wallet(privateKey);
-    const signedTx = signer.signTransaction(txData);
+    const signedTx = await signer.signTransaction(txData);
     const sentTx = await rpcs.sendRawTransaction({
       currency,
       rawTx: signedTx
@@ -77,7 +77,7 @@ describe('MATIC Tests', function() {
       };
       const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
       const signer = new ethers.Wallet(privateKey);
-      const signedTx = signer.signTransaction(txData);
+      const signedTx = await signer.signTransaction(txData);
       await rpcs.sendRawTransaction({
         currency,
         rawTx: signedTx
