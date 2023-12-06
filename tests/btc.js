@@ -93,6 +93,11 @@ describe('BTC Tests', function() {
     expect(fee).to.be.eq(1.234);
   });
 
+  it('should not estimateMaxPriorityFee for non EVM chain', async () => {
+    const fee = await rpcs.estimateMaxPriorityFee({ currency, nBlocks: 2 });
+    expect(fee).to.be.eq(undefined);
+  });
+
   it('should be able to get a balance', async () => {
     const balance = await rpcs.getBalance({ currency });
     expect(balance).to.eq(5000000000);
