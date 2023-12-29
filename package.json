@@ -19,7 +19,7 @@
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
     "dogecoind-rpc": "0.8.1",
-    "ethers": "^5.7.2",
+    "ethers": "5.7.2",
     "lightning": "10.0.1",
     "promptly": "0.2.0",
     "web3": "1.7.1",
