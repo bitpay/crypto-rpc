@@ -2,7 +2,7 @@ const { CryptoRpc } = require('../');
 const {assert, expect} = require('chai');
 const mocha = require('mocha');
 const { before, describe, it } = mocha;
-const EthereumTx = require('ethereumjs-tx');
+const ethers = require('ethers');
 const util = require('web3-utils');
 const sinon = require('sinon');
 const config = {
@@ -109,22 +109,19 @@ describe('ETH Tests', function() {
 
     // construct the transaction data
     const txData = {
-      nonce: util.toHex(txCount),
+      nonce: txCount,
       chainId: 1337,
-      gasLimit: util.toHex(25000),
-      gasPrice: util.toHex(2.1*10e9),
+      gasLimit: 25000,
+      gasPrice: 2.1*10e9,
       to: config.currencyConfig.sendTo,
-      from: config.account,
-      value: util.toHex(util.toWei('123', 'wei'))
+      value: Number(util.toWei('123', 'wei'))
     };
-
-    const rawTx = new EthereumTx(txData);
     const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
-    rawTx.sign(privateKey);
-    const serializedTx = rawTx.serialize();
+    const signer = new ethers.Wallet(privateKey);
+    const signedTx = await signer.signTransaction(txData);
     const sentTx = await rpcs.sendRawTransaction({
       currency,
-      rawTx: '0x' + serializedTx.toString('hex')
+      rawTx: signedTx
     });
     expect(sentTx.length).to.equal(66);
   });
@@ -133,23 +130,21 @@ describe('ETH Tests', function() {
     try {
       // construct the transaction data
       const txData = {
-        nonce: util.toHex(null),
+        nonce: null,
         chainId: 1337,
-        gasLimit: util.toHex(25000),
-        gasPrice: util.toHex(2.1*10e9),
+        gasLimit: 25000,
+        gasPrice: 2.1*10e9,
         to: config.currencyConfig.sendTo,
-        from: config.account,
-        value: util.toHex(util.toWei('123', 'wei'))
+        value: Number(util.toWei('123', 'wei'))
       };
-
-      const rawTx = new EthereumTx(txData);
       const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
-      rawTx.sign(privateKey);
-      const serializedTx = rawTx.serialize();
+      const signer = new ethers.Wallet(privateKey);
+      const signedTx = await signer.signTransaction(txData);
       await rpcs.sendRawTransaction({
         currency,
-        rawTx: '0x' + serializedTx.toString('hex')
+        rawTx: signedTx
       });
+      return signedTx;
     } catch(err) {
       expect(err.message).to.include('nonce too low');
     }
@@ -164,27 +159,58 @@ describe('ETH Tests', function() {
       // construct the transaction data
       const txData = {
         // add to nonce so that the first tx isn't auto-mined before second tx is sent
-        nonce: util.toHex(txCount + 1),
+        nonce: txCount + 1,
         chainId: 1337,
-        gasLimit: util.toHex(25000),
-        gasPrice: util.toHex(2.1*10e9),
+        gasLimit: 25000,
+        gasPrice: 2.1*10e9,
         to: config.currencyConfig.sendTo,
-        from: config.account,
-        value: util.toHex(util.toWei('123', 'wei'))
+        value: Number(util.toWei('123', 'wei'))
       };
-      const rawTx = new EthereumTx(txData);
       const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
-      rawTx.sign(privateKey);
-      const serializedTx = rawTx.serialize();
+      const signer = new ethers.Wallet(privateKey);
+      const signedTx = await signer.signTransaction(txData);
       const txSend1 = await rpcs.sendRawTransaction({
         currency,
-        rawTx: '0x' + serializedTx.toString('hex')
+        rawTx: signedTx
       });
       const txSend2 = await rpcs.sendRawTransaction({
         currency,
-        rawTx: '0x' + serializedTx.toString('hex')
+        rawTx: signedTx
       });
       expect(txSend1).to.equal(txSend2);
+    } catch(err) {
+      expect(err.toString()).to.not.exist();
+    }
+  });
+
+  it('should succeed send raw type 2 transaction', async () => {
+    const txCount = await rpcs.getTransactionCount({
+      currency,
+      address: config.account
+    });
+    try {
+      // construct the transaction data
+      const txData = {
+        nonce: txCount,
+        chainId: 1337,
+        gasLimit: 25000,
+        type: 2,
+        maxFeePerGas: Number(util.toWei('10', 'gwei')),
+        to: config.currencyConfig.sendTo,
+        value: Number(util.toWei('321', 'wei'))
+      };
+      const privateKey = Buffer.from(config.currencyConfig.privateKey, 'hex');
+      const signer = new ethers.Wallet(privateKey);
+      const signedTx = await signer.signTransaction(txData);
+      const decoded = await rpcs.decodeRawTransaction({ currency, rawTx: signedTx });
+      assert.isDefined(decoded);
+      assert.isObject(decoded);
+      expect(decoded.type).to.equal(2);
+      const txSend1 = await rpcs.sendRawTransaction({
+        currency,
+        rawTx: signedTx
+      });
+      expect(txSend1).to.equal('0x94266a12747ccea60d7566777d22c8e3b7bbaa71e16e69468c547c2bab0b9f90');      
     } catch(err) {
       expect(err.toString()).to.not.exist();
     }
@@ -326,6 +352,16 @@ describe('ETH Tests', function() {
     const { rawTx } = config.currencyConfig;
     const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
     assert.isDefined(decoded);
+  });
+
+  it('should be able to decode a raw type 2 transaction', async () => {
+    const rawTx = '0x02f9017d0580808504a817c800809437d7b3bbd88efde6a93cf74d2f5b0385d3e3b08a870dd764300b8000b90152f9014f808504a817c800809437d7b3bbd88efde6a93cf74d2f5b0385d3e3b08a870dd764300b8000b90124b6b4af05000000000000000000000000000000000000000000000000000dd764300b800000000000000000000000000000000000000000000000000000000004a817c8000000000000000000000000000000000000000000000000000000016ada606a26050bb49a5a8228599e0dd48c1368abd36f4f14d2b74a015b2d168dbcab0773ce399393220df874bb22ca961f351e038acd2ba5cc8c764385c9f23707622cc435000000000000000000000000000000000000000000000000000000000000001c7e247d684a635813267b10a63f7f3ba88b28ca2790c909110b28236cf1b9bba03451e83d5834189f28d4c77802fc76b7c760a42bc8bebf8dd15e6ead146805630000000000000000000000000000000000000000000000000000000000000000058080c0';
+    const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
+    assert.isDefined(decoded);
+    assert.isObject(decoded);
+    expect(decoded.type).to.equal(2);
+    assert.isDefined(decoded.maxFeePerGas);
+    assert.isDefined(decoded.maxPriorityFeePerGas);
   });
 
   it('should get the tip', async () => {
