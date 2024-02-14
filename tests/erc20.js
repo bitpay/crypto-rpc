@@ -133,11 +133,21 @@ describe('ERC20 Tests', function() {
     assert(emitResults[0].error);
   });
 
-  it('should be able to decode a raw transaction', async () => {
+  it('should be able to decode a non ERC-20 raw transaction', async () => {
     const { rawTx } = config.currencyConfig;
     assert(rawTx);
     const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
     assert(decoded);
+    assert(!decoded.decodedData);
+  });
+
+  it('should be able to decode a raw ERC-20 transaction', async () => {
+    const rawTx = '0xf86c118459682f0083027100949c9933a9258347db795ade131c93d1c5ae53438980b844a9059cbb0000000000000000000000007ee308b49e36ab516cd0186b3a47cfd31d2499a100000000000000000000000000000000000000000000000000f4a6889d2aeff6830138818080';
+    const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
+    assert(decoded);
+    assert(decoded.decodedData);   
+    expect(decoded.decodedData.args._to).to.equal('0x7ee308b49e36Ab516cd0186B3a47CFD31d2499A1');
+    expect(Number(decoded.decodedData.args._value)).to.equal(68862999999999990);
   });
 });
 
