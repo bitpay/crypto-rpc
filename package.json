@@ -15,7 +15,6 @@
   "license": "ISC",
   "prettier": {},
   "dependencies": {
-    "abi-decoder": "2.4.0",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
     "dogecoind-rpc": "0.8.1",
