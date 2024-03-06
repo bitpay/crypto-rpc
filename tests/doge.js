@@ -250,13 +250,12 @@ describe('DOGE Tests', function() {
     expect(info).to.have.property('headers');
     expect(info).to.have.property('bestblockhash');
     expect(info).to.have.property('difficulty');
-    // expect(info).to.have.property('time');
     expect(info).to.have.property('mediantime');
     expect(info).to.have.property('verificationprogress');
     expect(info).to.have.property('initialblockdownload');
     expect(info).to.have.property('chainwork');
-    // expect(info).to.have.property('size_on_disk');
     expect(info).to.have.property('pruned');
-    // expect(info).to.have.property('warnings');
+    expect(info).to.have.property('softforks');
+    expect(info).to.have.property('bip9_softforks');
   });
 });
