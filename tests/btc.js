@@ -368,4 +368,21 @@ describe('BTC Tests', function() {
       });
     });
   });
+
+  it('should be able to get server info', async () => {
+    const info = await rpcs.getServerInfo({ currency });
+    expect(info).to.have.property('chain');
+    expect(info).to.have.property('blocks');
+    expect(info).to.have.property('headers');
+    expect(info).to.have.property('bestblockhash');
+    expect(info).to.have.property('difficulty');
+    // expect(info).to.have.property('time'); // TODO this is added in newer bitcoin core version
+    expect(info).to.have.property('mediantime');
+    expect(info).to.have.property('verificationprogress');
+    expect(info).to.have.property('initialblockdownload');
+    expect(info).to.have.property('chainwork');
+    // expect(info).to.have.property('size_on_disk'); // TODO this is added in newer bitcoin core version
+    expect(info).to.have.property('pruned');
+    expect(info).to.have.property('warnings');
+  });
 });

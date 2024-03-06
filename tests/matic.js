@@ -303,4 +303,9 @@ describe('MATIC Tests', function() {
     const utilVaildate = util.isAddress('NOTANADDRESS');
     assert.isTrue(isValid === utilVaildate);
   });
+
+  it('should be able to get server info', async () => {
+    const info = await rpcs.getServerInfo({ currency });
+    expect(typeof info).to.equal('string');
+  });
 });

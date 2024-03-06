@@ -53,33 +53,42 @@ describe('XRP Tests', function() {
     assert.isTrue(fee === '10');
   });
 
-  it('should get block', async () => {
-    try {
-      block = await rpcs.getBlock({ currency, hash: blockHash });
-    } catch (err) {
-      expect(err).to.not.exist();
-    }
+  const blockCases = [
+    { description: 'by hash', params: { hash: blockHash  } },
+    { description: 'by index', params: { index: 'defined below' } },
+    { description: 'by latest', params: { index: 'latest' } },
+  ];
+  Object.defineProperty(blockCases[1].params, 'index', { get: () => block.ledger_index });
 
-    expect(block).to.have.property('ledger');
-    let ledger = block.ledger;
-    // from xrpl documentation: https://xrpl.org/ledger.html (9/26/2023)
-    // The following fields are deprecated and may be removed without further notice: accepted, totalCoins (use total_coins instead).
-    // as a result the following is commented out
-    // expect(ledger).to.have.property('accepted');
-    // expect(ledger.accepted).to.equal(true);
-    expect(ledger).to.have.property('ledger_hash');
-    expect(ledger).to.have.property('ledger_index');
-    expect(ledger).to.have.property('parent_hash');
-    expect(ledger).to.have.property('transactions');
-    expect(ledger.transactions).to.deep.equal([]);
-    expect(block).to.have.property('ledger_hash');
-    expect(block).to.have.property('ledger_index');
-    expect(block.ledger_hash).to.equal(ledger.ledger_hash);
-    expect(block.ledger_index.toString()).to.equal(ledger.ledger_index);
-    expect(block).to.have.property('validated');
-    expect(block.validated).to.equal(true);
-    assert(block);
-  });
+  for (const bcase of blockCases) {
+    it(`should get block ${bcase.description}`, async () => {
+      try {
+        block = await rpcs.getBlock({ currency, ...bcase.params });
+      } catch (err) {
+        expect(err).to.not.exist();
+      }
+
+      expect(block).to.have.property('ledger');
+      let ledger = block.ledger;
+      // from xrpl documentation: https://xrpl.org/ledger.html (9/26/2023)
+      // The following fields are deprecated and may be removed without further notice: accepted, totalCoins (use total_coins instead).
+      // as a result the following is commented out
+      // expect(ledger).to.have.property('accepted');
+      // expect(ledger.accepted).to.equal(true);
+      expect(ledger).to.have.property('ledger_hash');
+      expect(ledger).to.have.property('ledger_index');
+      expect(ledger).to.have.property('parent_hash');
+      expect(ledger).to.have.property('transactions');
+      expect(ledger.transactions).to.deep.equal([]);
+      expect(block).to.have.property('ledger_hash');
+      expect(block).to.have.property('ledger_index');
+      expect(block.ledger_hash).to.equal(ledger.ledger_hash);
+      expect(block.ledger_index.toString()).to.equal(ledger.ledger_index);
+      expect(block).to.have.property('validated');
+      expect(block.validated).to.equal(true);
+      assert(block);
+    });
+  }
 
   it('should return nothing for unknown block', async () => {
     let unknownBlock;
@@ -315,6 +324,15 @@ describe('XRP Tests', function() {
     expect(accountInfo.account_data).to.have.property('PreviousTxnID');
     expect(accountInfo.account_data).to.have.property('PreviousTxnLgrSeq');
     expect(accountInfo.account_data).to.have.property('Sequence');
+  });
+
+  it('should get server info', async () => {
+    const serverInfo = await rpcs.getServerInfo({ currency });
+    expect(serverInfo).to.have.property('complete_ledgers');
+    expect(serverInfo).to.have.property('server_state');
+    expect(serverInfo).to.have.property('uptime');
+    expect(serverInfo).to.have.property('validated_ledger');
+    expect(serverInfo.validated_ledger).to.have.property('reserve_base_xrp');
   });
 
   it('should disconnect from rpc when idle', async () => {

@@ -188,4 +188,23 @@ describe('LND Tests', function() {
     expect(payments.failed).to.not.exist;
     expect(payments.payment.tokens).to.equal(1000);
   });
+
+  it('should be able to get server info', async () => {
+    const info = await lightning1.getServerInfo({ currency });
+    expect(info).to.have.property('chains');
+    expect(info).to.have.property('color');
+    expect(info).to.have.property('active_channels_count');
+    expect(info).to.have.property('alias');
+    expect(info).to.have.property('current_block_hash');
+    expect(info).to.have.property('current_block_height');
+    expect(info).to.have.property('features');
+    expect(info).to.have.property('is_synced_to_chain');
+    expect(info).to.have.property('is_synced_to_graph');
+    expect(info).to.have.property('latest_block_at');
+    expect(info).to.have.property('peers_count');
+    expect(info).to.have.property('pending_channels_count');
+    expect(info).to.have.property('public_key');
+    expect(info).to.have.property('uris');
+    expect(info).to.have.property('version');
+  });
 });
