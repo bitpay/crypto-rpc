@@ -26,11 +26,13 @@ describe('BTC Tests', function() {
   const { currencyConfig } = config;
   const rpcs = new CryptoRpc(config, currencyConfig);
   const bitcoin = rpcs.get(currency);
+  const walletName = 'wallet0';
+  const addressLabel = 'abc123';
   let walletAddress = '';
 
   before(async () => {
-    await bitcoin.asyncCall('createwallet', ['wallet0']);
-    walletAddress = await bitcoin.asyncCall('getnewaddress', []);
+    await bitcoin.asyncCall('createwallet', [walletName]);
+    walletAddress = await bitcoin.asyncCall('getnewaddress', [addressLabel]);
   });
 
   it('should determine if wallet is encrypted', async () => {
@@ -107,7 +109,6 @@ describe('BTC Tests', function() {
   it('should be able to send a transaction', async () => {
     const txid = await rpcs.unlockAndSendToAddress({ currency, address: walletAddress, amount: '10000', passphrase: currencyConfig.unlockPassword });
     expect(txid).to.have.lengthOf(64);
-    assert(txid);
   });
 
   it('should be able to send many transactions', async () => {
@@ -313,6 +314,48 @@ describe('BTC Tests', function() {
       confirmations = await rpcs.getConfirmations({ currency, txid });
       expect(confirmations).to.eq(1);
     });
+  });
+
+  describe('Get Wallet Transactions', function() {
+    let txs;
+
+    describe('Unloaded wallet', function() {
+      before(async () => {
+        await bitcoin.asyncCall('unloadwallet', [walletName]);
+      });
+      after(async () => {
+        await bitcoin.asyncCall('loadwallet', [walletName]);
+      });
+
+      it('should error if no wallet is loaded', async () => {
+        try {
+          await rpcs.getTransactions({ currency });
+          throw new Error('should have thrown');
+        } catch (e) {
+          expect(e.message).to.include('No wallet is loaded');
+        }
+      });
+    });
+
+    it('should return wallet transactions', async () => {
+      txs = await rpcs.getTransactions({ currency });
+      expect(txs).to.have.lengthOf(10);
+    });
+
+    it('should return wallet transactions with count and skip', async () => {
+      const _txs = await rpcs.getTransactions({ currency, count: 2, skip: 3 });
+      expect(_txs).to.have.lengthOf(2);
+      // txs are ordered in ascending order, so latest are at the bottom.
+      expect(_txs[1].txid).to.equal(txs.slice(-3)[0].txid);
+    });
+
+    it('should return wallet transactions by label', async () => {
+      const _txs = await rpcs.getTransactions({ currency, label: addressLabel });
+      expect(_txs).to.have.lengthOf(10);
+      expect(_txs.every(t => t.label === addressLabel)).to.equal(true);
+      expect(_txs[0].txid).to.not.equal(txs[0].txid); // makes sure it's not just returning the same array
+    });
+
   });
 
   describe('Tx outputs', function() {

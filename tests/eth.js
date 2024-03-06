@@ -404,4 +404,9 @@ describe('ETH Tests', function() {
     const info = await rpcs.getServerInfo({ currency });
     expect(typeof info).to.equal('string');
   });
+
+  it('should get pending transactions', async () => {
+    const pendingTxs = await rpcs.getTransactions({ currency });
+    expect(Array.isArray(pendingTxs)).to.equal(true);
+  });
 });
