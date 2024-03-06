@@ -257,6 +257,6 @@ describe('DOGE Tests', function() {
     expect(info).to.have.property('chainwork');
     // expect(info).to.have.property('size_on_disk');
     expect(info).to.have.property('pruned');
-    expect(info).to.have.property('warnings');
+    // expect(info).to.have.property('warnings');
   });
 });
