@@ -15,6 +15,8 @@
   "license": "ISC",
   "prettier": {},
   "dependencies": {
+    "@solana/spl-token": "^0.4.6",
+    "@solana/web3.js": "^1.91.8",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
     "dogecoind-rpc": "0.8.1",
