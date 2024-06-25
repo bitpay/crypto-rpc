@@ -138,6 +138,7 @@ services:
       -b 2
       -g 20000000000
       -p 8545
+      -a 20
 
   rippled:
     networks:
