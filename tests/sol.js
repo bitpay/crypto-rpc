@@ -39,6 +39,7 @@ describe('SOL Tests', function () {
   this.timeout(10000);
   const currency = 'SOL';
   const rpcs = new CryptoRpc(config);
+  const MIN_FEE = 5000;
   let txid = '';
   let blockHash = '';
   let slot = '';
@@ -55,7 +56,7 @@ describe('SOL Tests', function () {
     const balance = await rpcs.getBalance({
       address: config.account
     });
-    assert(Number(balance));
+    assert(Number.isInteger(balance));
     expect(balance).to.equal(100000000000);
   });
 
@@ -69,14 +70,18 @@ describe('SOL Tests', function () {
       address: config.currencyConfig.sendTo
     });
     const amount = 10;
-    txid = await rpcs.sendToAddress({
-      currency,
-      address: config.currencyConfig.sendTo,
-      amount,
-      fromAccount: config.account,
-      fromAccountKeypair: keypair,
-    });
-
+    try {
+      // set txid to be used in subsequent tests
+      txid = await rpcs.sendToAddress({
+        currency,
+        address: config.currencyConfig.sendTo,
+        amount,
+        fromAccount: config.account,
+        fromAccountKeypair: keypair,
+      });
+    } catch (e) {
+      should.not.exist(e);
+    }
     assert(txid != null);
     expect(typeof txid).to.equal('string');
     txid.length.should.be.at.least(86);
@@ -87,7 +92,7 @@ describe('SOL Tests', function () {
       address: config.currencyConfig.sendTo
     });
     expect(balance2After).to.equal(balance2Before + amount);
-    balance1After.should.be.at.most(balance1Before - amount - 5000);
+    balance1After.should.be.at.most(balance1Before - amount - MIN_FEE);
   });
 
   it('should be able to get a chain tip', async () => {
@@ -131,15 +136,19 @@ describe('SOL Tests', function () {
       address: config.currencyConfig.sendTo
     });
     const amount = 10;
-    const _txid = await rpcs.sendToAddress({
-      currency,
-      address: config.currencyConfig.sendTo,
-      amount,
-      fromAccount: config.account,
-      fromAccountKeypair: keypair,
-      txType: 0
-    });
-
+    let _txid;
+    try {
+      _txid = await rpcs.sendToAddress({
+        currency,
+        address: config.currencyConfig.sendTo,
+        amount,
+        fromAccount: config.account,
+        fromAccountKeypair: keypair,
+        txType: 0
+      });
+    } catch (e) {
+      should.not.exist(e);
+    }
     assert(_txid != null);
     expect(typeof _txid).to.equal('string');
     _txid.length.should.be.at.least(86);
@@ -150,7 +159,7 @@ describe('SOL Tests', function () {
       address: config.currencyConfig.sendTo
     });
     expect(balance2After).to.equal(balance2Before + amount);
-    balance1After.should.be.at.most(balance1Before - amount - 5000);
+    balance1After.should.be.at.most(balance1Before - amount - MIN_FEE);
   });
 
   it('should validate address', async () => {
@@ -185,7 +194,7 @@ describe('SOL Tests', function () {
   });
 
   it('should be able to send a raw transaciton (Uint8Array)', async () => {
-    const { hash } = await rpcs.getTip({ currency });
+    const { hash, height } = await rpcs.getTip({ currency });
     const secretKey = Uint8Array.from(config.privateKey);
     const keypair = Web3.Keypair.fromSecretKey(secretKey);
     const address = new Web3.PublicKey(config.currencyConfig.sendTo);
@@ -221,7 +230,11 @@ describe('SOL Tests', function () {
     assert(_txid != null);
     expect(typeof _txid).to.equal('string');
     _txid.length.should.be.at.least(86);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await rpcs.rpcs['SOL'].connection.confirmTransaction({
+      signature: _txid,
+      blockhash: hash,
+      lastValidBlockHeight: height
+    });
     const balance1After = await rpcs.getBalance({
       currency,
       address: config.account
@@ -230,16 +243,17 @@ describe('SOL Tests', function () {
       currency,
       address: config.currencyConfig.sendTo
     });
-    balance1After.should.be.at.most(balance1Before - amount - 5000);
-    expect(balance2After).to.equal(balance2Before + amount);    
+    balance1After.should.be.at.most(balance1Before - amount - MIN_FEE);
+    expect(balance2After).to.equal(balance2Before + amount);
   });
 
   it('should be able to send a raw transaciton (base64 string)', async () => {
+    const solRPC = rpcs.rpcs['SOL'];
     const secretKey = Uint8Array.from(config.privateKey);
     const keypair = Web3.Keypair.fromSecretKey(secretKey);
     const amount = 1;
     const fromAccountKeypair = keypair;
-    const { hash } = await rpcs.getTip({ currency });
+    const { hash, height } = await rpcs.getTip({ currency });
     // get before balances
     const balance1Before = await rpcs.getBalance({
       currency,
@@ -257,13 +271,17 @@ describe('SOL Tests', function () {
     });
     decodedTx.message.recentBlockhash = hash;
     decodedTx.sign([fromAccountKeypair]);
-    const rawTx2 = rpcs.rpcs['SOL'].toBuffer(decodedTx.serialize()).toString('base64');
+    const rawTx2 = solRPC.uint8ArrayToBase64(decodedTx.serialize());
     // send transaction
     const _txid = await rpcs.sendRawTransaction({
       currency,
       rawTx: rawTx2,
     });
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await solRPC.connection.confirmTransaction({
+      signature: _txid,
+      blockhash: hash,
+      lastValidBlockHeight: height
+    });
     assert(_txid != null);
     expect(typeof _txid).to.equal('string');
     _txid.length.should.be.at.least(86);
@@ -276,8 +294,8 @@ describe('SOL Tests', function () {
     const balance2After = await rpcs.getBalance({
       currency,
       address: config.currencyConfig.sendTo
-    });    
-    balance1After.should.be.at.most(balance1Before - amount - 5000);
+    });
+    balance1After.should.be.at.most(balance1Before - amount - MIN_FEE);
     expect(balance2After).to.equal(balance2Before + amount);
   });
 
@@ -285,41 +303,53 @@ describe('SOL Tests', function () {
     const fee = await rpcs.estimateFee({ currency, nBlocks: 4 });
     should.exist(fee);
     assert(Number.isInteger(fee));
-    fee.should.be.at.least(5000);
+    fee.should.be.at.least(MIN_FEE);
   });
 
   it('should estimate fee by transaction', async () => {
-    const rawTx = await rpcs.getRawTransaction({ currency, txid });
-    should.exist(rawTx);
-    assert(typeof rawTx === 'string');
-    const fee = await rpcs.estimateFee({ currency, rawTx });
-    should.exist(fee);
-    assert(Number.isInteger(fee));
-    fee.should.be.at.least(5000);
+    try {
+      const rawTx = await rpcs.getRawTransaction({ currency, txid });
+      should.exist(rawTx);
+      assert(typeof rawTx === 'string');
+      const fee = await rpcs.estimateFee({ currency, rawTx });
+      should.exist(fee);
+      assert(Number.isInteger(fee));
+      fee.should.be.at.least(MIN_FEE);
+    } catch (e) {
+      should.not.exist(e);
+    }
   });
 
   it('should be able estimate priority fee', async () => {
     const devRPC = new CryptoRpc(devnetConfig);
-    const fee1 = await devRPC.estimateMaxPriorityFee({ currency, percentile: 10 });
-    const fee2 = await devRPC.estimateMaxPriorityFee({ currency });
-    const fee3 = await devRPC.estimateMaxPriorityFee({ currency, percentile: 100 });
-    if (fee1 == null || fee2 == null || fee3 == null) {
-      return;
+    const percentiles = [10, 25, 50, 75, 100];
+    const fees = [];
+
+    for (let i = 0; i < percentiles.length; i++) {
+      const fee = await devRPC.estimateMaxPriorityFee({ currency, percentile: percentiles[i] });
+      if (Number(fee)) {
+        fees.push(fee);
+      }
     }
-    should.exist(fee1);
-    should.exist(fee2);
-    should.exist(fee3);    
-    fee1.should.be.at.least(0);
-    fee1.should.be.at.most(fee2);
-    fee2.should.be.at.least(fee1);
-    fee3.should.be.at.least(fee2);
+
+    fees.length.should.be.at.least(1);
+
+    for (let i = 0; i < fees.length; i++) {
+      should.exist(fees[i]);
+      fees[i].should.be.at.least(1);
+      if (i > 0) {
+        fees[i].should.be.at.least(fees[i - 1]);
+      } else if (fees.length > 2) {
+        fees[i].should.be.at.most(fees[i + 1]);
+      }
+    }
   });
 
   it('should be able to connect to devnet', async () => {
     const devRPC = new CryptoRpc(devnetConfig);
     const address = new Web3.PublicKey(devnetConfig.currencyConfig.address);
     const balance = await devRPC.getBalance({ currency, address });
-    assert(Number(balance));
+    assert(Number.isInteger(balance));
     balance.should.be.at.least(1000);
   });
 
