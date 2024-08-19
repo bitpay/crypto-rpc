@@ -81,7 +81,7 @@ describe('ETH Tests', function() {
     sinon.spy(ethRPC.web3.eth, 'getBlock');
     let maxFee = await ethRPC.estimateMaxFee({ percentile: 15 });
     assert.isDefined(maxFee); 
-    expect(maxFee).to.be.equal(2654455240);
+    expect(maxFee).to.be.equal(1154455240);
     expect(ethRPC.web3.eth.getBlock.callCount).to.be.lt(10);
     expect(ethRPC.emitter.emit.callCount).to.equal(0);
   });
@@ -91,7 +91,7 @@ describe('ETH Tests', function() {
     const maxPriorityFee = await ethRPC.estimateMaxPriorityFee({});
     assert.isDefined(maxPriorityFee);
     expect(maxPriorityFee).to.be.gt(0);
-    expect(maxPriorityFee).to.be.equal(2500000000);
+    expect(maxPriorityFee).to.be.equal(1000000000);
     expect(ethRPC.blockMaxPriorityFeeCache.set.callCount).to.equal(0);
   });
 

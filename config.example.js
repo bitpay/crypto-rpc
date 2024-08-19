@@ -48,5 +48,12 @@ module.exports = {
         type: 'ERC20'
       }
     }
+  },
+  ARBNode: {
+    chain: 'ARB',
+    host: 'localhost',
+    rpcPort: '8546',
+    protocol: 'http',
+    isEVM: true
   }
 };
