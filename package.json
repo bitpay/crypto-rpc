@@ -6,6 +6,7 @@
   "scripts": {
     "ci:test": "npm run lint && npm run truffle:compile && npm run truffle:migrate && npm run truffle:test && mocha --recursive ./tests",
     "test": "docker-compose down && docker-compose build && docker-compose run test_runner",
+    "test:mac": "docker compose down && docker compose build && docker compose run test_runner",
     "lint": "npx eslint .",
     "truffle:compile": "cd blockchain/evm/ && ../../node_modules/.bin/truffle compile --network development_geth && ../../node_modules/.bin/truffle compile --network development_matic",
     "truffle:test": "cd blockchain/evm/ && ../../node_modules/.bin/truffle test --network development_geth && ../../node_modules/.bin/truffle test --network development_matic",
