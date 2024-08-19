@@ -3,7 +3,7 @@ module.exports = {
     browser: true,
     commonjs: true,
     node: true,
-    es2020: true,
+    es2022: true,
     mocha: true
   },
   extends: 'eslint:recommended',
