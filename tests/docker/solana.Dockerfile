@@ -6,16 +6,16 @@ RUN  npm install @solana/web3.js @solana/spl-token
 FROM solanalabs/solana:v1.10.32
 
 # Copy keypair files to the container
-COPY ./tests/docker/solana/keypair/id.json /solana/keypair/id.json
-COPY ./tests/docker/solana/keypair/id2.json /solana/keypair/id2.json
-COPY ./tests/docker/solana/keypair/validator.json /root/.config/solana/id.json
+COPY ./blockchain/solana/keypair/id.json /solana/keypair/id.json
+COPY ./blockchain/solana/keypair/id2.json /solana/keypair/id2.json
+COPY ./blockchain/solana/keypair/validator.json /root/.config/solana/id.json
 
 # Add a script to start the validator and fund the address
-COPY ./tests/docker/solana/start-solana.sh /solana/start-solana.sh
+COPY ./blockchain/solana/startSolana.sh /solana/startSolana.sh
 
 # Make the script executable
-RUN chmod +x /solana/start-solana.sh
+RUN chmod +x /solana/startSolana.sh
 
-ENTRYPOINT ["./solana/start-solana.sh"]
+ENTRYPOINT ["./solana/startSolana.sh"]
 EXPOSE 8899
 EXPOSE 8900

@@ -3,7 +3,7 @@ const {assert, expect} = require('chai');
 const mocha = require('mocha');
 const util = require('web3-utils');
 const { before, describe, it } = mocha;
-const ERC20 = require('../blockchain/build/contracts/CryptoErc20.json');
+const ERC20 = require('../blockchain/evm/build/contracts/CryptoErc20.json');
 const config = {
   chain: 'ETH',
   host: 'geth',

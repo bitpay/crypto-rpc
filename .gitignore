@@ -23,5 +23,5 @@ dist
 src/vendor
 src/dist
 config.js
-blockchain/build
-tests/docker/solana/data
+blockchain/evm/build
+blockchain/solana/data

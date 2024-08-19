@@ -8,8 +8,9 @@ const should = chai.should();
 const mocha = require('mocha');
 const { before, describe, it } = mocha;
 const sinon = require('sinon');
-const privateKey1 = require('./docker/solana/keypair/id.json');
-const privateKey2 = require('./docker/solana/keypair/id2.json');
+const privateKey1 = require('../blockchain/solana/keypair/id.json');
+const privateKey2 = require('../blockchain/solana/keypair/id2.json');
+const privateKey3 = require('../blockchain/solana/keypair/id2.json');
 const config = {
   chain: 'SOL',
   host: 'solana',
@@ -21,6 +22,8 @@ const config = {
   currencyConfig: {
     sendTo: '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR',
     privateKey: privateKey2,
+    tokenAccount: 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY',
+    tokenAccountprivateKey: privateKey3,
     rawTx:
       'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABA30ceZB+ENtmJJs1VsVVNdQOoqWSa6qXixe7usmdr33Hb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH7WMa6eSamXeAYr9Si588q7y9qaeAjv8ybNnel+W5BzAQICAAEMAgAAAAEAAAAAAAAAAA=='
   }
