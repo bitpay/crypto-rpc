@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 const { CryptoRpc } = require('../');
 const Web3 = require('@solana/web3.js');
 const chai = require('chai');
@@ -8,9 +7,9 @@ const should = chai.should();
 const mocha = require('mocha');
 const { before, describe, it } = mocha;
 const sinon = require('sinon');
-const privateKey1 = require('../blockchain/solana/keypair/id.json');
-const privateKey2 = require('../blockchain/solana/keypair/id2.json');
-const privateKey3 = require('../blockchain/solana/keypair/id2.json');
+const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
+const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
+const privateKey3 = require('../blockchain/solana/test/keypair/id2.json');
 const config = {
   chain: 'SOL',
   host: 'solana',

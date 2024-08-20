@@ -24,4 +24,4 @@ src/vendor
 src/dist
 config.js
 blockchain/evm/build
-blockchain/solana/data
+blockchain/solana/test/data
