@@ -9,7 +9,7 @@ const { before, describe, it } = mocha;
 const sinon = require('sinon');
 const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
 const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
-const privateKey3 = require('../blockchain/solana/test/keypair/id2.json');
+const privateKey3 = require('../blockchain/solana/test/keypair/id3.json');
 const config = {
   chain: 'SOL',
   host: 'solana',
@@ -21,8 +21,8 @@ const config = {
   currencyConfig: {
     sendTo: '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR',
     privateKey: privateKey2,
-    tokenAccount: 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY',
-    tokenAccountprivateKey: privateKey3,
+    nonceAccount: 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY',
+    nonceAccountPrivateKey: privateKey3,
     rawTx:
       'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQABA30ceZB+ENtmJJs1VsVVNdQOoqWSa6qXixe7usmdr33Hb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH7WMa6eSamXeAYr9Si588q7y9qaeAjv8ybNnel+W5BzAQICAAEMAgAAAAEAAAAAAAAAAA=='
   }
@@ -46,8 +46,19 @@ describe('SOL Tests', function () {
   let blockHash = '';
   let slot = '';
 
-  before(done => {
-    setTimeout(done, 5000);
+  before(async () => {
+    const balance = await rpcs.getBalance({
+      address: config.account
+    });
+    // Airdrop if airdrop on startup failed
+    if (Number.isInteger(balance) && balance < 100000000000) {
+      const _rpc = rpcs.rpcs['SOL'];
+      const airdrop1 = await _rpc.connection.requestAirdrop(new Web3.PublicKey(config.account), 1e11); // 100 SOL
+      await _rpc.connection.confirmTransaction(airdrop1);
+      const airdrop2 = await _rpc.connection.requestAirdrop(new Web3.PublicKey(config.currencyConfig.sendTo), 1e11);
+      await _rpc.connection.confirmTransaction(airdrop2);
+    }
+    return;
   });
 
   afterEach(() => {
@@ -62,39 +73,83 @@ describe('SOL Tests', function () {
     expect(balance).to.equal(100000000000);
   });
 
-  it('should be able to send a transaction', async () => {
-    const secretKey = Uint8Array.from(config.privateKey);
-    const keypair = Web3.Keypair.fromSecretKey(secretKey);
-    const balance1Before = await rpcs.getBalance({
-      address: config.account
-    });
-    const balance2Before = await rpcs.getBalance({
-      address: config.currencyConfig.sendTo
-    });
-    const amount = 10;
+  it('should be able to create a nonce account', async () => {
+    const senderSecretKey = Uint8Array.from(config.privateKey);
+    const senderKeypair = Web3.Keypair.fromSecretKey(senderSecretKey);
+    const nonceSecretKey = Uint8Array.from(config.currencyConfig.nonceAccountPrivateKey);
+    const nonceKeypair = Web3.Keypair.fromSecretKey(nonceSecretKey);
+    let txid;
     try {
-      // set txid to be used in subsequent tests
-      txid = await rpcs.sendToAddress({
-        currency,
-        address: config.currencyConfig.sendTo,
-        amount,
-        fromAccount: config.account,
-        fromAccountKeypair: keypair,
-      });
-    } catch (e) {
-      should.not.exist(e);
+      txid = await rpcs.rpcs['SOL'].createNonceAccount(senderKeypair, nonceKeypair);
+    } catch (err) {
+      should.not.exist(err.toString());
+      should.not.exist(err);
     }
     assert(txid != null);
     expect(typeof txid).to.equal('string');
     txid.length.should.be.at.least(86);
-    const balance1After = await rpcs.getBalance({
-      address: config.account
-    });
-    const balance2After = await rpcs.getBalance({
-      address: config.currencyConfig.sendTo
-    });
-    expect(balance2After).to.equal(balance2Before + amount);
-    balance1After.should.be.at.most(balance1Before - amount - MIN_FEE);
+  });
+
+  it('should not be able to create a nonce account from an existing account', async () => {
+    const senderSecretKey = Uint8Array.from(config.currencyConfig.privateKey);
+    const senderKeypair = Web3.Keypair.fromSecretKey(senderSecretKey);
+    const nonceSecretKey = Uint8Array.from(config.currencyConfig.nonceAccountPrivateKey);
+    const nonceKeypair = Web3.Keypair.fromSecretKey(nonceSecretKey);
+    let txid;
+    try {
+      txid = await rpcs.rpcs['SOL'].createNonceAccount(senderKeypair, nonceKeypair);
+    } catch (err) {
+      should.exist(err);
+      expect(err.transactionMessage).to.equal('Transaction simulation failed: Error processing Instruction 0: custom program error: 0x0');
+    }
+    assert(!txid);
+  });
+
+  it('should be able to send a transaction', async () => {
+    const secretKey = Uint8Array.from(config.privateKey);
+    const keypair = Web3.Keypair.fromSecretKey(secretKey);
+    const rpc = rpcs.rpcs['SOL'];
+    const { hash, height } = await rpcs.getTip({ currency });
+
+    try {
+      const balance1Before = await rpcs.getBalance({
+        address: config.account
+      });
+      const balance2Before = await rpcs.getBalance({
+        address: config.currencyConfig.sendTo
+      });
+      const amount = 10;
+      try {
+        // set txid to be used in subsequent tests
+        txid = await rpcs.sendToAddress({
+          currency,
+          address: config.currencyConfig.sendTo,
+          amount,
+          fromAccountKeypair: keypair,
+        });
+        const confirmation = await rpc.connection.confirmTransaction({
+          signature: txid,
+          blockhash: hash,
+          lastValidBlockHeight: height
+        });
+        should.not.exist(confirmation.value.err);
+      } catch (e) {
+        should.not.exist(e);
+      }
+      assert(txid != null);
+      expect(typeof txid).to.equal('string');
+      txid.length.should.be.at.least(86);
+      const balance1After = await rpcs.getBalance({
+        address: config.account
+      });
+      const balance2After = await rpcs.getBalance({
+        address: config.currencyConfig.sendTo
+      });
+      expect(balance2After).to.equal(balance2Before + amount);
+      balance1After.should.be.at.most(balance1Before - amount - MIN_FEE);
+    } catch (err) {
+      should.not.exist(err);
+    }
   });
 
   it('should be able to get a chain tip', async () => {
@@ -125,12 +180,13 @@ describe('SOL Tests', function () {
       currency,
       address: config.account
     });
-    expect(count).to.equal(2);
+    expect(count).to.equal(3);
   });
 
   it('should be able to send a version 0 transaction', async () => {
     const secretKey = Uint8Array.from(config.privateKey);
     const keypair = Web3.Keypair.fromSecretKey(secretKey);
+    const { hash, height } = await rpcs.getTip({ currency });
     const balance1Before = await rpcs.getBalance({
       address: config.account
     });
@@ -148,6 +204,12 @@ describe('SOL Tests', function () {
         fromAccountKeypair: keypair,
         txType: 0
       });
+      const confirmation = await rpcs.rpcs['SOL'].connection.confirmTransaction({
+        signature: _txid,
+        blockhash: hash,
+        lastValidBlockHeight: height
+      });
+      should.not.exist(confirmation.value.err);
     } catch (e) {
       should.not.exist(e);
     }
@@ -162,6 +224,51 @@ describe('SOL Tests', function () {
     });
     expect(balance2After).to.equal(balance2Before + amount);
     balance1After.should.be.at.most(balance1Before - amount - MIN_FEE);
+  });
+
+  it('should be able to send a legacy transaction with a nonce account', async () => {
+    const secretKey = Uint8Array.from(config.privateKey);
+    const keypair = Web3.Keypair.fromSecretKey(secretKey);
+    const rpc = rpcs.rpcs['SOL'];
+    const { hash, height } = await rpcs.getTip({ currency });
+
+    try {
+      const balance1Before = await rpcs.getBalance({
+        address: config.account
+      });
+      const balance2Before = await rpcs.getBalance({
+        address: config.currencyConfig.sendTo
+      });
+      const amount = 10;
+
+      // set txid to be used in subsequent tests
+      txid = await rpcs.sendToAddress({
+        currency,
+        address: config.currencyConfig.sendTo,
+        amount,
+        nonceAddress: config.currencyConfig.nonceAccount,
+        fromAccountKeypair: keypair,
+      });
+      const confirmation = await rpc.connection.confirmTransaction({
+        signature: txid,
+        blockhash: hash,
+        lastValidBlockHeight: height
+      });
+      should.not.exist(confirmation.value.err);
+      assert(txid != null);
+      expect(typeof txid).to.equal('string');
+      txid.length.should.be.at.least(86);
+      const balance1After = await rpcs.getBalance({
+        address: config.account
+      });
+      const balance2After = await rpcs.getBalance({
+        address: config.currencyConfig.sendTo
+      });
+      expect(balance2After).to.equal(balance2Before + amount);
+      balance1After.should.be.at.most(balance1Before - amount - MIN_FEE);
+    } catch (err) {
+      should.not.exist(err);
+    }
   });
 
   it('should validate address', async () => {
