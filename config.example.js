@@ -55,5 +55,11 @@ module.exports = {
     rpcPort: '8546',
     protocol: 'http',
     isEVM: true
+  },
+  SOLNode: {
+    chain: 'SOL',
+    host: 'localhost',
+    rpcPort: '8899',
+    protocol: 'http'
   }
 };
