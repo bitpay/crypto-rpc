@@ -2,10 +2,32 @@ version: "3"
 
 services:
 
+  start:
+    build:
+      context: .
+      dockerfile: start.dockerfile
+    volumes:
+      - my_data1:/root/.lnd
+      - my_data2:/root/.lnd2
+    networks:
+      default:
+        ipv4_address: 172.28.0.21
+    depends_on:
+      - bitcoin
+      - bitcoin-cash
+      - dogecoin
+      - rippled
+      - litecoin
+      - lightning
+      - lightning2
+      - geth
+      - ganache
+      - solana
+
   test_runner:
     build:
       context: .
-      dockerfile: Dockerfile-test
+      dockerfile: ./tests/docker/Dockerfile-test
     volumes:
       - my_data1:/root/.lnd
       - my_data2:/root/.lnd2
