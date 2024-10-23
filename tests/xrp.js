@@ -83,6 +83,7 @@ describe('XRP Tests', function() {
       expect(block).to.have.property('ledger_hash');
       expect(block).to.have.property('ledger_index');
       expect(block.ledger_hash).to.equal(ledger.ledger_hash);
+      expect(typeof block.ledger_index).to.equal('number');
       expect(block.ledger_index.toString()).to.equal(ledger.ledger_index);
       expect(block).to.have.property('validated');
       expect(block.validated).to.equal(true);
