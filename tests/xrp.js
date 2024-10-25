@@ -385,7 +385,7 @@ describe('XRP Tests', function() {
     assert(decoded);
   });
 
-  it.only('should get the tip', async () => {
+  it('should get the tip', async () => {
     const tip = await rpcs.getTip({ currency });
     assert(tip != undefined);
     expect(tip).to.have.property('hash');
