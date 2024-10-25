@@ -274,6 +274,7 @@ describe('XRP Tests', function() {
     const recipient2 = 'rMGhv5SNsk81QN1fGu6RybDkUi2of36dua';
     const recipient3 = 'r4ip6t3NUe4UWguLUJCbyojxG6PdPZg9EJ';
     const recipient4 = 'rwtFtAMNXPoq4xgxn3FzKKGgVZErdcuLST';
+    const senderAddress_ed25519 = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf';
 
     before(async () => {
       await xrpRPC.rpc.connect();
@@ -307,10 +308,66 @@ describe('XRP Tests', function() {
       } while (currentSeq <= initialSeq);
     });
     it('should be able to get many transactions', async () => {
-      await xrpRPC.getTransactions({ address: sender });
+      const address = sender;
+      const result = await xrpRPC.getTransactions({ address });
+      expect(result).to.have.property('account', address);
+      expect(result).to.have.property('ledger_index_max').that.is.a('number');
+      expect(result).to.have.property('ledger_index_min').that.is.a('number');
+      expect(result).to.have.property('limit').that.is.a('number');
+      expect(result).to.have.property('transactions').that.is.an('array');
+      expect(result).to.have.property('validated').that.is.a('boolean');
+      expect(result.transactions).to.have.lengthOf.above(0);
+
+      const tx = result.transactions[0];
+      expect(tx).to.have.property('meta');
+      expect(tx).to.have.property('tx');
+      expect(tx.meta).to.have.property('delivered_amount').that.is.a('string');
+      expect(tx.tx).to.have.property('Account').that.is.a('string');
+      expect(tx.tx).to.have.property('Amount').that.is.a('string');
+      expect(tx.tx).to.have.property('DeliverMax').that.is.a('string');
+      expect(tx.tx).to.have.property('Destination').that.is.a('string');
+      expect(tx.tx).to.have.property('Fee').that.is.a('string');
+      expect(tx.tx).to.have.property('Flags').that.is.a('number');
+      expect(tx.tx).to.have.property('LastLedgerSequence').that.is.a('number');
+      expect(tx.tx).to.have.property('Sequence').that.is.a('number');
+      expect(tx.tx).to.have.property('SigningPubKey').that.is.a('string');
+      expect(tx.tx).to.have.property('TransactionType', 'Payment');
+      expect(tx.tx).to.have.property('TxnSignature').that.is.a('string');
+      expect(tx.tx).to.have.property('date').that.is.a('number');
+      expect(tx.tx).to.have.property('hash').that.is.a('string');
+      expect(tx.tx).to.have.property('inLedger').that.is.a('number');
+      expect(tx.tx).to.have.property('ledger_index').that.is.a('number');
     });
-    // it('should return an empty array if account isn\'t found', async () => {});
-    // it('should propagate any getTransactions error if not "err.data.error" is "actNotFound"', async () => {});
+    it('should return an empty array if account isn\'t found', async () => {
+      // Public key from wrong algorithm
+      const result = await xrpRPC.getTransactions({ address: senderAddress_ed25519 });
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(0);
+    });
+    it('should throw RippledError: Missing field "account" if address undefined', async () => {
+      try {
+        await xrpRPC.getTransactions({ address: undefined });
+        expect.fail('Expected error was not thrown');
+      } catch (err) {
+        expect(err).to.have.property('data');
+        const { data } = err;
+        expect(data).to.have.property('error', 'invalidParams');
+        expect(data).to.have.property('error_code', 31);
+        expect(data).to.have.property('error_message', 'Missing field \'account\'.');
+      }
+    });
+    it('should throw RippledError: Account malformed if bad address', async () => {
+      try {
+        await xrpRPC.getTransactions({ address: 'badAddress' });
+        expect.fail('Expected error was not thrown');
+      } catch (err) {
+        expect(err).to.have.property('data');
+        const { data } = err;
+        expect(data).to.have.property('error', 'actMalformed');
+        expect(data).to.have.property('error_code', 35);
+        expect(data).to.have.property('error_message', 'Account malformed.');
+      }
+    });
   });
 
   it('should be able to decode a raw transaction', async () => {
