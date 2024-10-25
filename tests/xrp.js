@@ -267,6 +267,52 @@ describe('XRP Tests', function() {
     expect(tx === null);
   });
 
+  describe('getTransactions', () => {
+    const sender = config.address;
+    const senderSeed = 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb';
+    const recipient1 = 'r38UsJxHSJKajC8qcNmofxJvCESnzmx7Ke';
+    const recipient2 = 'rMGhv5SNsk81QN1fGu6RybDkUi2of36dua';
+    const recipient3 = 'r4ip6t3NUe4UWguLUJCbyojxG6PdPZg9EJ';
+    const recipient4 = 'rwtFtAMNXPoq4xgxn3FzKKGgVZErdcuLST';
+
+    before(async () => {
+      await xrpRPC.rpc.connect();
+      const initialServerInfo = await xrpRPC.rpc.request({ command: 'server_info' });
+      const initialSeq = initialServerInfo.result.info.validated_ledger.seq;
+
+      const payToArray = [recipient1, recipient2, recipient3, recipient4]
+        .map((recipient, index) => ({ id: index, address: recipient, amount: 10000 * (index + 1) }));
+      const eventEmitter = rpcs.rpcs.XRP.emitter;
+      let eventCounter = 0;
+      let emitResults = [];
+      const emitPromise = new Promise(resolve => {
+        eventEmitter.on('success', (emitData) => {
+          eventCounter++;
+          emitResults.push(emitData);
+          if (eventCounter === 3) {
+            resolve();
+          }
+        });
+      });
+      const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, secret: senderSeed });
+      await emitPromise;
+      expect(outputArray).to.have.lengthOf(4);
+      await xrpRPC.rpc.request({ command: 'ledger_accept' });
+      
+      let currentSeq;
+      do {
+        const response = await xrpRPC.rpc.request({ command: 'server_info' });
+        currentSeq = response.result.info.validated_ledger.seq;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } while (currentSeq <= initialSeq);
+    });
+    it('should be able to get many transactions', async () => {
+      await xrpRPC.getTransactions({ address: sender });
+    });
+    // it('should return an empty array if account isn\'t found', async () => {});
+    // it('should propagate any getTransactions error if not "err.data.error" is "actNotFound"', async () => {});
+  });
+
   it('should be able to decode a raw transaction', async () => {
     const { rawTx } = config.currencyConfig;
     assert(rawTx);
