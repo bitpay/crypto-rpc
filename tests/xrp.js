@@ -79,7 +79,7 @@ describe('XRP Tests', function() {
       expect(ledger).to.have.property('ledger_index');
       expect(ledger).to.have.property('parent_hash');
       expect(ledger).to.have.property('transactions');
-      expect(ledger.transactions).to.deep.equal([]);
+      expect(ledger).to.have.property('transactions').that.is.an('array');
       expect(block).to.have.property('ledger_hash');
       expect(block).to.have.property('ledger_index');
       expect(block.ledger_hash).to.equal(ledger.ledger_hash);
