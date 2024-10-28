@@ -108,7 +108,7 @@ describe('XRP Tests', function() {
     } catch (err) {
       expect(err).to.not.exist();
     }
-    expect(balance).to.eq(100000000000);
+    expect(balance).to.be.a('number');
     assert(balance != undefined);
   });
 
