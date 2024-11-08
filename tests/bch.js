@@ -28,7 +28,7 @@ describe('BCH Tests', function() {
   const rpcs = new CryptoRpc(config, currencyConfig);
   const bitcoin = rpcs.get(currency);
 
-  before(async () => {
+  before(async function() {
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
     } catch (e) {
