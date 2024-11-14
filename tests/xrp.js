@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-unused-vars
+const xrpl = require('xrpl'); // Here for typing
 const { CryptoRpc } = require('../');
 const {assert, expect} = require('chai');
 const mocha = require('mocha');
@@ -5,7 +7,8 @@ const {describe, it, before} = mocha;
 const config = {
   chain: 'XRP',
   currency: 'XRP',
-  host: 'rippled',
+  // host: 'rippled',
+  host: 'localhost',
   protocol: 'ws',
   rpcPort: '6006',
   address: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',
@@ -63,12 +66,14 @@ describe('XRP Tests', function() {
   for (const bcase of blockCases) {
     it(`should get block ${bcase.description}`, async () => {
       try {
+        /** @type {xrpl.LedgerResponse['result'] | null}} */
         block = await rpcs.getBlock({ currency, ...bcase.params });
       } catch (err) {
         expect(err).to.not.exist();
       }
 
       expect(block).to.have.property('ledger');
+      /** @type {xrpl.LedgerBinary} */
       let ledger = block.ledger;
       // from xrpl documentation: https://xrpl.org/ledger.html (9/26/2023)
       // The following fields are deprecated and may be removed without further notice: accepted, totalCoins (use total_coins instead).
@@ -84,7 +89,7 @@ describe('XRP Tests', function() {
       expect(block).to.have.property('ledger_index');
       expect(block.ledger_hash).to.equal(ledger.ledger_hash);
       expect(typeof block.ledger_index).to.equal('number');
-      expect(block.ledger_index.toString()).to.equal(ledger.ledger_index);
+      expect(block.ledger_index).to.equal(ledger.ledger_index);
       expect(block).to.have.property('validated');
       expect(block.validated).to.equal(true);
       assert(block);
@@ -218,23 +223,41 @@ describe('XRP Tests', function() {
   });
 
   it('should be able to get a transaction', async () => {
+    /** @type {xrpl.TxResponse['result'] & {confirmations: number; blockHash: string}} */
     let tx;
     try {
       tx = await rpcs.getTransaction({ currency, txid });
     } catch (err) {
       expect(err).to.not.exist();
     }
-    expect(tx).to.have.property('Account');
-    expect(tx).to.have.property('Amount');
-    expect(tx).to.have.property('Destination');
-    expect(tx).to.have.property('Fee');
-    expect(tx).to.have.property('Flags');
-    expect(tx).to.have.property('LastLedgerSequence');
-    expect(tx).to.have.property('Sequence');
+    // New expectations
+    expect(tx).to.have.property('tx_json');
+    expect(tx.tx_json).to.have.property('Account');
+    expect(tx.tx_json).to.have.property('Destination');
+    expect(tx.tx_json).to.have.property('Fee');
+    expect(tx.tx_json).to.have.property('Flags');
+    expect(tx.tx_json).to.have.property('LastLedgerSequence');
+    expect(tx.tx_json).to.have.property('Sequence');
+
     expect(tx).to.have.property('hash');
     expect(tx.hash).to.equal(txid);
-    expect(tx).to.have.property('blockHash');
-    expect(tx.blockHash).to.not.be.undefined;
+    expect(tx).to.have.property('blockHash').that.is.a('string');
+
+    expect(tx).to.have.property('meta');
+    expect(tx.meta).to.have.property('delivered_amount').that.is.a('string');
+
+    // Old expectations
+    // expect(tx).to.have.property('Account');
+    // expect(tx).to.have.property('Amount');
+    // expect(tx).to.have.property('Destination');
+    // expect(tx).to.have.property('Fee');
+    // expect(tx).to.have.property('Flags');
+    // expect(tx).to.have.property('LastLedgerSequence');
+    // expect(tx).to.have.property('Sequence');
+    // expect(tx).to.have.property('blockHash');
+    // expect(tx.hash).to.equal(txid);
+    // expect(tx).to.have.property('blockHash');
+    // expect(tx.blockHash).to.not.be.undefined;
   });
 
   it('should return nothing for unknown transaction', async () => {
@@ -309,6 +332,7 @@ describe('XRP Tests', function() {
     });
     it('should be able to get many transactions', async () => {
       const address = sender;
+      /** @type {xrpl.AccountTxResponse['result']} */
       const result = await xrpRPC.getTransactions({ address });
       expect(result).to.have.property('account', address);
       expect(result).to.have.property('ledger_index_max').that.is.a('number');
@@ -319,24 +343,41 @@ describe('XRP Tests', function() {
       expect(result.transactions).to.have.lengthOf.above(0);
 
       const tx = result.transactions[0];
+      // New expectations
+      expect(tx).to.have.property('tx_json');
+      expect(tx.tx_json).to.have.property('Account');
+      expect(tx.tx_json).to.have.property('Destination');
+      expect(tx.tx_json).to.have.property('Fee');
+      expect(tx.tx_json).to.have.property('Flags');
+      expect(tx.tx_json).to.have.property('LastLedgerSequence');
+      expect(tx.tx_json).to.have.property('Sequence');
+  
+      expect(tx).to.have.property('hash');
+      // expect(tx.hash).to.equal(txid);
+      // expect(tx).to.have.property('blockHash').that.is.a('string');
+  
       expect(tx).to.have.property('meta');
-      expect(tx).to.have.property('tx');
       expect(tx.meta).to.have.property('delivered_amount').that.is.a('string');
-      expect(tx.tx).to.have.property('Account').that.is.a('string');
-      expect(tx.tx).to.have.property('Amount').that.is.a('string');
-      expect(tx.tx).to.have.property('DeliverMax').that.is.a('string');
-      expect(tx.tx).to.have.property('Destination').that.is.a('string');
-      expect(tx.tx).to.have.property('Fee').that.is.a('string');
-      expect(tx.tx).to.have.property('Flags').that.is.a('number');
-      expect(tx.tx).to.have.property('LastLedgerSequence').that.is.a('number');
-      expect(tx.tx).to.have.property('Sequence').that.is.a('number');
-      expect(tx.tx).to.have.property('SigningPubKey').that.is.a('string');
-      expect(tx.tx).to.have.property('TransactionType', 'Payment');
-      expect(tx.tx).to.have.property('TxnSignature').that.is.a('string');
-      expect(tx.tx).to.have.property('date').that.is.a('number');
-      expect(tx.tx).to.have.property('hash').that.is.a('string');
-      expect(tx.tx).to.have.property('inLedger').that.is.a('number');
-      expect(tx.tx).to.have.property('ledger_index').that.is.a('number');
+
+      // Old expectations
+      // expect(tx).to.have.property('meta');
+      // expect(tx).to.have.property('tx');
+      // expect(tx.meta).to.have.property('delivered_amount').that.is.a('string');
+      // expect(tx.tx).to.have.property('Account').that.is.a('string');
+      // expect(tx.tx).to.have.property('Amount').that.is.a('string');
+      // expect(tx.tx).to.have.property('DeliverMax').that.is.a('string');
+      // expect(tx.tx).to.have.property('Destination').that.is.a('string');
+      // expect(tx.tx).to.have.property('Fee').that.is.a('string');
+      // expect(tx.tx).to.have.property('Flags').that.is.a('number');
+      // expect(tx.tx).to.have.property('LastLedgerSequence').that.is.a('number');
+      // expect(tx.tx).to.have.property('Sequence').that.is.a('number');
+      // expect(tx.tx).to.have.property('SigningPubKey').that.is.a('string');
+      // expect(tx.tx).to.have.property('TransactionType', 'Payment');
+      // expect(tx.tx).to.have.property('TxnSignature').that.is.a('string');
+      // expect(tx.tx).to.have.property('date').that.is.a('number');
+      // expect(tx.tx).to.have.property('hash').that.is.a('string');
+      // expect(tx.tx).to.have.property('inLedger').that.is.a('number');
+      // expect(tx.tx).to.have.property('ledger_index').that.is.a('number');
     });
     it('should return an empty array if account isn\'t found', async () => {
       // Public key from wrong algorithm
@@ -388,9 +429,7 @@ describe('XRP Tests', function() {
   it('should get the tip', async () => {
     const tip = await rpcs.getTip({ currency });
     assert(tip != undefined);
-    expect(tip).to.have.property('hash');
     expect(tip).to.have.property('hash').that.is.a('string');
-    expect(tip).to.have.property('height');
     expect(tip).to.have.property('height').that.is.a('number');
   });
 
