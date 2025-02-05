@@ -1,0 +1,29 @@
+require('@nomicfoundation/hardhat-ethers');
+require('@nomicfoundation/hardhat-ignition-ethers');
+
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
+  solidity: {
+    compilers: [
+      { version: '0.4.24' },
+      // add more here
+    ]
+  },
+  networks: {
+    development_geth: {
+      url: 'http://geth:8545',
+      gas: 4700000
+    },
+    development_matic: {
+      url: 'http://ganache:8545',
+      gas: 4700000
+    },
+  },
+  paths: {
+    sources: './contracts',
+    tests: './test',
+    cache: './cache',
+    artifacts: './artifacts',
+    modules: './ignition/modules'
+  }
+};

@@ -59,8 +59,8 @@ describe('ERC20 Tests', function() {
       nonce: 24
     });
     let decodedParams = await rpcs.getTransaction({ txid });
-    expect(decodedParams.nonce).to.equal(24);
-    expect(decodedParams.gasPrice).to.equal('30000000000');
+    expect(decodedParams.nonce).to.equal(24n);
+    expect(decodedParams.gasPrice).to.equal(30000000000n);
     assert.isTrue(util.isHex(txid));
   });
 
@@ -99,7 +99,7 @@ describe('ERC20 Tests', function() {
     expect(emitResults[1].error === null);
     expect(emitResults[1].address === address);
     expect(emitResults[1].amount === amount);
-    assert.isTrue(outputArray.length === 2);
+    expect(outputArray.length).to.equal(2);
     assert.isTrue(util.isHex(outputArray[0].txid));
     assert.isTrue(util.isHex(outputArray[1].txid));
     expect(outputArray[0].txid).to.have.lengthOf(66);
@@ -146,8 +146,8 @@ describe('ERC20 Tests', function() {
     const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
     assert(decoded);
     assert(decoded.decodedData);   
-    expect(decoded.decodedData.args._to).to.equal('0x7ee308b49e36Ab516cd0186B3a47CFD31d2499A1');
-    expect(Number(decoded.decodedData.args._value)).to.equal(68862999999999990);
+    expect(decoded.decodedData.args[0]).to.equal('0x7ee308b49e36Ab516cd0186B3a47CFD31d2499A1');
+    expect(decoded.decodedData.args[1]).to.equal(68862999999999990n);
   });
 });
 
