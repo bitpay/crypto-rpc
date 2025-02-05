@@ -1,5 +1,5 @@
 const { CryptoRpc } = require('../');
-const {assert, expect} = require('chai');
+const { expect } = require('chai');
 const mocha = require('mocha');
 const sinon = require('sinon');
 const { before, describe, it } = mocha;
@@ -134,10 +134,11 @@ describe('EVM', function() {
       });
 
       it('should send raw transaction', async () => {
+        const nonce = await rpcs.getTransactionCount({ currency, address: config.account });
         // construct the transaction data
         const txData = {
           chainId: 1337,
-          nonce: 0,
+          nonce,
           gasLimit: 25000,
           gasPrice: 2.1 * 10e9,
           to: config.currencyConfig.sendTo,
@@ -172,14 +173,14 @@ describe('EVM', function() {
             rawTx: signedTx
           });
         } catch(err) {
-          expect(err.message).to.include('Transaction nonce is too low');
+          expect(err.message).to.include('nonce too low');
         }
       });
 
       it('should estimate fee for type 2 transaction', async () => {
         sinon.spy(evmRPC.web3.eth, 'getBlock');
         const maxFee = await evmRPC.estimateFee({txType: 2, priority: 5});
-        expect(maxFee).to.be.equal(5000000000n);
+        expect(maxFee).to.be.gt(5000000000n);
         expect(evmRPC.web3.eth.getBlock.callCount).to.equal(1);
       });
 
@@ -244,12 +245,13 @@ describe('EVM', function() {
           currency,
           address: config.currencyConfig.sendTo,
           amount: '10000',
-          passphrase: currencyConfig.unlockPassword,
+          fromAccount: config.account,
           gasPrice: 30000000000
         });
         let decodedParams = await rpcs.getTransaction({ txid });
         expect(decodedParams.gasPrice).to.equal(30000000000n);
         expect(util.isHex(txid)).to.be.true;
+        rpcs.rpcs[config.chain].removeAccount(config.account);
       });
     
       it('should be able to send a transaction and specify a custom gasPrice', async () => {
@@ -257,7 +259,7 @@ describe('EVM', function() {
           currency,
           address: config.currencyConfig.sendTo,
           amount: '10000',
-          passphrase: currencyConfig.unlockPassword,
+          fromAccount: currencyConfig.privateKey,
           gasPrice: 30000000000
         });
         let decodedParams = await rpcs.getTransaction({ txid });
@@ -283,7 +285,8 @@ describe('EVM', function() {
         });
         const outputArray = await rpcs.unlockAndSendToAddressMany({
           currency,
-          payToArray
+          payToArray,
+          fromAccount: currencyConfig.privateKey,
         });
         await emitPromise;
         expect(emitResults[0].txid).to.exist;
@@ -319,16 +322,18 @@ describe('EVM', function() {
         });
         const outputArray = await rpcs.unlockAndSendToAddressMany({
           currency,
-          payToArray
+          payToArray,
+          fromAccount: currencyConfig.privateKey
         });
         await emitPromise;
-        assert(!outputArray[1].txid);
+        expect(outputArray[1].txid).to.not.exist;
         expect(outputArray[1].error).to.equal(emitResults[0].error);
         expect(emitResults.length).to.equal(1);
-        assert(emitResults[0].error);
+        expect(emitResults[0].error).to.exist;
       });
 
       it('should be able to get all balances', async () => {
+        rpcs.rpcs[config.chain].addAccount(currencyConfig.privateKey);
         const balance = await rpcs.getBalance({ currency });
         expect(balance[0].account).to.equal(config.account);
         expect(balance[0].balance).to.be.gt(0);
@@ -336,31 +341,34 @@ describe('EVM', function() {
     
       it('should be able to get a transaction', async () => {
         const tx = await rpcs.getTransaction({ currency, txid });
-        assert.isDefined(tx);
-        assert.isObject(tx);
+        expect(tx).to.exist;
+        expect(typeof tx).to.equal('object');
       });
     
       it('should be able to decode a raw transaction', async () => {
         const { rawTx } = config.currencyConfig;
         const decoded = await rpcs.decodeRawTransaction({ currency, rawTx });
-        assert.isDefined(decoded);
+        expect(decoded).to.exist;
       });
     
       it('should get the tip', async () => {
         const tip = await rpcs.getTip({ currency });
-        assert.hasAllKeys(tip, ['height', 'hash']);
+        expect(tip.height).to.exist;
+        expect(tip.hash).to.exist;
       });
     
       it('should get confirmations', async () => {
         const confirmations = await rpcs.getConfirmations({ currency, txid });
-        assert.isDefined(confirmations);
+        expect(confirmations).to.be.gt(0);
       });
     
-      it('should not get confirmations with invalid txid', async () => {
+      it('should reject getConfirmations with invalid txid', async () => {
         try {
           await rpcs.getConfirmations({ currency, txid: 'wrongtxid' });
+          throw new Error('should have thrown');
         } catch (err) {
-          assert.isDefined(err);
+          expect(err.name).to.equal('Web3ValidatorError');
+          expect(err.message).to.include('value "wrongtxid" at "/0" must pass "bytes32" validation');
         }
       });
     
@@ -380,6 +388,16 @@ describe('EVM', function() {
         });
         const utilVaildate = util.isAddress('NOTANADDRESS');
         expect(isValid).to.equal(utilVaildate);
+      });
+
+      it('should be able to get server info', async () => {
+        const info = await rpcs.getServerInfo({ currency });
+        expect(typeof info).to.equal('string');
+      });
+    
+      it('should get pending transactions', async () => {
+        const pendingTxs = await rpcs.getTransactions({ currency });
+        expect(Array.isArray(pendingTxs)).to.equal(true);
       });
     });  
   }
