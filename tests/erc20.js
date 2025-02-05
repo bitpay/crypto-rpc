@@ -45,7 +45,7 @@ describe('ERC20 Tests', function() {
   });
 
   it('should be able to send a transaction', async () => {
-    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', passphrase: currencyConfig.unlockPassword });
+    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: '10000', fromAccount: currencyConfig.privateKey });
     assert(txid);
   });
 
@@ -54,7 +54,7 @@ describe('ERC20 Tests', function() {
       currency,
       address: config.currencyConfig.sendTo,
       amount: '10000',
-      passphrase: currencyConfig.unlockPassword,
+      fromAccount: currencyConfig.privateKey,
       gasPrice: 30000000000,
       nonce: 24
     });
@@ -65,7 +65,7 @@ describe('ERC20 Tests', function() {
   });
 
   it('should be able to send a big transaction', async () => {
-    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: 1e23, passphrase: currencyConfig.unlockPassword });
+    txid = await rpcs.unlockAndSendToAddress({ currency, address: config.currencyConfig.sendTo, amount: 1e23, fromAccount: currencyConfig.privateKey });
     assert(txid);
   });
 
@@ -88,7 +88,7 @@ describe('ERC20 Tests', function() {
     const outputArray = await rpcs.unlockAndSendToAddressMany({
       currency,
       payToArray,
-      passphrase: currencyConfig.unlockPassword
+      fromAccount: currencyConfig.privateKey
     });
     await emitPromise;
     assert(emitResults[0].txid);
@@ -124,7 +124,7 @@ describe('ERC20 Tests', function() {
     const outputArray = await rpcs.unlockAndSendToAddressMany({
       currency,
       payToArray,
-      passphrase: currencyConfig.unlockPassword
+      fromAccount: currencyConfig.privateKey
     });
     await emitPromise;
     assert(!outputArray[1].txid);
