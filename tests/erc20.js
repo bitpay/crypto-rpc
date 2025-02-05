@@ -3,7 +3,7 @@ const {assert, expect} = require('chai');
 const mocha = require('mocha');
 const util = require('web3-utils');
 const { before, describe, it } = mocha;
-const ERC20 = require('../blockchain/EVM/build/contracts/CryptoErc20.json');
+const deployedAddresses = require('../blockchain/EVM/ignition/deployments/chain-1337/deployed_addresses.json');
 const config = {
   chain: 'ETH',
   host: process.env.ETH_HOST || 'geth',
@@ -12,7 +12,7 @@ const config = {
   account: '0x00a329c0648769A73afAc7F9381E08FB43dBEA72',
   tokens: {
     ERC20: {
-      tokenContractAddress: ERC20.networks['1337'].address,
+      tokenContractAddress: deployedAddresses['ERC20#CryptoErc20'],
       type: 'ERC20'
     }
   },

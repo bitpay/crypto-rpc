@@ -9,15 +9,20 @@ module.exports = {
       // add more here
     ]
   },
+  ignition: {
+    requiredConfirmations: 1
+  },
   networks: {
-    development_geth: {
-      url: 'http://geth:8545',
-      gas: 4700000
+    geth: {
+      url: `http://geth:8545`,
+      gas: 4700000,
+      chainId: 1337
     },
-    development_matic: {
-      url: 'http://ganache:8545',
-      gas: 4700000
-    },
+    local: {
+      url: process.env.HARDHAT_URL || 'http://localhost:8545',
+      gas: 4700000,
+      chainId: 1337
+    }
   },
   paths: {
     sources: './contracts',

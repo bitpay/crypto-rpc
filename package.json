@@ -11,16 +11,19 @@
     "start": "npm run stop && npm run build && docker compose run start",
     "restart": "npm run stop && docker compose run start",
     "stop": "docker compose down",
-    "compile": "npm run lint && npm run truffle:compile",
-    "migrate": "npm run compile && npm run truffle:migrate",
+    "compile": "npm run lint && npm run hardhat:compile",
+    "deploy": "npm run compile && npm run hardhat:deploy",
     "lint": "npx eslint .",
     "test": "npm run test:ci",
     "test:ci": "docker-compose down && docker-compose build && docker-compose run test_runner",
     "test:local": "npm run stop && npm run build && docker compose run test_runner",
-    "docker:test": "npm run migrate && npm run truffle:test && mocha --recursive ./tests",
-    "truffle:compile": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle compile --network development_geth",
-    "truffle:test": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle test --network development_geth",
-    "truffle:migrate": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle migrate --network development_geth"
+    "docker:test": "npm run deploy && npm run hardhat:test && mocha --recursive ./tests",
+    "truffle:compile": "cd blockchain/EVM/ && npx truffle compile --network development_geth",
+    "truffle:test": "cd blockchain/EVM/ && npx truffle test --network development_geth",
+    "truffle:migrate": "cd blockchain/EVM/ && npx truffle migrate --network development_geth",
+    "hardhat:compile": "cd blockchain/EVM/ && npx hardhat compile",
+    "hardhat:test": "cd blockchain/EVM/ && npx hardhat test",
+    "hardhat:deploy": "cd blockchain/EVM/ && export HARDHAT_IGNITION_CONFIRM_DEPLOYMENT=false && export HARDHAT_IGNITION_CONFIRM_RESET=false && npx hardhat --network geth ignition deploy ./ignition/modules/all.js --reset"
   },
   "author": "Micah Riggan",
   "license": "ISC",
@@ -39,7 +42,6 @@
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-ignition-ethers": "^0.15.9",
-    "assert": "^1.4.1",
     "chai": "^5.1.2",
     "eslint": "^8.57.0",
     "eslint-config-standard": "^17.1.0",
@@ -49,7 +51,6 @@
     "eslint-plugin-standard": "^5.0.0",
     "hardhat": "^2.22.18",
     "mocha": "^11.1.0",
-    "sinon": "^7.3.1",
-    "truffle": "5.1.0"
+    "sinon": "^7.3.1"
   }
 }
