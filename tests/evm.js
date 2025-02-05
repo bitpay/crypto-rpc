@@ -78,7 +78,7 @@ const configs = [
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
-    account: '0xf9A09F3Dd46D475B59A9Db149Aca5654A9040E07',
+    account: '0x7B9bCe020241027a136399a3307195c41AC9d5d7',
     currencyConfig: {
       sendTo: '0xc0b4dD3941898CB1dAF5cD768Bc1997F77a3D9a5',
       unlockPassword: '',

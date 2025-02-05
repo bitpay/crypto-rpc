@@ -133,15 +133,15 @@ services:
       --datadir /geth
       --networkid 1337
       --http
-      --http.api web3,eth,debug,net,personal
+      --http.api web3,eth,debug,net
       --http.corsdomain '*'
       --http.vhosts '*'
       --http.addr 0.0.0.0
       --http.port 8545
       --keystore /keystore
       --allow-insecure-unlock
-      --unlock 00a329c0648769a73afac7f9381e08fb43dbea72,30aeb843945055c9d96c4f2e99bf66ff1ef778c7,94be9bd3f76b0689a141aed24c149bb6acba5411,b556dc491b7652f73b9d3080a6cbf2766db368e9,f9a09f3dd46d475b59a9db149aca5654a9040e07
-      --password ''
+      --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
+      --password /keystore/pw
 
   rippled:
     networks:
