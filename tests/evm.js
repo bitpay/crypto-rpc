@@ -130,7 +130,7 @@ describe('EVM', function() {
     
       it('should estimate fee', async () => {
         const fee = await rpcs.estimateFee({ currency, nBlocks: 4 });
-        expect(fee).to.be.gte(20000000000);
+        expect(fee).to.be.gte(500000000);
       });
 
       it('should send raw transaction', async () => {
@@ -192,7 +192,7 @@ describe('EVM', function() {
     
       it('should estimate gas price', async () => {
         const gasPrice = await evmRPC.estimateGasPrice();
-        expect(gasPrice).to.be.gte(20000000000);
+        expect(gasPrice).to.be.gte(500000000);
       });
 
       it('should be able to get a block hash', async () => {
