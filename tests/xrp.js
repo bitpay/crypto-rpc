@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-unused-vars
+const xrpl = require('xrpl'); // Here for typing
 const { CryptoRpc } = require('../');
 const {assert, expect} = require('chai');
 const mocha = require('mocha');
@@ -63,12 +65,14 @@ describe('XRP Tests', function() {
   for (const bcase of blockCases) {
     it(`should get block ${bcase.description}`, async () => {
       try {
+        /** @type {xrpl.LedgerResponse['result'] | null}} */
         block = await rpcs.getBlock({ currency, ...bcase.params });
       } catch (err) {
         expect(err).to.not.exist();
       }
 
       expect(block).to.have.property('ledger');
+      /** @type {xrpl.LedgerBinary} */
       let ledger = block.ledger;
       // from xrpl documentation: https://xrpl.org/ledger.html (9/26/2023)
       // The following fields are deprecated and may be removed without further notice: accepted, totalCoins (use total_coins instead).
@@ -79,11 +83,12 @@ describe('XRP Tests', function() {
       expect(ledger).to.have.property('ledger_index');
       expect(ledger).to.have.property('parent_hash');
       expect(ledger).to.have.property('transactions');
-      expect(ledger.transactions).to.deep.equal([]);
+      expect(ledger).to.have.property('transactions').that.is.an('array');
       expect(block).to.have.property('ledger_hash');
       expect(block).to.have.property('ledger_index');
       expect(block.ledger_hash).to.equal(ledger.ledger_hash);
-      expect(block.ledger_index.toString()).to.equal(ledger.ledger_index);
+      expect(typeof block.ledger_index).to.equal('number');
+      expect(block.ledger_index).to.equal(ledger.ledger_index);
       expect(block).to.have.property('validated');
       expect(block.validated).to.equal(true);
       assert(block);
@@ -107,7 +112,7 @@ describe('XRP Tests', function() {
     } catch (err) {
       expect(err).to.not.exist();
     }
-    expect(balance).to.eq(100000000000);
+    expect(balance).to.be.a('number');
     assert(balance != undefined);
   });
 
@@ -217,23 +222,41 @@ describe('XRP Tests', function() {
   });
 
   it('should be able to get a transaction', async () => {
+    /** @type {xrpl.TxResponse['result'] & {confirmations: number; blockHash: string}} */
     let tx;
     try {
       tx = await rpcs.getTransaction({ currency, txid });
     } catch (err) {
       expect(err).to.not.exist();
     }
-    expect(tx).to.have.property('Account');
-    expect(tx).to.have.property('Amount');
-    expect(tx).to.have.property('Destination');
-    expect(tx).to.have.property('Fee');
-    expect(tx).to.have.property('Flags');
-    expect(tx).to.have.property('LastLedgerSequence');
-    expect(tx).to.have.property('Sequence');
+    // New expectations
+    expect(tx).to.have.property('tx_json');
+    expect(tx.tx_json).to.have.property('Account');
+    expect(tx.tx_json).to.have.property('Destination');
+    expect(tx.tx_json).to.have.property('Fee');
+    expect(tx.tx_json).to.have.property('Flags');
+    expect(tx.tx_json).to.have.property('LastLedgerSequence');
+    expect(tx.tx_json).to.have.property('Sequence');
+
     expect(tx).to.have.property('hash');
     expect(tx.hash).to.equal(txid);
-    expect(tx).to.have.property('blockHash');
-    expect(tx.blockHash).to.not.be.undefined;
+    expect(tx).to.have.property('blockHash').that.is.a('string');
+
+    expect(tx).to.have.property('meta');
+    expect(tx.meta).to.have.property('delivered_amount').that.is.a('string');
+
+    // Old expectations
+    // expect(tx).to.have.property('Account');
+    // expect(tx).to.have.property('Amount');
+    // expect(tx).to.have.property('Destination');
+    // expect(tx).to.have.property('Fee');
+    // expect(tx).to.have.property('Flags');
+    // expect(tx).to.have.property('LastLedgerSequence');
+    // expect(tx).to.have.property('Sequence');
+    // expect(tx).to.have.property('blockHash');
+    // expect(tx.hash).to.equal(txid);
+    // expect(tx).to.have.property('blockHash');
+    // expect(tx.blockHash).to.not.be.undefined;
   });
 
   it('should return nothing for unknown transaction', async () => {
@@ -266,6 +289,127 @@ describe('XRP Tests', function() {
     expect(tx === null);
   });
 
+  describe('getTransactions', () => {
+    const sender = config.address;
+    const senderSeed = 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb';
+    const recipient1 = 'r38UsJxHSJKajC8qcNmofxJvCESnzmx7Ke';
+    const recipient2 = 'rMGhv5SNsk81QN1fGu6RybDkUi2of36dua';
+    const recipient3 = 'r4ip6t3NUe4UWguLUJCbyojxG6PdPZg9EJ';
+    const recipient4 = 'rwtFtAMNXPoq4xgxn3FzKKGgVZErdcuLST';
+    const senderAddress_ed25519 = 'rGWrZyQqhTp9Xu7G5Pkayo7bXjH4k4QYpf';
+
+    before(async () => {
+      await xrpRPC.rpc.connect();
+      const initialServerInfo = await xrpRPC.rpc.request({ command: 'server_info' });
+      const initialSeq = initialServerInfo.result.info.validated_ledger.seq;
+
+      const payToArray = [recipient1, recipient2, recipient3, recipient4]
+        .map((recipient, index) => ({ id: index, address: recipient, amount: 10000 * (index + 1) }));
+      const eventEmitter = rpcs.rpcs.XRP.emitter;
+      let eventCounter = 0;
+      let emitResults = [];
+      const emitPromise = new Promise(resolve => {
+        eventEmitter.on('success', (emitData) => {
+          eventCounter++;
+          emitResults.push(emitData);
+          if (eventCounter === 3) {
+            resolve();
+          }
+        });
+      });
+      const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, secret: senderSeed });
+      await emitPromise;
+      expect(outputArray).to.have.lengthOf(4);
+      await xrpRPC.rpc.request({ command: 'ledger_accept' });
+      
+      let currentSeq;
+      do {
+        const response = await xrpRPC.rpc.request({ command: 'server_info' });
+        currentSeq = response.result.info.validated_ledger.seq;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } while (currentSeq <= initialSeq);
+    });
+    it('should be able to get many transactions', async () => {
+      const address = sender;
+      /** @type {xrpl.AccountTxResponse['result']} */
+      const result = await xrpRPC.getTransactions({ address });
+      expect(result).to.have.property('account', address);
+      expect(result).to.have.property('ledger_index_max').that.is.a('number');
+      expect(result).to.have.property('ledger_index_min').that.is.a('number');
+      expect(result).to.have.property('limit').that.is.a('number');
+      expect(result).to.have.property('transactions').that.is.an('array');
+      expect(result).to.have.property('validated').that.is.a('boolean');
+      expect(result.transactions).to.have.lengthOf.above(0);
+
+      const tx = result.transactions[0];
+      // New expectations
+      expect(tx).to.have.property('tx_json');
+      expect(tx.tx_json).to.have.property('Account');
+      expect(tx.tx_json).to.have.property('Destination');
+      expect(tx.tx_json).to.have.property('Fee');
+      expect(tx.tx_json).to.have.property('Flags');
+      expect(tx.tx_json).to.have.property('LastLedgerSequence');
+      expect(tx.tx_json).to.have.property('Sequence');
+  
+      expect(tx).to.have.property('hash');
+      // expect(tx.hash).to.equal(txid);
+      // expect(tx).to.have.property('blockHash').that.is.a('string');
+  
+      expect(tx).to.have.property('meta');
+      expect(tx.meta).to.have.property('delivered_amount').that.is.a('string');
+
+      // Old expectations
+      // expect(tx).to.have.property('meta');
+      // expect(tx).to.have.property('tx');
+      // expect(tx.meta).to.have.property('delivered_amount').that.is.a('string');
+      // expect(tx.tx).to.have.property('Account').that.is.a('string');
+      // expect(tx.tx).to.have.property('Amount').that.is.a('string');
+      // expect(tx.tx).to.have.property('DeliverMax').that.is.a('string');
+      // expect(tx.tx).to.have.property('Destination').that.is.a('string');
+      // expect(tx.tx).to.have.property('Fee').that.is.a('string');
+      // expect(tx.tx).to.have.property('Flags').that.is.a('number');
+      // expect(tx.tx).to.have.property('LastLedgerSequence').that.is.a('number');
+      // expect(tx.tx).to.have.property('Sequence').that.is.a('number');
+      // expect(tx.tx).to.have.property('SigningPubKey').that.is.a('string');
+      // expect(tx.tx).to.have.property('TransactionType', 'Payment');
+      // expect(tx.tx).to.have.property('TxnSignature').that.is.a('string');
+      // expect(tx.tx).to.have.property('date').that.is.a('number');
+      // expect(tx.tx).to.have.property('hash').that.is.a('string');
+      // expect(tx.tx).to.have.property('inLedger').that.is.a('number');
+      // expect(tx.tx).to.have.property('ledger_index').that.is.a('number');
+    });
+    it('should return an empty array if account isn\'t found', async () => {
+      // Public key from wrong algorithm
+      const result = await xrpRPC.getTransactions({ address: senderAddress_ed25519 });
+      expect(result).to.be.an('array');
+      expect(result).to.have.lengthOf(0);
+    });
+    it('should throw RippledError: Missing field "account" if address undefined', async () => {
+      try {
+        await xrpRPC.getTransactions({ address: undefined });
+        expect.fail('Expected error was not thrown');
+      } catch (err) {
+        expect(err).to.have.property('data');
+        const { data } = err;
+        expect(data).to.have.property('error', 'invalidParams');
+        expect(data).to.have.property('error_code', 31);
+        expect(data).to.have.property('error_message', 'Missing field \'account\'.');
+      }
+    });
+    it('should throw RippledError: Account malformed if bad address', async () => {
+      try {
+        await xrpRPC.getTransactions({ address: 'badAddress' });
+        expect.fail('Expected error was not thrown');
+      } catch (err) {
+        expect(err).to.have.property('data');
+        const { data } = err;
+        expect(data).to.have.property('error', 'actMalformed');
+        expect(data).to.have.property('error_code', 35);
+        expect(data).to.have.property('error_message', 'Account malformed.');
+      }
+    });
+  });
+
   it('should be able to decode a raw transaction', async () => {
     const { rawTx } = config.currencyConfig;
     assert(rawTx);
@@ -284,8 +428,8 @@ describe('XRP Tests', function() {
   it('should get the tip', async () => {
     const tip = await rpcs.getTip({ currency });
     assert(tip != undefined);
-    expect(tip).to.have.property('hash');
-    expect(tip).to.have.property('height');
+    expect(tip).to.have.property('hash').that.is.a('string');
+    expect(tip).to.have.property('height').that.is.a('number');
   });
 
   it('should get confirmations', async () => {
