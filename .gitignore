@@ -24,4 +24,7 @@ src/vendor
 src/dist
 config.js
 blockchain/EVM/build
+blockchain/EVM/artifacts
+blockchain/EVM/cache
+blockchain/EVM/ignition/deployments
 blockchain/solana/test/data

@@ -1,7 +1,4 @@
-version: "3"
-
 services:
-
   start:
     build:
       context: .
@@ -21,7 +18,6 @@ services:
       - lightning
       - lightning2
       - geth
-      - ganache
       - solana
 
   test_runner:
@@ -43,7 +39,6 @@ services:
       - lightning
       - lightning2
       - geth
-      - ganache
       - solana
 
   bitcoin:
@@ -125,7 +120,7 @@ services:
     restart: always
 
   geth:
-    image: 0labs/geth:v1.10.21
+    image: ethereum/client-go:v1.14.13
     volumes:
       - ./tests/docker/geth-keystore:/keystore
     ports:
@@ -134,34 +129,19 @@ services:
       default:
         ipv4_address: 172.28.0.7
     command:
-      geth
       --dev
-      --datadir=/home/kjoseph/nodes/dev/geth
-      --networkid=1337
+      --datadir /geth
+      --networkid 1337
       --http
-      --http.api=web3,eth,debug,personal,net
-      --http.corsdomain='*'
-      --http.vhosts='*'
-      --http.addr=0.0.0.0
-      --http.port=8545
-      --keystore=/keystore
+      --http.api web3,eth,debug,net
+      --http.corsdomain '*'
+      --http.vhosts '*'
+      --http.addr 0.0.0.0
+      --http.port 8545
+      --keystore /keystore
       --allow-insecure-unlock
-      --unlock=00a329c0648769a73afac7f9381e08fb43dbea72
-      --password=/keystore/pw
-
-  ganache:
-    image: trufflesuite/ganache-cli:v6.12.2
-    ports:
-      - "10545:8545"
-    networks:
-      default:
-        ipv4_address: 172.28.0.11
-    command:
-      -m "dose youth patient boring disagree tuna random tower tornado version violin around"
-      -b 2
-      -g 20000000000
-      -p 8545
-      -a 20
+      --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
+      --password /keystore/pw
 
   rippled:
     networks:
