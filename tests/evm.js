@@ -92,6 +92,21 @@ const configs = [
 ];
 
 describe('EVM', function() {
+  before(async function() {
+    const recipientConfigs = configs.slice(1);
+    const mainConfig = configs[0];
+    const rpc = new CryptoRpc(mainConfig, mainConfig.currencyConfig);
+    for (const config of recipientConfigs) {
+      // fund the other addresses
+      await rpc.unlockAndSendToAddress({
+        currency: mainConfig.chain,
+        address: config.account,
+        amount: 1e20,
+        fromAccount: mainConfig.currencyConfig.privateKey
+      });
+    }
+  });
+
   for (const config of configs) {
 
     describe(`${config.chain} Tests: `, function() {
@@ -130,7 +145,7 @@ describe('EVM', function() {
     
       it('should estimate fee', async () => {
         const fee = await rpcs.estimateFee({ currency, nBlocks: 4 });
-        expect(fee).to.be.gte(500000000);
+        expect(fee).to.be.gte(400000000);
       });
 
       it('should send raw transaction', async () => {

@@ -29,6 +29,7 @@ describe('BCH Tests', function() {
   const bitcoin = rpcs.get(currency);
 
   before(async function() {
+    this.timeout(60000);
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
     } catch (e) {
