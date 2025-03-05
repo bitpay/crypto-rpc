@@ -17,7 +17,8 @@
     "docker:test": "npm run migrate && npm run truffle:test && mocha --recursive ./tests",
     "truffle:compile": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle compile --network development_geth && ../../node_modules/.bin/truffle compile --network development_matic",
     "truffle:test": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle test --network development_geth && ../../node_modules/.bin/truffle test --network development_matic",
-    "truffle:migrate": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle migrate --network development_geth && ../../node_modules/.bin/truffle migrate --network development_matic"
+    "truffle:migrate": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle migrate --network development_geth && ../../node_modules/.bin/truffle migrate --network development_matic",
+    "test:integration": "mocha 'tests/integration/**/*.js'"
   },
   "author": "Micah Riggan",
   "license": "ISC",
