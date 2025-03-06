@@ -74,7 +74,7 @@ describe('SolRpc Integration tests', () => {
         })
     })
 
-    describe.only('sendToAddress', () => {
+    describe('sendToAddress', () => {
         let inputBase;
         before(() => {
             inputBase = {
