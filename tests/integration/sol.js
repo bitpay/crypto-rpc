@@ -1,5 +1,3 @@
-// const { createKeyPairSignerFromPrivateKeyBytes, getBase58Encoder } = require("@solana/web3.js");
-// const { generateKeypair, Keypair, Connection, NONCE_ACCOUNT_LENGTH, SystemProgram, Transaction, sendAndConfirmTransaction, VersionedTransaction, TransactionMessage, PublicKey } = require("@solana/web3.js")
 const {
     createKeyPairSignerFromPrivateKeyBytes,
     generateKeyPairSigner,
@@ -12,7 +10,6 @@ const {
     createTransactionMessage,
     appendTransactionMessageInstructions,
     sendAndConfirmTransactionFactory,
-    sendAndConfirmDurableNonceTransactionFactory,
     getSignatureFromTransaction,
 } = require("@solana/web3.js");
 const { pipe } = require('@solana/functional');
@@ -21,7 +18,7 @@ const bs58 = require("bs58");
 const SolRPC = require("../../lib/sol/SolRpc");
 const { expect } = require("chai");
 const assert = require("assert");
-const { getTransferSolInstruction, getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS } = require("@solana-program/system");
+const { getTransferSolInstruction, getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS, getInitializeNonceAccountInstruction } = require("@solana-program/system");
 
 const config = {
     chain: 'SOL',
@@ -43,179 +40,211 @@ describe('SolRpc Integration tests', () => {
     let receiverKeypair;
     /** @type {import("@solana/web3.js").KeyPairSigner<string>} */
     let nonceAccountKeypair;
-    /** @type {import("@solana/web3.js").KeyPairSigner<string>} */
-    let nonceAuthorityKeypair;
 
-    before(async () => {
+    before(async function () {
+        this.timeout(10000);
         const bs58Encoder = getBase58Encoder();
         const [keypairSigner1Value, keypairSigner2Value] = await Promise.all(
             Object.values(config.currencyConfig)
-                .map(async (key) => { return await createKeyPairSignerFromPrivateKeyBytes(bs58Encoder.encode(key)) })
+                .map(async (key) => createKeyPairSignerFromPrivateKeyBytes(bs58Encoder.encode(key)))
         );
 
         // For these tests, the nonce authority will be the sender
         senderKeypair = keypairSigner1Value;
         nonceAuthorityKeypair = senderKeypair;
         receiverKeypair = keypairSigner2Value;
+
         solRpc = new SolRPC(config);
 
         // Create nonce account
         nonceAccountKeypair = await generateKeyPairSigner();
+        await createNonceAccount(solRpc, senderKeypair, nonceAccountKeypair);
     });
 
-    // @DONE
-    // describe('getBalance', () => {
-    //     it('can retrieve a balance number for a valid address', async () => {
-    //         const addressString = senderKeypair.address;
-    //         const balance = await solRpc.getBalance({ address: addressString });
-    //         expect(balance).to.be.a('number');
-    //     })
-    //     it('returns null for an invalid address', async () => {
-    //         const invalidAddress = 'Address not on curve';
-    //         const balance = await solRpc.getBalance({ address: invalidAddress });
-    //         expect(balance).to.be.null;
-    //     })
-    // })
+    describe('getBalance', () => {
+        it('can retrieve a balance number for a valid address', async () => {
+            const addressString = senderKeypair.address;
+            const balance = await solRpc.getBalance({ address: addressString });
+            expect(balance).to.be.a('number');
+        })
+        it('returns null for an invalid address', async () => {
+            const invalidAddress = 'Address not on curve';
+            const balance = await solRpc.getBalance({ address: invalidAddress });
+            expect(balance).to.be.null;
+        })
+    })
 
-    // DO LAST
-    // describe('sendToAddress', () => {
-    //     let inputBase;
-    //     before(() => {
-    //         inputBase = {
-    //             address: receiverKeypair.publicKey.toBase58(),
-    //             amount: 1000,
-    //             fromAccountKeypair: senderKeypair
-    //         }
-    //     })
+    describe.only('sendToAddress', () => {
+        let inputBase;
+        before(() => {
+            inputBase = {
+                address: receiverKeypair.address,
+                amount: 1000,
+                fromAccountKeypair: senderKeypair
+            }
+        })
 
-    //     it('can send a valid versioned transaction without nonce and without priority flag', async () => {
-    //         const txhash = await solRpc.sendToAddress({
-    //             ...inputBase,
-    //             txType: 0,
-    //             priority: false
-    //         });
-    //         expect(txhash).to.be.a('string');
-    //     })
-    //     it('can send a valid versioned transaction with nonce and without priority flag', async () => {
-    //         const txhash = await solRpc.sendToAddress({
-    //             ...inputBase,
-    //             txType: 0,
-    //             nonceAddress: nonceAccountKeypair.publicKey.toBase58(),
-    //             priority: false,
-    //         });
-    //         expect(txhash).to.be.a('string');
-    //     })
-    //     // it('can send a valid versioned transaction without nonce and with priority flag', async () => {
-    //     //     const txhash = await solRpc.sendToAddress({
-    //     //         ...inputBase,
-    //     //         txType: 0,
-    //     //         priority: true
-    //     //     });
-    //     //     expect(txhash).to.be.a('string');
-    //     // })
-    //     // it('can send a valid versioned transaction with nonce and with priority flag', async () => {})
-    //     // it('can send a valid legacy transaction without nonce and without priority flag', async () => {})
-    //     // it('can send a valid legacy transaction with nonce and without priority flag', async () => {})
-    //     // it('can send a valid legacy transaction without nonce and with priority flag', async () => {
-    //     //     const txhash = await solRpc.sendToAddress({
-    //     //         ...inputBase,
-    //     //         txType: 'legacy',
-    //     //         priority: true
-    //     //     });
-    //     //     expect(txhash).to.be.a('string');
-    //     // })
-    //     // it('can send a valid legacy transaction with nonce and with priority flag', async () => {})
+        it('can send a valid versioned transaction without nonce and without priority flag', async function () {
+            this.timeout(10000);
+            const txhash = await solRpc.sendToAddress({
+                ...inputBase,
+                txType: 0,
+                priority: false
+            });
+            expect(txhash).to.be.a('string');
+        })
+        
+        it('can send a valid versioned transaction with nonce and without priority flag', async function () {
+            this.timeout(10000);
+            const txhash = await solRpc.sendToAddress({
+                ...inputBase,
+                txType: 0,
+                nonceAddress: nonceAccountKeypair.address,
+                priority: false,
+            });
+            expect(txhash).to.be.a('string');
+        })
+        
+        it('can send a valid versioned transaction without nonce and with priority flag', async function () {
+            this.timeout(10000);
+            const txhash = await solRpc.sendToAddress({
+                ...inputBase,
+                txType: 0,
+                priority: true
+            });
+            expect(txhash).to.be.a('string');
+        });
+        it('can send a valid versioned transaction with nonce and with priority flag', async function () {
+            this.timeout(10000);
+            const txhash = await solRpc.sendToAddress({
+                ...inputBase,
+                txType: 0,
+                nonceAddress: nonceAccountKeypair.address,
+                priority: true
+            });
+            expect(txhash).to.be.a('string');
+        })
+        it('can send a valid legacy transaction without nonce and without priority flag', async function () {
+            this.timeout(10000);
+            const txhash = await solRpc.sendToAddress({
+                ...inputBase,
+                txType: 'legacy'
+            });
+            expect(txhash).to.be.a('string');
+        })
+        it('can send a valid legacy transaction with nonce and without priority flag', async function () {
+            this.timeout(10000);
+            const txhash = await solRpc.sendToAddress({
+                ...inputBase,
+                txType: 'legacy',
+                nonceAddress: nonceAccountKeypair.address,
+            });
+            expect(txhash).to.be.a('string');
+        })
+        it('can send a valid legacy transaction without nonce and with priority flag', async function () {
+            this.timeout(10000);
+            const txhash = await solRpc.sendToAddress({
+                ...inputBase,
+                txType: 'legacy',
+                priority: true
+            });
+            expect(txhash).to.be.a('string');
+        })
+        it('can send a valid legacy transaction with nonce and with priority flag', async function () {
+            this.timeout(10000);
+            const txhash = await solRpc.sendToAddress({
+                ...inputBase,
+                txType: 'legacy',
+                nonceAddress: nonceAccountKeypair.address,
+                priority: true
+            });
+            expect(txhash).to.be.a('string');
+        })
     
-    //     /** @TODO Make sure to include test cases where the nonce is used but the sender isn't the authority */
-    // })
+        /** Testing behavior of bad nonce authority would be good */
+    })
 
-    // @DONE
-    // describe('createNonceAccount', () => {
-    //     it('can create a nonce account ', async function () {
-    //         this.timeout(3000);
-    //         const nonceKeypair = await generateKeyPairSigner();
-    //         const retVal = await solRpc.createNonceAccount(senderKeypair, nonceKeypair);
-    //         expect(retVal).to.be.a('string');
-    //     })
-    // })
+    describe('createNonceAccount', () => {
+        it('can create a nonce account ', async function () {
+            this.timeout(5000);
+            const nonceKeypair = await generateKeyPairSigner();
+            const retVal = await solRpc.createNonceAccount(senderKeypair, nonceKeypair);
+            expect(retVal).to.be.a('string');
+        })
+    })
 
-    // DONE
-    // describe('estimateFee', () => {
-    //     it('calls estimateTransactionFee is rawTx is included and returns number if rawTx is valid', async () => {
-    //         const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
-    //         const retVal = await solRpc.estimateFee({ rawTx });
-    //         expect(retVal).to.be.a('number');
-    //         expect(retVal).to.be.greaterThanOrEqual(0);
-    //     })
-    //     it('returns a number based on the average fee calculator for the last 10 blocks', async function () {
-    //         this.timeout(5000);
-    //         const retVal = await solRpc.estimateFee({});
-    //         expect(retVal).to.be.a('number');
-    //         expect(retVal).to.be.greaterThanOrEqual(0);
-    //     })
-    //     it('throws "Could not decode provided raw transaction" error if rawTx cannot be decoded', async () => {
-    //         const rawTx = 'non dec0dable';
-    //         try {
-    //             await solRpc.estimateFee({ rawTx });
-    //             expect.fail('Should have thrown an error');
-    //         } catch (err) {
-    //             expect(err.message).to.equal('Could not decode provided raw transaction');
-    //         }
-    //     })
-    // })
+    describe('estimateFee', () => {
+        it('calls estimateTransactionFee is rawTx is included and returns number if rawTx is valid', async () => {
+            const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
+            const retVal = await solRpc.estimateFee({ rawTx });
+            expect(retVal).to.be.a('number');
+            expect(retVal).to.be.greaterThanOrEqual(0);
+        })
+        it('returns a number based on the average fee calculator for the last 10 blocks', async function () {
+            this.timeout(5000);
+            const retVal = await solRpc.estimateFee({});
+            expect(retVal).to.be.a('number');
+            expect(retVal).to.be.greaterThanOrEqual(0);
+        })
+        it('throws "Could not decode provided raw transaction" error if rawTx cannot be decoded', async () => {
+            const rawTx = 'non dec0dable';
+            try {
+                await solRpc.estimateFee({ rawTx });
+                expect.fail('Should have thrown an error');
+            } catch (err) {
+                expect(err.message).to.equal('Could not decode provided raw transaction');
+            }
+        })
+    })
 
-    // @DONE
-    // describe('estimateTransactionFee', () => {
-    //     it('returns a fee estimate number in lamports based on the latest blockhash and transaction message', async () => {
-    //         const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
-    //         const retVal = await solRpc.estimateTransactionFee({ rawTx });
-    //         expect(retVal).to.be.a('number');
-    //         expect(retVal).to.be.greaterThanOrEqual(0);
-    //     })
-    //     it('throws "Could not decode provided raw transaction" if input could not be retrieved', async () => {
-    //         const rawTx = 'non dec0dable';
-    //         try {
-    //             await solRpc.estimateFee({ rawTx });
-    //             expect.fail('Should have thrown an error');
-    //         } catch (err) {
-    //             expect(err.message).to.equal('Could not decode provided raw transaction');
-    //         }
-    //     })
-    // })
+    describe('estimateTransactionFee', () => {
+        it('returns a fee estimate number in lamports based on the latest blockhash and transaction message', async () => {
+            const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
+            const retVal = await solRpc.estimateTransactionFee({ rawTx });
+            expect(retVal).to.be.a('number');
+            expect(retVal).to.be.greaterThanOrEqual(0);
+        })
+        it('throws "Could not decode provided raw transaction" if input could not be retrieved', async () => {
+            const rawTx = 'non dec0dable';
+            try {
+                await solRpc.estimateFee({ rawTx });
+                expect.fail('Should have thrown an error');
+            } catch (err) {
+                expect(err.message).to.equal('Could not decode provided raw transaction');
+            }
+        })
+    })
 
-    // @DONE
-    // describe('estimateMaxPriorityFee', () => {
-    //     it('returns a number representing the priority fee at the nth percentile of ordered recent prioritization fees', async () => {
-    //         const retVal = await solRpc.estimateMaxPriorityFee({});
-    //         expect(retVal).to.be.a('number');
-    //         expect(retVal).to.be.greaterThanOrEqual(0);
-    //     })
-    // })
+    describe('estimateMaxPriorityFee', () => {
+        it('returns a number representing the priority fee at the nth percentile of ordered recent prioritization fees', async () => {
+            const retVal = await solRpc.estimateMaxPriorityFee({});
+            expect(retVal).to.be.a('number');
+            expect(retVal).to.be.greaterThanOrEqual(0);
+        })
+    })
 
-    // @DONE
-    // describe('addPriorityFee', () => {
-    //     it('adds a priority fee to the provided transaction message', async () => {
-    //         const transactionMessage = await createUnsignedTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
-    //         assert(!doesTxMsgHaveComputeBudgetInstruction(transactionMessage));
+    describe('addPriorityFee', () => {
+        it('adds a priority fee to the provided transaction message', async () => {
+            const transactionMessage = await createUnsignedTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
+            assert(!doesTxMsgHaveComputeBudgetInstruction(transactionMessage));
 
-    //         const appendedTransactionMessage = await solRpc.addPriorityFee({ transactionMessage })
-    //         expect(doesTxMsgHaveComputeBudgetInstruction(appendedTransactionMessage)).to.be.true;
+            const appendedTransactionMessage = await solRpc.addPriorityFee({ transactionMessage })
+            expect(doesTxMsgHaveComputeBudgetInstruction(appendedTransactionMessage)).to.be.true;
 
-    //         function doesTxMsgHaveComputeBudgetInstruction(txMsg) {
-    //             return txMsg.instructions.some(instruction => {
-    //                 return instruction.programAddress === 'ComputeBudget111111111111111111111111111111'
-    //             })
-    //         }
-    //     })
-    // })
+            function doesTxMsgHaveComputeBudgetInstruction(txMsg) {
+                return txMsg.instructions.some(instruction => {
+                    return instruction.programAddress === 'ComputeBudget111111111111111111111111111111'
+                })
+            }
+        })
+    })
 
-    // @DONE
-    // describe('getBestBlockHash', () => {
-    //     it('returns a blockhash', async () => {
-    //         const hash = await solRpc.getBestBlockHash();
-    //         expect(hash).to.be.a('string');
-    //     })
-    // })
+    describe('getBestBlockHash', () => {
+        it('returns a blockhash', async () => {
+            const hash = await solRpc.getBestBlockHash();
+            expect(hash).to.be.a('string');
+        })
+    })
 
     const assertValidTransaction = (retVal) => {
         const numberTargetType = 'bigint';
@@ -255,207 +284,225 @@ describe('SolRpc Integration tests', () => {
         expect(signatures.every(signature => typeof signature === 'string')).to.be.true;
     }
 
-    /**
-     * @DONE
-     */
-    // describe('getTransaction', () => {
-    //     let txid;
-    //     beforeEach(async function () {
-    //         this.timeout(3000);
-    //         txid = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 10000n);
-    //     });
+    describe('getTransaction', () => {
+        let versioned_txid;
+        let legacy_txid;
+        before(async function () {
+            this.timeout(10000);
+            // const [versionedTxId, legacyTxId] = await Promise.all([
+            //     sendTransaction(solRpc, senderKeypair, receiverKeypair, 10000n, 0),
+            //     sendTransaction(solRpc, senderKeypair, receiverKeypair, 10000n, 'legacy')
+            // ])
 
-    //     it('returns a transaction if provided a valid transaction id', async () => {
-    //         const retVal = await solRpc.getTransaction({ txid });
-    //         assertValidTransaction(retVal);
-    //     })
-    // })
+            // versioned_txid = versionedTxId;
+            // legacy_txid = legacyTxId;
+            versioned_txid = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 10000n, 0);
+            await new Promise(resolve => setTimeout(resolve, 500)); // Add small delay between transactions - allow for listener cleanup
+            legacy_txid = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 10000n, 'legacy');
+        });
 
-    // @DONE
-    // describe('getTransactions', () => {
-    //     /** @type {Keypair} */
-    //     let targetKeypair;
-    //     beforeEach(async function() {
-    //         this.timeout(5e3);
-    //         targetKeypair = await createAccount(solRpc, senderKeypair);
-    //         for (let i = 0; i < 2; i++) {
-    //             await sendTransaction(solRpc, senderKeypair, targetKeypair, 1000 * (i + 1));
-    //         }
-    //     })
+        it('returns a versioned transaction if provided a valid transaction id', async () => {
+            const retVal = await solRpc.getTransaction({ txid: versioned_txid });
+            expect(retVal.version).to.be.a('bigint');
+            expect(Number(retVal.version)).to.equal(0);
+            assertValidTransaction(retVal);
+        })
 
-    //     it('returns an array of at most 1000 non-null transactions for a specified address', async () => {
-    //         // Consider generating a new address here...
-    //         const transactions = await solRpc.getTransactions({ address: targetKeypair.address });
-    //         expect(transactions).to.be.an('array');
-    //         transactions.forEach(transaction => {
-    //             assertValidTransaction(transaction);
-    //         });
-    //     })
-    // }, 5e3);
+        it('returns a legacy transaction if provided a valid transaction id', async () => {
+            const retVal = await solRpc.getTransaction({ txid: legacy_txid });
+            expect(retVal.version).to.equal('legacy');
+            assertValidTransaction(retVal);
+        })
+    })
 
-    // @DONE
-    // describe('getTransactionCount', () => {
-    //     const numTransactions = 2;
-    //     /** @type {import("@solana/web3.js").KeyPairSigner} */
-    //     let targetKeypair;
-    //     beforeEach(async function() {
-    //         this.timeout(5e3);
-    //         targetKeypair = await createAccount(solRpc, senderKeypair);
-    //         for (let i = 0; i < numTransactions; i++) {
-    //             await sendTransaction(solRpc, senderKeypair, targetKeypair, 1000 * (i + 1));
-    //         }
-    //     })
+    describe('getTransactions', () => {
+        /** @type {Keypair} */
+        let targetKeypair;
+        beforeEach(async function() {
+            this.timeout(5e3);
+            targetKeypair = await createAccount(solRpc, senderKeypair);
+            for (let i = 0; i < 2; i++) {
+                await sendTransaction(solRpc, senderKeypair, targetKeypair, 1000 * (i + 1));
+            }
+        })
 
-    //     it('returns the count of confirmed transactions for a valid account address', async () => {
-    //         const count = await solRpc.getTransactionCount({ address: targetKeypair.address });
-    //         expect(count).to.equal(numTransactions + 1); // 1 is the createAccount transaction
-    //     }, 5e3)
-    // })
+        it('returns an array of at most 1000 non-null transactions for a specified address', async () => {
+            // Consider generating a new address here...
+            const transactions = await solRpc.getTransactions({ address: targetKeypair.address });
+            expect(transactions).to.be.an('array');
+            transactions.forEach(transaction => {
+                assertValidTransaction(transaction);
+            });
+        })
+    }, 5e3);
 
-    // @DONE
-    // describe('getRawTransaction', () => {
-    //     let txid;
-    //     beforeEach(async function () {
-    //         this.timeout(3500);
-    //         txid = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 10000n);
-    //     });
-    //     it('returns a base64 encoded string for a valid transaction', async () => {
-    //         const txString = await solRpc.getRawTransaction({ txid });
-    //         expect(txString).to.be.a('string');
-    //         expect(txString).to.equal(Buffer.from(txString, 'base64').toString('base64'));
-    //     })
-    // })
+    describe('getTransactionCount', () => {
+        const numTransactions = 2;
+        /** @type {import("@solana/web3.js").KeyPairSigner} */
+        let targetKeypair;
+        beforeEach(async function() {
+            this.timeout(5e3);
+            targetKeypair = await createAccount(solRpc, senderKeypair);
+            for (let i = 0; i < numTransactions; i++) {
+                await new Promise(resolve => setTimeout(resolve, 250));
+                await sendTransaction(solRpc, senderKeypair, targetKeypair, 1000 * (i + 1));
+            }
+        })
 
-    // @COMEBACK
-    // describe('decodeRawTransaction', () => {
-    //     it('returns a decoded raw transaction', async () => {
-    //         const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
-    //         const decodedRawTransaction = solRpc.decodeRawTransaction({ rawTx })
-    //         expect(decodedRawTransaction).to.be.an('object');
-    //         expect(decodedRawTransaction).to.have.property('signatures').that.is.an('array');
-    //         expect(decodedRawTransaction).to.have.property('message').that.is.an('object');
-    //         const { signatures: _, message } = decodedRawTransaction;
-    //         expect(message).to.have.property('recentBlockhash').that.is.a('string');
-    //         expect(message).to.have.property('accountKeys').that.is.an('array');
-    //         expect(message).to.have.property('instructions').that.is.an('array');
-    //     })
-    // })
+        it('returns the count of confirmed transactions for a valid account address', async () => {
+            const count = await solRpc.getTransactionCount({ address: targetKeypair.address });
+            expect(count).to.equal(numTransactions + 1); // 1 is the createAccount transaction
+        }, 5e3)
+    })
 
-    // @DONE
-    // describe('sendRawTransaction', () => {
-    //     it('sends a raw transaction', async () => {
-    //         const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
-    //         const signature = await solRpc.sendRawTransaction({ rawTx });
-    //         expect(signature).to.be.a('string');
-    //     })
-    // }) 
+    describe('getRawTransaction', () => {
+        let txid;
+        beforeEach(async function () {
+            this.timeout(3500);
+            txid = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 10000n);
+        });
+        it('returns a base64 encoded string for a valid transaction', async () => {
+            const txString = await solRpc.getRawTransaction({ txid });
+            expect(txString).to.be.a('string');
+            expect(txString).to.equal(Buffer.from(txString, 'base64').toString('base64'));
+        })
+    })
 
-    /** @DONE */
-    // describe('getBlock', () => {
-    //     it('returns a block at provided height', async () => {
-    //         const numberTargetType = 'bigint';
+    describe('decodeRawTransaction', () => {
+        it('returns a decoded raw transaction', async () => {
+            const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
+            const decodedRawTransaction = solRpc.decodeRawTransaction({ rawTx })
+            expect(decodedRawTransaction).to.be.an('object');
+            expect(decodedRawTransaction).to.have.property('signatures').that.is.an('array');
+            expect(decodedRawTransaction).to.have.property('message').that.is.an('object');
+            const { signatures: _, message } = decodedRawTransaction;
+            expect(message).to.have.property('recentBlockhash').that.is.a('string');
+            expect(message).to.have.property('accountKeys').that.is.an('array');
+            expect(message).to.have.property('instructions').that.is.an('array');
+        })
+    })
 
-    //         const slot = await solRpc.rpc.getSlot().send();
-    //         const block = await solRpc.getBlock({ height: slot });
-    //         expect(block).to.be.an('object');
-    //         expect(block).to.have.property('blockhash').that.is.a('string');
-    //         expect(block).to.have.property('blockHeight').that.is.a(numberTargetType);
-    //         expect(block).to.have.property('blockTime').that.is.a(numberTargetType);
-    //         expect(block).to.have.property('parentSlot').that.is.a(numberTargetType);
-    //         expect(block).to.have.property('previousBlockhash').that.is.a('string');
-    //         expect(block).to.have.property('rewards').that.is.an('array');
-    //         expect(block).to.have.property('transactions').that.is.an('array');
-    //     })
-    // })
+    describe('sendRawTransaction', () => {
+        it('sends a raw transaction', async () => {
+            const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
+            const signature = await solRpc.sendRawTransaction({ rawTx });
+            expect(signature).to.be.a('string');
+        })
+    }) 
 
-    /** @DONE */
-    // describe('getConfirmations', () => {
-    //     it('returns the number of confirmations for a valid txid', async function () {
-    //         this.timeout(5000);
-    //         const confirmedTransactionSignature = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 1000);
+    describe('getBlock', () => {
+        it('returns a block at provided height', async () => {
+            const numberTargetType = 'bigint';
 
-    //         await new Promise(resolve => setTimeout(resolve, 250));
-    //         let confirmations = await solRpc.getConfirmations({ txid: confirmedTransactionSignature });
-    //         // Check monotonic increasing number of confirmations over time
-    //         for (let i = 0; i < 2; i++) {
-    //             await new Promise(resolve => setTimeout(resolve, 500));
-    //             const newConfirmations = await solRpc.getConfirmations({ txid: confirmedTransactionSignature });
-    //             expect(newConfirmations).to.be.greaterThan(confirmations);
-    //             confirmations = newConfirmations;
-    //         }
-    //     });
-    // })
+            const slot = await solRpc.rpc.getSlot().send();
+            const block = await solRpc.getBlock({ height: slot });
+            expect(block).to.be.an('object');
+            expect(block).to.have.property('blockhash').that.is.a('string');
+            expect(block).to.have.property('blockHeight').that.is.a(numberTargetType);
+            expect(block).to.have.property('blockTime').that.is.a(numberTargetType);
+            expect(block).to.have.property('parentSlot').that.is.a(numberTargetType);
+            expect(block).to.have.property('previousBlockhash').that.is.a('string');
+            expect(block).to.have.property('rewards').that.is.an('array');
+            expect(block).to.have.property('transactions').that.is.an('array');
+        })
+    })
 
-    /** @DONE */
-    // describe('getTip', () => {
-    //     it('returns the slot number as "height" and the corresponding block at that height', async () => {
-    //         const tip = await solRpc.getTip();
-    //         expect(tip).to.be.an('object');
-    //         expect(tip).to.have.property('hash').that.is.a('string');
-    //         expect(tip).to.have.property('height').that.is.a('number');
-    //     })
-    // })
+    describe('getConfirmations', () => {
+        it('returns the number of confirmations for a valid txid', async function () {
+            this.timeout(5000);
+            const confirmedTransactionSignature = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 1000);
 
-    /** @DONE */
-    // describe('getServerInfo', () => {
-    //     it('returns server info', async () => {
-    //         const serverInfo = await solRpc.getServerInfo();
-    //         expect(serverInfo).to.be.an('object');
-    //         expect(serverInfo).to.have.property('feature-set').that.is.a('number');
-    //         expect(serverInfo).to.have.property('solana-core').that.is.a('string');
-    //     })
-    // })
+            await new Promise(resolve => setTimeout(resolve, 250));
+            let confirmations = await solRpc.getConfirmations({ txid: confirmedTransactionSignature });
+            // Check monotonic increasing number of confirmations over time
+            for (let i = 0; i < 2; i++) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const newConfirmations = await solRpc.getConfirmations({ txid: confirmedTransactionSignature });
+                expect(newConfirmations).to.be.greaterThan(confirmations);
+                confirmations = newConfirmations;
+            }
+        });
+    })
 
-    /** @DONE */
-    // describe('isBase58', () => {
-    //     it('returns true if a string is valid base58', () => {
-    //         const isBase58 = solRpc.isBase58(receiverKeypair.address);
-    //         expect(isBase58).to.be.true;
-    //     })
-    //     it('returns false if a string is invalid base58', () => {
-    //         const isBase58 = solRpc.isBase58('l1O0');
-    //         expect(isBase58).to.be.false;
-    //     })
-    // })
+    describe('getTip', () => {
+        it('returns the slot number as "height" and the corresponding block at that height', async () => {
+            const tip = await solRpc.getTip();
+            expect(tip).to.be.an('object');
+            expect(tip).to.have.property('hash').that.is.a('string');
+            expect(tip).to.have.property('height').that.is.a('number');
+        })
+    })
+
+    describe('getServerInfo', () => {
+        it('returns server info', async () => {
+            const serverInfo = await solRpc.getServerInfo();
+            expect(serverInfo).to.be.an('object');
+            expect(serverInfo).to.have.property('feature-set').that.is.a('number');
+            expect(serverInfo).to.have.property('solana-core').that.is.a('string');
+        })
+    })
+
+    describe('isBase58', () => {
+        it('returns true if a string is valid base58', () => {
+            const isBase58 = solRpc.isBase58(receiverKeypair.address);
+            expect(isBase58).to.be.true;
+        })
+        it('returns false if a string is invalid base58', () => {
+            const isBase58 = solRpc.isBase58('l1O0');
+            expect(isBase58).to.be.false;
+        })
+    })
 })
 
 /**
  * 
- * @param {import("@solana/web3.js").Rpc} rpc 
+ * @param {SolRPC} solRpc 
  * @param {import("@solana/web3.js").KeyPairSigner} feePayerAndAuthorityKeypair 
  * @param {import("@solana/web3.js").KeyPairSigner} nonceKeypair 
  */
 async function createNonceAccount(
-    rpc,
+    solRpc,
     feePayerAndAuthorityKeypair,
     nonceKeypair
 ) {
     try {
-        const minimumBalanceForRentExemption = await rpc.getMinimumBalanceForRentExemption(NONCE_ACCOUNT_LENGTH);
+      // Get the min balance for rent exception
+      const space = 80n;
+      const lamportsForRent = await solRpc.rpc.getMinimumBalanceForRentExemption(space).send();
 
-        const createAccountInstruction = SystemProgram.createAccount({
-            fromPubkey: feePayerAndAuthorityKeypair.publicKey,
-            newAccountPubkey: nonceKeypair.publicKey,
-            lamports: minimumBalanceForRentExemption,
-            space: NONCE_ACCOUNT_LENGTH,
-            programId: SystemProgram.programId
-        });
+      // Build the tx
+      const createAccountInstruction = getCreateAccountInstruction({
+        payer: feePayerAndAuthorityKeypair,
+        newAccount: nonceKeypair,
+        lamports: lamportsForRent,
+        space,
+        programAddress: SYSTEM_PROGRAM_ADDRESS
+      });
 
-        const initNonceInstruction = SystemProgram.nonceInitialize({
-            noncePubkey: nonceKeypair.publicKey,
-            authorizedPubkey: feePayerAndAuthorityKeypair.publicKey
-        });
+      const initializeNonceAccountInstruction = getInitializeNonceAccountInstruction(
+        {
+          nonceAccount: nonceKeypair.address,
+          nonceAuthority: feePayerAndAuthorityKeypair.address
+        }
+      );
 
-        const transaction = new Transaction()
-            .add(createAccountInstruction)
-            .add(initNonceInstruction);
+      const { value: latestBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
+      const transactionMessage = pipe(
+        createTransactionMessage({ version: 0 }),
+        (tx) => setTransactionMessageFeePayerSigner(feePayerAndAuthorityKeypair, tx), // fix payer
+        (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+        (tx) => appendTransactionMessageInstructions(
+          [createAccountInstruction, initializeNonceAccountInstruction],
+          tx
+        )
+      );
 
-        const signature = await rpc.sendTransaction(
-            transaction,
-            [feePayerAndAuthorityKeypair, nonceKeypair],
-            { commitment: 'confirmed' }
-        );
-        return signature;
+      // Sign & send
+      const signedTransactionMessage = await signTransactionMessageWithSigners(transactionMessage);
+
+      const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
+      await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'confirmed' });
+      return getSignatureFromTransaction(signedTransactionMessage);
     } catch (err) {
         console.error('Error creating nonce account:', err);
         throw err;
@@ -467,10 +514,11 @@ async function createNonceAccount(
  * @param {SolRPC} solRpc 
  * @param {import("@solana/web3.js").KeyPairSigner} fromKeypair 
  * @param {import("@solana/web3.js").KeyPairSigner} toKeypair 
- * @param {number} amountInLamports 
+ * @param {number} amountInLamports
+ * @param {0|'legacy'} [version=0]
  */
-async function sendTransaction(solRpc, fromKeypair, toKeypair, amountInLamports) {
-    const transaction = await createUnsignedTransaction(solRpc.rpc, fromKeypair, toKeypair, amountInLamports);
+async function sendTransaction(solRpc, fromKeypair, toKeypair, amountInLamports, version = 0) {
+    const transaction = await createUnsignedTransaction(solRpc.rpc, fromKeypair, toKeypair, amountInLamports, version);
     const signedTransaction = await signTransactionMessageWithSigners(transaction);
 
     const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
@@ -568,3 +616,4 @@ async function createAccount(
     await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'confirmed' });
     return keypair;
 }
+
