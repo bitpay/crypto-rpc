@@ -372,6 +372,7 @@ describe('SolRpc Integration tests', () => {
       expect(decodedRawTransaction).to.be.an('object');
       expect(decodedRawTransaction).to.have.property('signatures').that.is.an('array');
       expect(decodedRawTransaction).to.have.property('message').that.is.an('object');
+      // eslint-disable-next-line no-unused-vars
       const { signatures: _, message } = decodedRawTransaction;
       expect(message).to.have.property('recentBlockhash').that.is.a('string');
       expect(message).to.have.property('accountKeys').that.is.an('array');
