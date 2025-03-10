@@ -1,22 +1,10 @@
-const {
-  createKeyPairSignerFromPrivateKeyBytes,
-  generateKeyPairSigner,
-  getBase58Encoder,
-  setTransactionMessageFeePayerSigner,
-  setTransactionMessageLifetimeUsingBlockhash,
-  appendTransactionMessageInstruction,
-  signTransactionMessageWithSigners,
-  getBase64EncodedWireTransaction,
-  createTransactionMessage,
-  appendTransactionMessageInstructions,
-  sendAndConfirmTransactionFactory,
-  getSignatureFromTransaction,
-} = require('@solana/web3.js');
+
+const SolKit = require('@solana/kit');
+const SolSystem = require('@solana-program/system');
 const { pipe } = require('@solana/functional');
 const SolRPC = require('../../lib/sol/SolRpc');
 const { expect } = require('chai');
 const assert = require('assert');
-const { getTransferSolInstruction, getCreateAccountInstruction, SYSTEM_PROGRAM_ADDRESS, getInitializeNonceAccountInstruction } = require('@solana-program/system');
 
 const config = {
   chain: 'SOL',
@@ -41,10 +29,10 @@ describe('SolRpc Integration tests', () => {
 
   before(async function () {
     this.timeout(10000);
-    const bs58Encoder = getBase58Encoder();
+    const bs58Encoder = SolKit.getBase58Encoder();
     const [keypairSigner1Value, keypairSigner2Value] = await Promise.all(
       Object.values(config.currencyConfig)
-        .map(async (key) => createKeyPairSignerFromPrivateKeyBytes(bs58Encoder.encode(key)))
+        .map(async (key) => SolKit.createKeyPairSignerFromPrivateKeyBytes(bs58Encoder.encode(key)))
     );
 
     // For these tests, the nonce authority will be the sender
@@ -54,7 +42,7 @@ describe('SolRpc Integration tests', () => {
     solRpc = new SolRPC(config);
 
     // Create nonce account
-    nonceAccountKeypair = await generateKeyPairSigner();
+    nonceAccountKeypair = await SolKit.generateKeyPairSigner();
     await createNonceAccount(solRpc, senderKeypair, nonceAccountKeypair);
   });
 
@@ -164,7 +152,7 @@ describe('SolRpc Integration tests', () => {
   describe('createNonceAccount', () => {
     it('can create a nonce account ', async function () {
       this.timeout(5000);
-      const nonceKeypair = await generateKeyPairSigner();
+      const nonceKeypair = await SolKit.generateKeyPairSigner();
       const retVal = await solRpc.createNonceAccount(senderKeypair, nonceKeypair);
       expect(retVal).to.be.a('string');
     });
@@ -469,15 +457,15 @@ async function createNonceAccount(
     const lamportsForRent = await solRpc.rpc.getMinimumBalanceForRentExemption(space).send();
 
     // Build the tx
-    const createAccountInstruction = getCreateAccountInstruction({
+    const createAccountInstruction = SolSystem.getCreateAccountInstruction({
       payer: feePayerAndAuthorityKeypair,
       newAccount: nonceKeypair,
       lamports: lamportsForRent,
       space,
-      programAddress: SYSTEM_PROGRAM_ADDRESS
+      programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS
     });
 
-    const initializeNonceAccountInstruction = getInitializeNonceAccountInstruction(
+    const initializeNonceAccountInstruction = SolSystem.getInitializeNonceAccountInstruction(
       {
         nonceAccount: nonceKeypair.address,
         nonceAuthority: feePayerAndAuthorityKeypair.address
@@ -486,21 +474,21 @@ async function createNonceAccount(
 
     const { value: latestBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
     const transactionMessage = pipe(
-      createTransactionMessage({ version: 0 }),
-      (tx) => setTransactionMessageFeePayerSigner(feePayerAndAuthorityKeypair, tx), // fix payer
-      (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-      (tx) => appendTransactionMessageInstructions(
+      SolKit.createTransactionMessage({ version: 0 }),
+      (tx) => SolKit.setTransactionMessageFeePayerSigner(feePayerAndAuthorityKeypair, tx), // fix payer
+      (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+      (tx) => SolKit.appendTransactionMessageInstructions(
         [createAccountInstruction, initializeNonceAccountInstruction],
         tx
       )
     );
 
     // Sign & send
-    const signedTransactionMessage = await signTransactionMessageWithSigners(transactionMessage);
+    const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessage);
 
-    const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
+    const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
     await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'confirmed' });
-    return getSignatureFromTransaction(signedTransactionMessage);
+    return SolKit.getSignatureFromTransaction(signedTransactionMessage);
   } catch (err) {
     console.error('Error creating nonce account:', err);
     throw err;
@@ -517,11 +505,11 @@ async function createNonceAccount(
  */
 async function sendTransaction(solRpc, fromKeypair, toKeypair, amountInLamports, version = 0) {
   const transaction = await createUnsignedTransaction(solRpc.rpc, fromKeypair, toKeypair, amountInLamports, version);
-  const signedTransaction = await signTransactionMessageWithSigners(transaction);
+  const signedTransaction = await SolKit.signTransactionMessageWithSigners(transaction);
 
-  const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
+  const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
   await sendAndConfirmTransaction(signedTransaction, { commitment: 'confirmed' });
-  return getSignatureFromTransaction(signedTransaction);
+  return SolKit.getSignatureFromTransaction(signedTransaction);
 }
 
 /**
@@ -538,8 +526,8 @@ async function createRawTransaction(
   amountInLamports
 ) {
   const transaction = await createUnsignedTransaction(rpc, fromKeypair, toKeypair, amountInLamports);
-  const signedTransaction = await signTransactionMessageWithSigners(transaction);
-  const base64EncodedTransaction = getBase64EncodedWireTransaction(signedTransaction);
+  const signedTransaction = await SolKit.signTransactionMessageWithSigners(transaction);
+  const base64EncodedTransaction = SolKit.getBase64EncodedWireTransaction(signedTransaction);
   return base64EncodedTransaction;
 }
 
@@ -560,17 +548,17 @@ async function createUnsignedTransaction(
 ) {
   const { value: recentBlockhash } = await rpc.getLatestBlockhash().send();
 
-  const transferInstruction = getTransferSolInstruction({
+  const transferInstruction = SolSystem.getTransferSolInstruction({
     amount: amountInLamports,
     destination: toKeypair.address,
     source: fromKeypair
   });
 
   const transactionMessage = pipe(
-    createTransactionMessage({ version }),
-    (tx) => setTransactionMessageFeePayerSigner(fromKeypair, tx),
-    (tx) => setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
-    (tx) => appendTransactionMessageInstructions([transferInstruction], tx)
+    SolKit.createTransactionMessage({ version }),
+    (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeypair, tx),
+    (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
+    (tx) => SolKit.appendTransactionMessageInstructions([transferInstruction], tx)
   );
 
   return transactionMessage;
@@ -588,29 +576,29 @@ async function createAccount(
   feePayerKeypair,
   version = 0
 ) {
-  const keypair = await generateKeyPairSigner();
+  const keypair = await SolKit.generateKeyPairSigner();
   const space = 0;
   const rentLamports = await solRpc.rpc.getMinimumBalanceForRentExemption(space).send();
-  const createAccountInstruction = getCreateAccountInstruction({
+  const createAccountInstruction = SolSystem.getCreateAccountInstruction({
     payer: feePayerKeypair,
     newAccount: keypair,
     lamports: rentLamports,
     space,
-    programAddress: SYSTEM_PROGRAM_ADDRESS
+    programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS
   });
 
   const { value: latestBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
 
   const transactionMessage = pipe(
-    createTransactionMessage({ version }),
-    (tx) => setTransactionMessageFeePayerSigner(feePayerKeypair, tx),
-    (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-    (tx) => appendTransactionMessageInstruction(createAccountInstruction, tx)
+    SolKit.createTransactionMessage({ version }),
+    (tx) => SolKit.setTransactionMessageFeePayerSigner(feePayerKeypair, tx),
+    (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+    (tx) => SolKit.appendTransactionMessageInstruction(createAccountInstruction, tx)
   );
 
-  const signedTransactionMessage = await signTransactionMessageWithSigners(transactionMessage);
+  const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessage);
 
-  const sendAndConfirmTransaction = sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
+  const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
   await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'confirmed' });
   return keypair;
 }
