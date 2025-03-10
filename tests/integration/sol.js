@@ -20,11 +20,11 @@ describe('SolRpc Integration tests', () => {
   /** @type {SolRPC} */
   let solRpc;
 
-  /** @type {import("@solana/web3.js").KeyPairSigner<string>} */
+  /** @type {import("@solana/kit").KeyPairSigner<string>} */
   let senderKeypair;
-  /** @type {import("@solana/web3.js").KeyPairSigner<string>} */
+  /** @type {import("@solana/kit").KeyPairSigner<string>} */
   let receiverKeypair;
-  /** @type {import("@solana/web3.js").KeyPairSigner<string>} */
+  /** @type {import("@solana/kit").KeyPairSigner<string>} */
   let nonceAccountKeypair;
 
   before(async function () {
@@ -323,7 +323,7 @@ describe('SolRpc Integration tests', () => {
 
   describe('getTransactionCount', () => {
     const numTransactions = 2;
-    /** @type {import("@solana/web3.js").KeyPairSigner} */
+    /** @type {import("@solana/kit").KeyPairSigner} */
     let targetKeypair;
     beforeEach(async function() {
       this.timeout(5e3);
@@ -443,8 +443,8 @@ describe('SolRpc Integration tests', () => {
 /**
  * 
  * @param {SolRPC} solRpc 
- * @param {import("@solana/web3.js").KeyPairSigner} feePayerAndAuthorityKeypair 
- * @param {import("@solana/web3.js").KeyPairSigner} nonceKeypair 
+ * @param {import("@solana/kit").KeyPairSigner} feePayerAndAuthorityKeypair 
+ * @param {import("@solana/kit").KeyPairSigner} nonceKeypair 
  */
 async function createNonceAccount(
   solRpc,
@@ -498,8 +498,8 @@ async function createNonceAccount(
 /**
  * 
  * @param {SolRPC} solRpc 
- * @param {import("@solana/web3.js").KeyPairSigner} fromKeypair 
- * @param {import("@solana/web3.js").KeyPairSigner} toKeypair 
+ * @param {import("@solana/kit").KeyPairSigner} fromKeypair 
+ * @param {import("@solana/kit").KeyPairSigner} toKeypair 
  * @param {number} amountInLamports
  * @param {0|'legacy'} [version=0]
  */
@@ -514,9 +514,9 @@ async function sendTransaction(solRpc, fromKeypair, toKeypair, amountInLamports,
 
 /**
  * 
- * @param {import("@solana/web3.js").Rpc} rpc 
- * @param {import("@solana/web3.js").KeyPairSigner} fromKeypair 
- * @param {import("@solana/web3.js").KeyPairSigner} toKeypair 
+ * @param {import("@solana/kit").Rpc} rpc 
+ * @param {import("@solana/kit").KeyPairSigner} fromKeypair 
+ * @param {import("@solana/kit").KeyPairSigner} toKeypair 
  * @param {number} amountInLamports 
  */
 async function createRawTransaction(
@@ -533,9 +533,9 @@ async function createRawTransaction(
 
 /**
  * 
- * @param {import("@solana/web3.js").Rpc} rpc 
- * @param {import("@solana/web3.js").KeyPairSigner} fromKeypair 
- * @param {import("@solana/web3.js").KeyPairSigner} toKeypair 
+ * @param {import("@solana/kit").Rpc} rpc 
+ * @param {import("@solana/kit").KeyPairSigner} fromKeypair 
+ * @param {import("@solana/kit").KeyPairSigner} toKeypair 
  * @param {number} amountInLamports 
  * @param {0 | 'legacy'} [version=0]
  */
@@ -567,9 +567,9 @@ async function createUnsignedTransaction(
 /**
  * 
  * @param {SolRPC} solRpc 
- * @param {import("@solana/web3.js").KeyPairSigner} feePayerKeypair 
+ * @param {import("@solana/kit").KeyPairSigner} feePayerKeypair 
  * @param {0 | 'legacy'} version 
- * @returns {Promise<import("@solana/web3.js").KeyPairSigner>}
+ * @returns {Promise<import("@solana/kit").KeyPairSigner>}
  */
 async function createAccount(
   solRpc,

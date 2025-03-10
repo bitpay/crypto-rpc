@@ -1,5 +1,5 @@
 const { CryptoRpc } = require('../');
-const Web3 = require('@solana/web3.js');
+const Web3 = require('@solana/kit');
 const chai = require('chai');
 const assert = require('assert');
 const { expect } = chai;

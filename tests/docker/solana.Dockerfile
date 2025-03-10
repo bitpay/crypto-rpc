@@ -1,6 +1,6 @@
 FROM node:lts-bullseye
 WORKDIR /crypto-rpc
-RUN  npm install @solana/web3.js
+RUN  npm install @solana/kit
 
 # Use the official Solana image
 FROM solanalabs/solana:v1.10.32
