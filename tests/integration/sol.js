@@ -301,7 +301,7 @@ describe('SolRpc Integration tests', () => {
   });
 
   describe('getTransactions', () => {
-    /** @type {Keypair} */
+    /** @type {import('@solana/kit').KeyPairSigner<string>} */
     let targetKeypair;
     beforeEach(async function() {
       this.timeout(5e3);
