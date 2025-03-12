@@ -18,7 +18,8 @@
     "truffle:compile": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle compile --network development_geth && ../../node_modules/.bin/truffle compile --network development_matic",
     "truffle:test": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle test --network development_geth && ../../node_modules/.bin/truffle test --network development_matic",
     "truffle:migrate": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle migrate --network development_geth && ../../node_modules/.bin/truffle migrate --network development_matic",
-    "test:integration": "mocha 'tests/integration/**/*.js'"
+    "test:integration": "mocha 'tests/integration/**/*.js'",
+    "test:target": "mocha 'tests/sol.js'"
   },
   "author": "Micah Riggan",
   "license": "ISC",
@@ -26,6 +27,7 @@
     "@solana-program/compute-budget": "^0.7.0",
     "@solana-program/memo": "^0.7.0",
     "@solana-program/system": "^0.7.0",
+    "@solana-program/token": "^0.5.1",
     "@solana/kit": "^2.1.0",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
