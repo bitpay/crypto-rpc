@@ -101,8 +101,8 @@ describe('SOL Tests', () => {
     let nonceAccountKeypair;
     before(async function () {
       // For these tests, the nonce authority will be the sender
-      senderKeypair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(Uint8Array.from(privateKey1));
-      receiverKeypair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(Uint8Array.from(privateKey2));
+      senderKeypair = await SolKit.createKeyPairSignerFromBytes(Uint8Array.from(privateKey1));
+      receiverKeypair = await SolKit.createKeyPairSignerFromBytes(Uint8Array.from(privateKey2));
 
       solRpc = new SolRPC(config);
 
