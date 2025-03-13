@@ -107,8 +107,8 @@ describe('SOL Tests', () => {
       solRpc = new SolRPC(config);
 
       // Airdrop if no money on sender
-      const senderBalance = await solRpc.rpc.getBalance(senderKeypair.address).send();
-      if (senderBalance < 1e10) {
+      const { value: senderBalance } = await solRpc.rpc.getBalance(senderKeypair.address).send();
+      if (Number(senderBalance) < 1e10) {
         const airdropSignature = await solRpc.rpc.requestAirdrop(senderKeypair.address, 1e10).send();
         const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
         let status = statuses[0];
@@ -125,8 +125,7 @@ describe('SOL Tests', () => {
         }
       }
 
-      await solRpc.rpc.requestAirdrop(senderKeypair.address, 1e10).send();
-      await solRpc.rpc.requestAirdrop(receiverKeypair.address, 1e10).send();
+
 
       // Create nonce account
       nonceAccountKeypair = await SolKit.generateKeyPairSigner();
