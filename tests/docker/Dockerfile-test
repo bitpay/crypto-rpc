@@ -1,4 +1,4 @@
-FROM node:18
+FROM node:22
 WORKDIR /crypto-rpc
 COPY package.json .
 RUN mkdir ~/.ssh
