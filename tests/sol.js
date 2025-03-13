@@ -81,7 +81,7 @@ describe('SOL Tests', () => {
     // Add specific instruction checks as needed
   };
 
-  describe.only('Local tests', function () {
+  describe('Local tests', function () {
     const config = {
       chain: 'SOL',
       host: 'localhost',
