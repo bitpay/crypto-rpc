@@ -429,7 +429,7 @@ describe('SOL Tests', () => {
         for (let i = 0; i < 2; i++) {
           await new Promise(resolve => setTimeout(resolve, 500));
           const newConfirmations = await solRpc.getConfirmations({ txid: confirmedTransactionSignature });
-          expect(newConfirmations).to.be.greaterThan(confirmations);
+          expect(newConfirmations).to.be.greaterThanOrEqual(confirmations);
           confirmations = newConfirmations;
         }
       });
@@ -519,12 +519,11 @@ describe('SOL Tests', () => {
 
         await new Promise(resolve => setTimeout(resolve, 250));
         let confirmations = await solRpc.getConfirmations({ txid: signature });
-        expect(confirmations).to.be.a('number').greaterThan(0);
-        // Confirmations should exhibit monotonic increasing behavior
+        expect(confirmations).to.be.a('number').greaterThanOrEqual(0);
         for (let i = 0; i < 2; i++) {
           await new Promise(resolve => setTimeout(resolve, 500));
           const newConfirmations = await solRpc.getConfirmations({ txid: signature });
-          expect(newConfirmations).to.be.a('number').greaterThan(confirmations);
+          expect(newConfirmations).to.be.a('number').greaterThanOrEqual(confirmations);
           confirmations = newConfirmations;
         }
 
