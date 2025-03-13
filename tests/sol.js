@@ -84,7 +84,7 @@ describe('SOL Tests', () => {
   describe('Local tests', function () {
     const config = {
       chain: 'SOL',
-      host: 'localhost',
+      host: 'solana',
       protocol: 'http',
       port: 8899,
       wsPort: 8900
