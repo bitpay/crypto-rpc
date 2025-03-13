@@ -81,10 +81,10 @@ describe('SOL Tests', () => {
     // Add specific instruction checks as needed
   };
 
-  describe.only('Local tests', function () {
+  describe('Local tests', function () {
     const config = {
       chain: 'SOL',
-      host: 'localhost',
+      host: 'solana',
       protocol: 'http',
       port: 8899,
       wsPort: 8900
