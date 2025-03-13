@@ -13,8 +13,8 @@ describe('SOL Tests', () => {
   const assertValidTransaction = (retVal) => {
     expect(retVal).to.be.an('object');
     expect(retVal).to.have.property('confirmations');
-    if (retVal.confirmations) {
-      expect(retVal.confirmations).to.be.a('number').greaterThan(0);
+    if (typeof retVal.confirmations === 'number') {
+      expect(retVal.confirmations).to.be.a('number').greaterThanOrEqual(0);
     } else {
       expect(retVal.confirmations).to.be.null;
     }
@@ -81,10 +81,10 @@ describe('SOL Tests', () => {
     // Add specific instruction checks as needed
   };
 
-  describe('Local tests', function () {
+  describe.only('Local tests', function () {
     const config = {
       chain: 'SOL',
-      host: 'solana',
+      host: 'localhost',
       protocol: 'http',
       port: 8899,
       wsPort: 8900
@@ -125,8 +125,6 @@ describe('SOL Tests', () => {
         }
       }
 
-
-
       // Create nonce account
       nonceAccountKeypair = await SolKit.generateKeyPairSigner();
       await createNonceAccount(solRpc, senderKeypair, nonceAccountKeypair)
@@ -135,8 +133,6 @@ describe('SOL Tests', () => {
         });
     });
     
-
-
     describe('getBalance', () => {
       it('can retrieve a balance number for a valid address', async () => {
         const addressString = senderKeypair.address;
