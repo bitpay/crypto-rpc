@@ -128,6 +128,9 @@ describe('SOL Tests', () => {
           throw new Error('Sender balance top-off was not finalized in the specified time interval');
         }
       }
+
+      await solRpc.rpc.requestAirdrop(senderKeypair.address, 1e10).send();
+      await solRpc.rpc.requestAirdrop(receiverKeypair.address, 1e10).send();
     });
 
     describe('getBalance', () => {
