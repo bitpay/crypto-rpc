@@ -7,7 +7,7 @@ const util = require('web3-utils');
 const sinon = require('sinon');
 const config = {
   chain: 'ETH',
-  host: 'geth',
+  host: process.env.HOST_ETH || 'geth',
   protocol: 'http',
   port: '8545',
   rpcPort: '8545',

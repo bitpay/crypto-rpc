@@ -5,7 +5,7 @@ const {describe, it, before} = mocha;
 const config = {
   chain: 'XRP',
   currency: 'XRP',
-  host: 'rippled',
+  host: process.env.HOST_XRP || 'rippled',
   protocol: 'ws',
   rpcPort: '6006',
   address: 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh',

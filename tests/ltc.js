@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const { describe, it } = mocha;
 const config = {
   chain: 'LTC',
-  host: 'litecoin',
+  host: process.env.HOST_LTC || 'litecoin',
   protocol: 'http',
   rpcPort: '10333',
   rpcUser: 'cryptorpc',

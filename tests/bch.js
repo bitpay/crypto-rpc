@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const { before, describe, it } = mocha;
 const config = {
   chain: 'BCH',
-  host: 'bitcoin-cash',
+  host: process.env.HOST_BCH || 'bitcoin-cash',
   protocol: 'http',
   rpcPort: '9333',
   rpcUser: 'cryptorpc',

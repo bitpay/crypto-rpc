@@ -10,7 +10,7 @@ const chainConfig = require('../lib/eth/chains');
 const configs = [
   {
     chain: 'ARB',
-    host: 'ganache',
+    host: process.env.HOST_ARB || 'ganache',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -26,7 +26,7 @@ const configs = [
   },
   {
     chain: 'OP',
-    host: 'ganache',
+    host: process.env.HOST_OP || 'ganache',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -42,7 +42,7 @@ const configs = [
   },
   {
     chain: 'BASE',
-    host: 'ganache',
+    host: process.env.HOST_BASE || 'ganache',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -58,7 +58,7 @@ const configs = [
   },
   {
     chain: 'MATIC',
-    host: 'ganache',
+    host: process.env.HOST_MATIC || 'ganache',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',

@@ -6,7 +6,7 @@ const { before, describe, it } = mocha;
 const ERC20 = require('../blockchain/EVM/build/contracts/CryptoErc20.json');
 const config = {
   chain: 'ETH',
-  host: 'geth',
+  host: process.env.HOST_ETH || 'geth',
   protocol: 'http',
   rpcPort: '8545',
   account: '0x00a329c0648769A73afAc7F9381E08FB43dBEA72',

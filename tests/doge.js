@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const { before, describe, it } = mocha;
 const config = {
   chain: 'DOGE',
-  host: 'dogecoin',
+  host: process.env.HOST_DOGE || 'dogecoin',
   protocol: 'http',
   rpcPort: '22555',
   rpcUser: 'cryptorpc',

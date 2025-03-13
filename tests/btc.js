@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const { describe, it } = mocha;
 const config = {
   chain: 'BTC',
-  host: 'bitcoin',
+  host: process.env.HOST_BTC || 'bitcoin',
   protocol: 'http',
   rpcPort: '8333',
   rpcUser: 'cryptorpc',
