@@ -46,7 +46,15 @@ describe('SOL Tests', () => {
     expect(Array.isArray(retVal.instructions)).to.be.false;
     expect(retVal.instructions).not.to.be.null;
 
-    const { transferSol, advanceNonceAccount, setComputeUnitLimit, setComputeUnitPrice, memo } = retVal.instructions;
+    const {
+      transferSol,
+      advanceNonceAccount,
+      setComputeUnitLimit,
+      setComputeUnitPrice,
+      memo,
+      transferCheckedToken,
+      transferToken,
+    } = retVal.instructions;
     if (transferSol) {
       expect(transferSol).to.be.an('object');
       expect(transferSol).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
@@ -76,6 +84,24 @@ describe('SOL Tests', () => {
     if (memo) {
       expect(memo).to.be.an('object');
       expect(memo).to.have.property('memo').that.is.a('string');
+    }
+
+    if (transferCheckedToken) {
+      expect(transferCheckedToken).to.be.an('object');
+      expect(transferCheckedToken).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
+      expect(transferCheckedToken).to.have.property('authority').that.is.a('string');
+      expect(transferCheckedToken).to.have.property('decimals').that.is.a('number').that.is.greaterThan(0);
+      expect(transferCheckedToken).to.have.property('destination').that.is.a('string');
+      expect(transferCheckedToken).to.have.property('mint').that.is.a('string');
+      expect(transferCheckedToken).to.have.property('source').that.is.a('string');
+    }
+
+    if (transferToken) {
+      expect(transferToken).to.be.an('object');
+      expect(transferToken).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
+      expect(transferToken).to.have.property('authority').that.is.a('string');
+      expect(transferToken).to.have.property('destination').that.is.a('string');
+      expect(transferToken).to.have.property('source').that.is.a('string');
     }
 
     // Add specific instruction checks as needed
