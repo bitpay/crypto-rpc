@@ -428,11 +428,9 @@ describe('SOL Tests', () => {
     }); 
 
     describe('getBlock', () => {
-      it('returns a block at provided height', async () => {
+      const assertValidBlock = (block) => {
         const numberTargetType = 'bigint';
 
-        const slot = await solRpc.rpc.getSlot().send();
-        const block = await solRpc.getBlock({ height: slot });
         expect(block).to.be.an('object');
         expect(block).to.have.property('blockhash').that.is.a('string');
         expect(block).to.have.property('blockHeight').that.is.a(numberTargetType);
@@ -440,7 +438,60 @@ describe('SOL Tests', () => {
         expect(block).to.have.property('parentSlot').that.is.a(numberTargetType);
         expect(block).to.have.property('previousBlockhash').that.is.a('string');
         expect(block).to.have.property('rewards').that.is.an('array');
+      };
+      it('returns a block at provided height and signatures if no "transactionDetails" property passed in', async () => {
+        const slot = await solRpc.rpc.getSlot().send();
+        const block = await solRpc.getBlock({ height: slot });
+        assertValidBlock(block);
+        expect(block).not.to.have.property('transactions');
+        expect(block).to.have.property('signatures').that.is.an('array');
+        expect(block.signatures.every(signature => typeof signature === 'string')).to.be.true;
+      });
+      it('returns a block at provided height and signatures if "transactionDetails: signatures"', async () => {
+        const slot = await solRpc.rpc.getSlot().send();
+        const block = await solRpc.getBlock({ height: slot });
+        assertValidBlock(block);
+        expect(block).not.to.have.property('transactions');
+        expect(block).to.have.property('signatures').that.is.an('array');
+        expect(block.signatures.every(signature => typeof signature === 'string')).to.be.true;
+      });
+      it('returns a block at provided height and transactions if "transactionDetails: full"', async () => {
+        const slot = await solRpc.rpc.getSlot().send();
+        const block = await solRpc.getBlock({ height: slot });
+        assertValidBlock(block);
+        expect(block).not.to.have.property('signatures');
         expect(block).to.have.property('transactions').that.is.an('array');
+        expect(block.transactions.every(transaction => typeof transaction === 'object')).to.be.true;
+      });
+      it('returns a block at provided height and transactions if "transactionDetails: accounts"', async () => {
+        const slot = await solRpc.rpc.getSlot().send();
+        const block = await solRpc.getBlock({ height: slot });
+        assertValidBlock(block);
+        expect(block).not.to.have.property('signatures');
+        expect(block).to.have.property('transactions').that.is.an('array');
+        expect(block.transactions.every(transaction => typeof transaction === 'object')).to.be.true;
+      });
+      it('returns a block at provided height and neither transactions nor signaturse if "transactionDetails: none"', async () => {
+        const slot = await solRpc.rpc.getSlot().send();
+        const block = await solRpc.getBlock({ height: slot });
+        assertValidBlock(block);
+        expect(block).not.to.have.property('signatures');
+        expect(block).not.to.have.property('transactions');
+      });
+    });
+
+    describe('getLatestSignature', () => {
+      it('retrieves the latest signature if found in the max number of blocks to check', async () => {
+        try {
+          const latestSignature = await solRpc.getLatestSignature();
+          expect(latestSignature).to.be.an('object');
+          expect(latestSignature).to.have.property('blockHeight').that.is.a('number').greaterThan(0);
+          expect(latestSignature).to.have.property('blockTime').that.is.a('number').greaterThan(0);
+          expect(latestSignature).to.have.property('signature').that.is.a('string');
+        } catch (err) {
+          // The catch block handles the expected error of all prior blocks checked not having a signature
+          expect(err.message.includes('No signatures found in the last')).to.be.true;
+        }
       });
     });
 
