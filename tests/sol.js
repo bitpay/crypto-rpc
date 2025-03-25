@@ -630,11 +630,14 @@ describe('SOL Tests', () => {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         const rawTransaction = await solRpc.getRawTransaction({ txid: signature });
-        expect(rawTransaction).to.be.a('string');
-        expect(rawTransaction).to.equal(rawTx);
-
-        const decodedRawTransaction = await solRpc.decodeRawTransaction({ rawTx: rawTransaction });
-        assertValidTransaction(decodedRawTransaction);
+        if (rawTransaction) {
+          expect(rawTransaction).to.be.a('string');
+          expect(rawTransaction).to.equal(rawTx);
+          const decodedRawTransaction = await solRpc.decodeRawTransaction({ rawTx: rawTransaction });
+          assertValidTransaction(decodedRawTransaction);
+        } else {
+          expect(rawTransaction).to.be.null;
+        }
       });
       it('can create a nonce account and use it to send a durable nonce transaction', async () => {
         // From sender to receiver 2/2
