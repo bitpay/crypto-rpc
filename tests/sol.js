@@ -577,6 +577,11 @@ describe('SOL Tests', () => {
       }
     });
 
+    it.only('is the test', async () => {
+      const nonce = await solRpc.getNonce(nonceAccountKeypair.address);
+      console.log(nonce);
+    });
+
     describe('Transaction tests', () => {
       // Note: the result of this set of tests should be that the two involved addresses maintain a steady balance, less the transaction fees
       const baseArgs = {
