@@ -457,7 +457,7 @@ describe('SOL Tests', () => {
       });
       it('returns a block at provided height and transactions if "transactionDetails: full"', async () => {
         const slot = await solRpc.rpc.getSlot().send();
-        const block = await solRpc.getBlock({ height: slot });
+        const block = await solRpc.getBlock({ height: slot, transactionDetails: 'full' });
         assertValidBlock(block);
         expect(block).not.to.have.property('signatures');
         expect(block).to.have.property('transactions').that.is.an('array');
@@ -465,15 +465,15 @@ describe('SOL Tests', () => {
       });
       it('returns a block at provided height and transactions if "transactionDetails: accounts"', async () => {
         const slot = await solRpc.rpc.getSlot().send();
-        const block = await solRpc.getBlock({ height: slot });
+        const block = await solRpc.getBlock({ height: slot, transactionDetails: 'accounts' });
         assertValidBlock(block);
         expect(block).not.to.have.property('signatures');
         expect(block).to.have.property('transactions').that.is.an('array');
         expect(block.transactions.every(transaction => typeof transaction === 'object')).to.be.true;
       });
-      it('returns a block at provided height and neither transactions nor signaturse if "transactionDetails: none"', async () => {
+      it('returns a block at provided height and neither transactions nor signatures if "transactionDetails: none"', async () => {
         const slot = await solRpc.rpc.getSlot().send();
-        const block = await solRpc.getBlock({ height: slot });
+        const block = await solRpc.getBlock({ height: slot, transactionDetails: 'none' });
         assertValidBlock(block);
         expect(block).not.to.have.property('signatures');
         expect(block).not.to.have.property('transactions');
@@ -687,7 +687,7 @@ describe('SOL Tests', () => {
       expect(block).to.have.property('parentSlot').that.is.a(numberTargetType);
       expect(block).to.have.property('previousBlockhash').that.is.a('string');
       expect(block).to.have.property('rewards').that.is.an('array');
-      expect(block).to.have.property('transactions').that.is.an('array');
+      expect(block).to.have.property('signatures').that.is.an('array');
     });
     it('can get the most recent slot and its blockhash', async () => {
       const tip = await solRpc.getTip();
