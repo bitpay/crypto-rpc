@@ -5,7 +5,6 @@ const { pipe } = require('@solana/functional');
 const SolRPC = require('../lib/sol/SolRpc');
 const SplRPC = require('../lib/sol/SplRpc');
 const { expect } = require('chai');
-const assert = require('assert');
 const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
 const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
 const sinon = require('sinon');
@@ -15,104 +14,6 @@ const tokenProgramAddress = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 describe('SPL Tests', () => {
   const topLevelConfig = {
     decimals: 6, // As for USDC/USDT
-  };
-  
-  // Reusable assertion set
-  const assertValidTransaction = (retVal) => {
-    expect(retVal).to.be.an('object');
-    expect(retVal).to.have.property('confirmations');
-    if (typeof retVal.confirmations === 'number') {
-      expect(retVal.confirmations).to.be.a('number').greaterThanOrEqual(0);
-    } else {
-      expect(retVal.confirmations).to.be.null;
-    }
-    expect(retVal).to.have.property('status');
-    if (retVal.status) {
-      expect(['processed', 'confirmed', 'finalized'].includes(retVal.status)).to.be.true;
-    } else {
-      expect(retVal.status).to.be.null;
-    }
-    expect(retVal).to.have.property('txid').that.is.a('string');
-    expect([0, 'legacy'].includes(retVal.version)).to.be.true;
-    
-    const { lifetimeConstraint } = retVal;
-    if (lifetimeConstraint) {
-      expect(lifetimeConstraint).to.be.an('object');
-      // Should have blockhash XOR nonce
-      const hasBlockhash = lifetimeConstraint.hasOwnProperty('blockhash');
-      const hasNonce = lifetimeConstraint.hasOwnProperty('nonce');
-      expect(hasBlockhash !== hasNonce).to.be.true; // XOR
-      if (hasBlockhash) {
-        expect(lifetimeConstraint.blockhash).to.be.a('string');
-      } else {
-        expect(lifetimeConstraint.nonce).to.be.a('string');
-      }
-    }
-
-
-    expect(retVal).to.have.property('instructions').that.is.an('object');
-    expect(Array.isArray(retVal.instructions)).to.be.false;
-    expect(retVal.instructions).not.to.be.null;
-
-    const {
-      transferSol,
-      advanceNonceAccount,
-      setComputeUnitLimit,
-      setComputeUnitPrice,
-      memo,
-      transferCheckedToken,
-      transferToken,
-    } = retVal.instructions;
-    if (transferSol) {
-      expect(transferSol).to.be.an('object');
-      expect(transferSol).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
-      expect(transferSol).to.have.property('currency').that.is.a('string');
-      expect(transferSol.currency).to.equal('SOL');
-      expect(transferSol).to.have.property('destination').that.is.a('string');
-      expect(transferSol).to.have.property('source').that.is.a('string');
-    }
-
-    if (advanceNonceAccount) {
-      expect(advanceNonceAccount).to.be.an('object');
-      expect(advanceNonceAccount).to.have.property('nonceAccount').that.is.a('string');
-      expect(advanceNonceAccount).to.have.property('nonceAuthority').that.is.a('string');
-    }
-
-    if (setComputeUnitLimit) {
-      expect(setComputeUnitLimit).to.be.an('object');
-      expect(setComputeUnitLimit).to.have.property('computeUnitLimit').that.is.a('number').greaterThan(0);
-    }
-
-    if (setComputeUnitPrice) {
-      expect(setComputeUnitPrice).to.be.an('object');
-      expect(setComputeUnitPrice).to.have.property('priority').that.is.a('boolean').that.is.true;
-      expect(setComputeUnitPrice).to.have.property('microLamports').that.is.a('number').greaterThan(0);
-    }
-
-    if (memo) {
-      expect(memo).to.be.an('object');
-      expect(memo).to.have.property('memo').that.is.a('string');
-    }
-
-    if (transferCheckedToken) {
-      expect(transferCheckedToken).to.be.an('object');
-      expect(transferCheckedToken).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
-      expect(transferCheckedToken).to.have.property('authority').that.is.a('string');
-      expect(transferCheckedToken).to.have.property('decimals').that.is.a('number').that.is.greaterThan(0);
-      expect(transferCheckedToken).to.have.property('destination').that.is.a('string');
-      expect(transferCheckedToken).to.have.property('mint').that.is.a('string');
-      expect(transferCheckedToken).to.have.property('source').that.is.a('string');
-    }
-
-    if (transferToken) {
-      expect(transferToken).to.be.an('object');
-      expect(transferToken).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
-      expect(transferToken).to.have.property('authority').that.is.a('string');
-      expect(transferToken).to.have.property('destination').that.is.a('string');
-      expect(transferToken).to.have.property('source').that.is.a('string');
-    }
-
-    // Add specific instruction checks as needed
   };
 
   describe('Inheritance tests', () => {
@@ -236,15 +137,16 @@ describe('SPL Tests', () => {
     });
   });
   describe('Local tests', function () {
+    this.timeout(10e5);
     const config = {
       chain: 'SOL',
-      host:  process.env.HOST_SOL || 'solana',
+      // host:  process.env.HOST_SOL || 'solana',
+      host: 'localhost',
       protocol: 'http',
       port: 8899,
       wsPort: 8900
     };
     
-    this.timeout(10e3);
     /** @type {SplRPC} */
     let splRpc;
     /** @type {SolKit.KeyPairSigner<string>} */
@@ -259,7 +161,6 @@ describe('SPL Tests', () => {
     let senderAta;
     
     before(async function () {
-      this.timeout(10e5);
       // For these tests, the nonce authority will be the sender
       senderKeypair = await SolKit.createKeyPairSignerFromBytes(Uint8Array.from(privateKey1));
       receiverKeypair = await SolKit.createKeyPairSignerFromBytes(Uint8Array.from(privateKey2));
@@ -287,10 +188,7 @@ describe('SPL Tests', () => {
 
       // Create nonce account
       nonceAccountKeypair = await SolKit.generateKeyPairSigner();
-      await createNonceAccount(splRpc, senderKeypair, nonceAccountKeypair)
-        .catch(reason => {
-          throw reason;
-        });
+      await createNonceAccount(splRpc, senderKeypair, nonceAccountKeypair);
 
       // Create mint
       mintKeypair = await SolKit.generateKeyPairSigner();
@@ -299,18 +197,35 @@ describe('SPL Tests', () => {
       await mintTokens({ splRpc, payer: senderKeypair, mint: mintKeypair.address, mintAuthority: senderKeypair, targetAta: senderAta, decimals: topLevelConfig.decimals });
     });
 
-    describe.only('getOrCreateAta', () => {
+    describe('getOrCreateAta', function () {
+      // createAccount requires finalization - it's time-intensive
+      this.timeout(20000);
       /** @type {SolKit.KeyPairSigner<string>} */
       let ownerKeypair;
       let sendAndConfirmFactorySpy;
+      let resolvedCreateAccountArray;
+      let resolvedCreateAccountIndex = 0;
+
+      before(async function () {
+        // createAccount waits for transaction finalization. This takes a lot of time. Processing in parallel mitigates this issue to a large extend.
+        // Update GET_OR_CREATE_ATA_TESTS_COUNT when adding/removing tests to the "getOrCreateAta" describe block.
+        const GET_OR_CREATE_ATA_TESTS_COUNT = 3;
+        resolvedCreateAccountArray = await Promise.all(
+          Array(GET_OR_CREATE_ATA_TESTS_COUNT).fill(0)
+            .map(async () => createAccount({ splRpc, feePayerKeypair: senderKeypair, version: 'legacy' }))
+        );
+      });
+
       beforeEach(async function () {
-        // ownerKeypair = await createAccount({ splRpc, feePayerKeypair: senderKeypair, version: 'legacy' });
+        ownerKeypair = resolvedCreateAccountArray[resolvedCreateAccountIndex];
+        resolvedCreateAccountIndex++;
         sendAndConfirmFactorySpy = sinon.spy(SolKit, 'sendAndConfirmTransactionFactory');
       });
 
       afterEach(function () {
         sinon.restore();
       });
+
       it('can create an ata', async () => {
         const result = await splRpc.getOrCreateAta({ owner: ownerKeypair.address, mint: mintKeypair.address, feePayer: senderKeypair });
         expect(result).to.be.a('string');
@@ -319,122 +234,153 @@ describe('SPL Tests', () => {
       });
 
       it('can retrieve an existing ata', async () => {
-        // Setup
         const ata = await createAta({ splRpc, owner: ownerKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
-        const getTokenAccountsSpy = sinon.spy(splRpc.rpc, 'getTokenAccountsByOwner');
         sendAndConfirmFactorySpy.resetHistory();
 
         const result = await splRpc.getOrCreateAta({ owner: ownerKeypair.address, mint: mintKeypair.address, feePayer: senderKeypair });
         expect(result).to.be.a('string');
-        expect(sendAndConfirmFactorySpy.callCount).to.equal(0);
-
-        const sendPromise = getTokenAccountsSpy.firstCall.returnValue;
-        const rpcResult = await sendPromise.send();
-        expect(rpcResult).to.have.property('value').that.is.an('array').with.length.greaterThan(0);
-        expect(rpcResult.value[0].pubkey).to.equal(ata);
-
-        // Also ensure sendAndconfirmTransactionFactory wasn't called
+        expect(result).to.equal(ata);
+        // Ensure no transaction is sent (saving the sender the transaction fee)
         expect(sendAndConfirmFactorySpy.callCount).to.equal(0);
       });
 
-      it('does something or the other if invalid mint', async () => {
+      it('throws "SolanaError: invalid mint parameter" error if invalid mint', async () => {
         const invalidMint = receiverKeypair.address;
-        await expect(splRpc.getOrCreateAta({
-          owner: ownerKeypair.address,
-          mint: invalidMint,
-          feePayer: senderKeypair
-        })).to.be.rejectedWith(/Invalid public key/);
+        try {
+          await splRpc.getOrCreateAta({
+            owner: ownerKeypair.address,
+            mint: invalidMint,
+            feePayer: senderKeypair
+          });
+        } catch (err) {
+          expect(err.message).to.equal(`SolanaError: invalid mint parameter ${invalidMint}`);
+        }
       });
     });
     
     describe('sendToAddress', () => {
+      // this.timeout(10e5);
       let inputBase;
-      before(() => {
+      /** @type {Array<SolKit.KeyPairSigner<string>>} */
+      let receiverKeypairs;
+      /** @type {SolKit.KeyPairSigner<string>} */
+      let receiverKeypair;
+      let receiverKeypairsIndex = 0;
+      /** @type {SolKit.KeyPairSigner<string>} */
+      let fastDescribeBlockReceiverKeypair;
+
+      before(async function () {
+        // createAccount waits for tx finalization, thus is time-intensive
+        this.timeout(10e5);
+        const SEND_TO_ADDRESS_INDIVIDUAL_TEST_COUNT = 2;
+        const REQUIRED_CREATED_ACCOUNT_COUNT = SEND_TO_ADDRESS_INDIVIDUAL_TEST_COUNT + 1; // for the fast tests describe block
+        receiverKeypairs = await Promise.all(
+          Array(REQUIRED_CREATED_ACCOUNT_COUNT).fill(0)
+            .map(async () => createAccount({ splRpc, feePayerKeypair: senderKeypair, version: 'legacy' }))
+        );
+
+        fastDescribeBlockReceiverKeypair = receiverKeypairs[receiverKeypairsIndex];
+        receiverKeypairsIndex++;
+
         inputBase = {
-          address: receiverKeypair.address,
-          amount: 1000,
-          fromAccountKeypair: senderKeypair
+          amount: 10,
+          fromAccountKeypair: senderKeypair,
+          mintAddress: mintKeypair.address,
+          decimals: topLevelConfig.decimals
         };
       });
 
-      it('can send a valid versioned transaction without nonce and without priority flag', async function () {
-        this.timeout(10000);
-        const txhash = await solRpc.sendToAddress({
+      beforeEach(function () {
+        receiverKeypair = receiverKeypairs[receiverKeypairsIndex];
+        receiverKeypairsIndex++;
+        sinon.spy(splRpc, 'getOrCreateAta');
+      });
+
+      afterEach(function () {
+        sinon.restore();
+      });
+
+      it('can create ata and send a versioned transaction', async function () {
+        const result = await splRpc.sendToAddress({
           ...inputBase,
+          address: receiverKeypair.address,
           txType: 0,
           priority: false
         });
-        expect(txhash).to.be.a('string');
+        expect(result).to.be.an('object');
+        expect(result).to.have.property('txid').that.is.a('string');
+        expect(result).to.have.property('destinationAta').that.is.a('string');
+        expect(result).to.have.property('sourceAta').that.equals(senderAta);
+        expect(splRpc.getOrCreateAta.callCount).to.equal(2); // b/c destinationAta not included AND sourceAta not included
       });
-        
-      it('can send a valid versioned transaction with nonce and without priority flag', async function () {
-        this.timeout(10000);
-        const txhash = await solRpc.sendToAddress({
+
+      it('can create ata and send a legacy transaction', async function () {
+        const result = await splRpc.sendToAddress({
           ...inputBase,
-          txType: 0,
-          nonceAddress: nonceAccountKeypair.address,
-          priority: false,
-        });
-        expect(txhash).to.be.a('string');
-      });
-        
-      it('can send a valid versioned transaction without nonce and with priority flag', async function () {
-        this.timeout(10000);
-        const txhash = await solRpc.sendToAddress({
-          ...inputBase,
-          txType: 0,
-          priority: true
-        });
-        expect(txhash).to.be.a('string');
-      });
-      it('can send a valid versioned transaction with nonce and with priority flag', async function () {
-        this.timeout(10000);
-        const txhash = await solRpc.sendToAddress({
-          ...inputBase,
-          txType: 0,
-          nonceAddress: nonceAccountKeypair.address,
-          priority: true
-        });
-        expect(txhash).to.be.a('string');
-      });
-      it('can send a valid legacy transaction without nonce and without priority flag', async function () {
-        this.timeout(10000);
-        const txhash = await solRpc.sendToAddress({
-          ...inputBase,
-          txType: 'legacy'
-        });
-        expect(txhash).to.be.a('string');
-      });
-      it('can send a valid legacy transaction with nonce and without priority flag', async function () {
-        this.timeout(10000);
-        const txhash = await solRpc.sendToAddress({
-          ...inputBase,
+          address: receiverKeypair.address,
           txType: 'legacy',
-          nonceAddress: nonceAccountKeypair.address,
+          priority: false
         });
-        expect(txhash).to.be.a('string');
+        expect(result).to.be.an('object');
+        expect(result).to.have.property('txid').that.is.a('string');
+        expect(result).to.have.property('destinationAta').that.is.a('string');
+        expect(result).to.have.property('sourceAta').that.equals(senderAta);
+        expect(splRpc.getOrCreateAta.callCount).to.equal(2); // b/c destinationAta not included AND sourceAta not included
       });
-      it('can send a valid legacy transaction without nonce and with priority flag', async function () {
-        this.timeout(10000);
-        const txhash = await solRpc.sendToAddress({
-          ...inputBase,
-          txType: 'legacy',
-          priority: true
+
+      describe('faster tests using source and destination atas', function () {
+        let inputBaseWithAtas;
+        let destinationAta;
+        before(async function () {
+          destinationAta = await createAta({
+            splRpc,
+            owner: fastDescribeBlockReceiverKeypair.address,
+            mint: mintKeypair.address,
+            payer: senderKeypair
+          });
+          inputBaseWithAtas = {
+            ...inputBase,
+            destinationAta,
+            sourceAta: senderAta,
+            address: fastDescribeBlockReceiverKeypair.address,
+            txType: 'legacy',
+            priority: false
+          };
         });
-        expect(txhash).to.be.a('string');
-      });
-      it('can send a valid legacy transaction with nonce and with priority flag', async function () {
-        this.timeout(10000);
-        const txhash = await solRpc.sendToAddress({
-          ...inputBase,
-          txType: 'legacy',
-          nonceAddress: nonceAccountKeypair.address,
-          priority: true
+
+        it('can send a transaction without calling splRPC.getOrCreateAta if ata params are included', async function () {
+          const result = await splRpc.sendToAddress({
+            ...inputBaseWithAtas
+          });
+          expect(result).to.be.an('object');
+          expect(result).to.have.property('txid').that.is.a('string');
+          expect(result).to.have.property('destinationAta').that.equals(destinationAta);
+          expect(result).to.have.property('sourceAta').that.equals(senderAta);
+          expect(splRpc.getOrCreateAta.callCount).to.equal(0); // b/c destinationAtaAND sourceAta are included
         });
-        expect(txhash).to.be.a('string');
+  
+        it('can send a durable nonce transaction', async function () {
+          const result = await splRpc.sendToAddress({
+            ...inputBaseWithAtas,
+            nonceAddress: nonceAccountKeypair.address
+          });
+          expect(result).to.be.an('object');
+          expect(result).to.have.property('txid').that.is.a('string');
+          expect(result).to.have.property('destinationAta').that.equals(destinationAta);
+          expect(result).to.have.property('sourceAta').that.equals(senderAta);
+        });
+  
+        it('can send a prioritized transaction', async function () {
+          const result = await splRpc.sendToAddress({
+            ...inputBaseWithAtas,
+            priority: true,
+          });
+          expect(result).to.be.an('object');
+          expect(result).to.have.property('txid').that.is.a('string');
+          expect(result).to.have.property('destinationAta').that.equals(destinationAta);
+          expect(result).to.have.property('sourceAta').that.equals(senderAta);
+        });
       });
-    
-    /** Testing behavior of bad nonce authority would be good */
     });
   });
   describe('Devnet tests', function () {
@@ -453,12 +399,11 @@ describe('SPL Tests', () => {
     let senderKeypair;
     /** @type {SolKit.KeyPairSigner<string>} */
     let receiverKeypair;
-    /** @type {SolKit.KeyPairSigner<string>} */
-    let nonceAccountKeypair;
-    /** @type {SolKit.KeyPairSigner<string>} */
-    let mintKeypair;
     /** @type {SolKit.Address<string>} */
     let senderAta;
+    /** @type {SolKit.Address<string>} */
+    let receiverAta;
+    let txInputBase;
 
     before(async function () {
       senderKeypair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(bs58Encoder.encode('H6x8RRKJ9xBx71N8wn8USBghwApSqHP7A9LT5Mxo6rP9'));
@@ -473,143 +418,59 @@ describe('SPL Tests', () => {
         console.warn('Devnet accounts need more funds');
       }
 
-      nonceAccountKeypair = await SolKit.generateKeyPairSigner();
-      await createNonceAccount(splRpc, senderKeypair, nonceAccountKeypair);
-
-      // Create mint
-      mintKeypair = await SolKit.generateKeyPairSigner();
-      await createMint({ splRpc, payer: senderKeypair, mint: mintKeypair, mintAuthority: senderKeypair, decimals: topLevelConfig.decimals });
-      senderAta = await createAta({ splRpc, owner: senderKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
-      await mintTokens({ splRpc, payer: senderKeypair, mint: mintKeypair.address, mintAuthority: senderKeypair, targetAta: senderAta, decimals: topLevelConfig.decimals });
+      senderAta = SolKit.address('BBBGCUHgh5i75rw4vhdYSe3mHHvMUbUukCEcqUYLuNJP');
+      receiverAta = SolKit.address('2Ba5zAJRBnd4E96Ms8HQGcrn5m8qaYgPdym14RzN2ohy');
+      txInputBase = {
+        amount: 100,
+        mintAddress: SolKit.address('33mppJgqTnSkumFDPUTbTUquejR7Lxyzevh5LxQpqvPF'),
+        decimals: 6,
+        priority: false
+      };
     });
 
-    // describe.only('getOrCreateAta', () => {
-    //   /** @type {SolKit.KeyPairSigner<string>} */
-    //   let ownerKeypair;
-    //   let sendAndConfirmFactorySpy;
-    //   beforeEach(async function () {
-    //     ownerKeypair = await createAccount({ splRpc, feePayerKeypair: senderKeypair, version: 'legacy' });
-    //     sendAndConfirmFactorySpy = sinon.spy(SolKit, 'sendAndConfirmTransactionFactory');
-    //   });
+    beforeEach(function () {
+      sinon.spy(splRpc, 'getOrCreateAta');
+    });
 
-    //   afterEach(function () {
-    //     sinon.restore();
-    //   });
+    afterEach(function () {
+      sinon.restore();
+    });
 
-    //   it('can create an ata', async () => {
-    //     const result = await splRpc.getOrCreateAta({ owner: ownerKeypair.address, mint: mintKeypair.address, feePayer: senderKeypair });
-    //     expect(result).to.be.a('string');
-    //     // Verify that the creation transaction was sent
-    //     expect(sendAndConfirmFactorySpy.callCount).to.equal(1);
-    //   });
-
-    //   it('can retrieve an existing ata', async () => {
-    //     // Setup
-    //     const ata = await createAta({ splRpc, owner: ownerKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
-    //     const getTokenAccountsSpy = sinon.spy(splRpc.rpc, 'getTokenAccountsByOwner');
-    //     sendAndConfirmFactorySpy.resetHistory();
-
-    //     const result = await splRpc.getOrCreateAta({ owner: ownerKeypair.address, mint: mintKeypair.address, feePayer: senderKeypair });
-    //     expect(result).to.be.a('string');
-    //     expect(sendAndConfirmFactorySpy.callCount).to.equal(0);
-
-    //     const sendPromise = getTokenAccountsSpy.firstCall.returnValue;
-    //     const rpcResult = await sendPromise.send();
-    //     expect(rpcResult).to.have.property('value').that.is.an('array').with.length.greaterThan(0);
-    //     expect(rpcResult.value[0].pubkey).to.equal(ata);
-
-    //     // Also ensure sendAndconfirmTransactionFactory wasn't called
-    //     expect(sendAndConfirmFactorySpy.callCount).to.equal(0);
-    //   });
-
-    //   it('does something or the other if invalid mint', async () => {
-    //     const invalidMint = receiverKeypair.address;
-    //     await expect(splRpc.getOrCreateAta({
-    //       owner: ownerKeypair.address,
-    //       mint: invalidMint,
-    //       feePayer: senderKeypair
-    //     })).to.be.rejectedWith(/Invalid public key/);
-    //   });
-    // });
-
-    // Note: the result of this set of tests should be that the two involved addresses maintain a steady balance, less the transaction fees
-    const baseArgs = {
-      amount: 10000
-    };
-
-    it('can send a versioned transaction, get number of confirmations, and retrieve it', async () => {
-      // From sender to receiver 1/2
-      const signature = await solRpc.sendToAddress({
-        ...baseArgs,
+    // The versioned transaction and legacy transaction tests below should send the same amount back and forth
+    it('can send a versioned transaction', async function () {
+      const sourceAta = senderAta;
+      const destinationAta = receiverAta;
+      const result = await splRpc.sendToAddress({
+        ...txInputBase,
         address: receiverKeypair.address,
         fromAccountKeypair: senderKeypair,
         txType: 0,
-        priority: false
+        destinationAta,
+        sourceAta
       });
-      expect(signature).to.be.a('string');
-
-      await new Promise(resolve => setTimeout(resolve, 250));
-      let confirmations = await solRpc.getConfirmations({ txid: signature });
-      expect(confirmations).to.be.a('number').greaterThanOrEqual(0);
-      for (let i = 0; i < 2; i++) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const newConfirmations = await solRpc.getConfirmations({ txid: signature });
-        expect(newConfirmations).to.be.a('number').greaterThanOrEqual(confirmations);
-        confirmations = newConfirmations;
-      }
-
-      const transaction = await solRpc.getTransaction({ txid: signature });
-      assertValidTransaction(transaction);
+      expect(result).to.be.an('object');
+      expect(result).to.have.property('txid').that.is.a('string');
+      expect(result).to.have.property('destinationAta').that.equals(destinationAta);
+      expect(result).to.have.property('sourceAta').that.equals(sourceAta);
+      expect(splRpc.getOrCreateAta.callCount).to.equal(0); // b/c destinationAta not included AND sourceAta not included
     });
-    it('can send a priority, legacy transaction and retrieve it', async () => {
-      // From receiver to sender 1/2
-      const signature = await solRpc.sendToAddress({
-        ...baseArgs,
+
+    it('can send a legacy transaction', async function () {
+      const sourceAta = receiverAta;
+      const destinationAta = senderAta;
+      const result = await splRpc.sendToAddress({
+        ...txInputBase,
         address: senderKeypair.address,
         fromAccountKeypair: receiverKeypair,
         txType: 'legacy',
-        priority: true
+        destinationAta,
+        sourceAta
       });
-      expect(signature).to.be.a('string');
-
-      const transaction = await solRpc.getTransaction({ txid: signature });
-      assertValidTransaction(transaction);
-    });
-    it('can send a raw transaction, retrieve a raw transaction, and decode it', async () => {
-      // From receiver to sender 2/2
-      const rawTx = await createRawTransaction(solRpc.rpc, receiverKeypair, senderKeypair, baseArgs.amount);
-      const signature = await solRpc.sendRawTransaction({ rawTx }); // Note, this is not necessarily confirmed
-
-      // Wait 5 seconds before looking for transaction
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      const rawTransaction = await solRpc.getRawTransaction({ txid: signature });
-      if (rawTransaction) {
-        expect(rawTransaction).to.be.a('string');
-        expect(rawTransaction).to.equal(rawTx);
-        const decodedRawTransaction = await solRpc.decodeRawTransaction({ rawTx: rawTransaction });
-        assertValidTransaction(decodedRawTransaction);
-      } else {
-        expect(rawTransaction).to.be.null;
-      }
-    });
-    it('can create a nonce account and use it to send a durable nonce transaction', async () => {
-      // From sender to receiver 2/2
-      const nonceKeypair = await SolKit.generateKeyPairSigner();
-      const confirmedSignature = await solRpc.createNonceAccount(senderKeypair, nonceKeypair);
-      expect(confirmedSignature).to.be.a('string');
-
-      // Wait 2.5 seconds for transaction to finalize from 'confirmed'
-      await new Promise(resolve => setTimeout(resolve, 2500));
-
-      const signature = await solRpc.sendToAddress({
-        ...baseArgs,
-        address: receiverKeypair.address,
-        fromAccountKeypair: senderKeypair,
-        nonceAddress: nonceKeypair.address,
-        txType: 'legacy'
-      });
-      expect(signature).to.be.a('string');
+      expect(result).to.be.an('object');
+      expect(result).to.have.property('txid').that.is.a('string');
+      expect(result).to.have.property('destinationAta').that.equals(destinationAta);
+      expect(result).to.have.property('sourceAta').that.equals(sourceAta);
+      expect(splRpc.getOrCreateAta.callCount).to.equal(0); // b/c destinationAta not included AND sourceAta not included
     });
   });
 });
@@ -669,25 +530,6 @@ async function createNonceAccount(
     console.error('Error creating nonce account:', err);
     throw err;
   }
-}
-
-/**
- * 
- * @param {SolKit.Rpc} rpc 
- * @param {SolKit.KeyPairSigner} fromKeypair 
- * @param {SolKit.KeyPairSigner} toKeypair 
- * @param {number} amountInLamports 
- */
-async function createRawTransaction(
-  rpc,
-  fromKeypair,
-  toKeypair,
-  amountInLamports
-) {
-  const transaction = await createUnsignedTransaction(rpc, fromKeypair, toKeypair, amountInLamports);
-  const signedTransaction = await SolKit.signTransactionMessageWithSigners(transaction);
-  const base64EncodedTransaction = SolKit.getBase64EncodedWireTransaction(signedTransaction);
-  return base64EncodedTransaction;
 }
 
 /**

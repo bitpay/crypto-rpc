@@ -133,23 +133,27 @@ describe('SOL Tests', () => {
       solRpc = new SolRPC(config);
 
       // Airdrop if no money on sender
-      const { value: senderBalance } = await solRpc.rpc.getBalance(senderKeypair.address).send();
-      if (Number(senderBalance) < 1e10) {
-        const airdropSignature = await solRpc.rpc.requestAirdrop(senderKeypair.address, 1e10).send();
-        const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
-        let status = statuses[0];
-        let remainingTries = 10;
-        while (remainingTries > 0 && status?.confirmationStatus !== 'finalized') {
-          await new Promise(resolve => setTimeout(resolve, 250));
+      const addresses = [senderKeypair.address, receiverKeypair.address];
+      for (const address of addresses) {
+        const { value: balance } = await solRpc.rpc.getBalance(address).send();
+        if (Number(balance) < 1e10) {
+          const airdropSignature = await solRpc.rpc.requestAirdrop(address, 1e10).send();
           const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
-          status = statuses[0];
-          remainingTries--;
-        }
-
-        if (status !== 'finalized') {
-          throw new Error('Sender balance top-off was not finalized in the specified time interval');
+          let status = statuses[0];
+          let remainingTries = 10;
+          while (remainingTries > 0 && status?.confirmationStatus !== 'finalized') {
+            await new Promise(resolve => setTimeout(resolve, 250));
+            const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
+            status = statuses[0];
+            remainingTries--;
+          }
+  
+          if (status !== 'finalized') {
+            throw new Error('Balance top-off was not finalized in the specified time interval');
+          }
         }
       }
+
 
       // Create nonce account
       nonceAccountKeypair = await SolKit.generateKeyPairSigner();
