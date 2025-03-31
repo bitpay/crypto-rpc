@@ -55,7 +55,7 @@ describe('SPL Tests', () => {
       // Create test instance after stubbing parent methods
       splRpc = new SplRPC({
         chain: 'SOL',
-        host: 'localhost',
+        host:  process.env.HOST_SOL || 'solana',
         protocol: 'http',
         port: 8899,
         wsPort: 8900
