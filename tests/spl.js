@@ -140,8 +140,7 @@ describe('SPL Tests', () => {
     this.timeout(10e5);
     const config = {
       chain: 'SOL',
-      // host:  process.env.HOST_SOL || 'solana',
-      host: 'localhost',
+      host:  process.env.HOST_SOL || 'solana',
       protocol: 'http',
       port: 8899,
       wsPort: 8900
