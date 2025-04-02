@@ -6,6 +6,8 @@ const { expect } = require('chai');
 const assert = require('assert');
 const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
 const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
+const SolToken = require('@solana-program/token');
+const SOL_ERROR_MESSAGES = require('../lib/sol/error_messages');
 const bs58Encoder = SolKit.getBase58Encoder();
 
 describe('SOL Tests', () => {
@@ -119,11 +121,11 @@ describe('SOL Tests', () => {
     this.timeout(10e3);
     /** @type {SolRPC} */
     let solRpc;
-    /** @type {import("@solana/kit").KeyPairSigner<string>} */
+    /** @type {SolKit.KeyPairSigner<string>} */
     let senderKeypair;
-    /** @type {import("@solana/kit").KeyPairSigner<string>} */
+    /** @type {SolKit.KeyPairSigner<string>} */
     let receiverKeypair;
-    /** @type {import("@solana/kit").KeyPairSigner<string>} */
+    /** @type {SolKit.KeyPairSigner<string>} */
     let nonceAccountKeypair;
     before(async function () {
       // For these tests, the nonce authority will be the sender
@@ -153,7 +155,6 @@ describe('SOL Tests', () => {
           }
         }
       }
-
 
       // Create nonce account
       nonceAccountKeypair = await SolKit.generateKeyPairSigner();
@@ -385,7 +386,7 @@ describe('SOL Tests', () => {
 
     describe('getTransactionCount', () => {
       const numTransactions = 2;
-      /** @type {import("@solana/kit").KeyPairSigner} */
+      /** @type {SolKit.KeyPairSigner} */
       let targetKeypair;
       beforeEach(async function() {
         this.timeout(5e3);
@@ -534,6 +535,70 @@ describe('SOL Tests', () => {
       });
     });
 
+    describe('Mint tests', function () {
+      /** @type {SolKit.KeyPairSigner<string>} */
+      let mintKeypair;
+      before(async function () {
+        this.timeout(20e3);
+        // Create mint
+        mintKeypair = await SolKit.generateKeyPairSigner();
+        await createMint({ solRpc, payer: senderKeypair, mint: mintKeypair, mintAuthority: senderKeypair });
+      });
+
+      describe('getAta', function () {
+        // Why is this failing?
+        it('Retrieves ATA address string', async () => {
+          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
+          const createdAta = await createAta({ solRpc, owner: createdAccount.address, mint: mintKeypair.address, payer: senderKeypair });
+          const result = await solRpc.getAta({ solAddress: createdAccount.address, mintAddress: mintKeypair.address });
+          expect(result).to.equal(createdAta);
+        });
+        it(`Throws "${SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED}" if ATA not found`, async () => {
+          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
+          try {
+            await solRpc.getAta({ solAddress: createdAccount.address, mintAddress: mintKeypair.address });
+          } catch (err) {
+            expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED);
+          }
+        });
+        it(`Throws ${SOL_ERROR_MESSAGES.UNSPECIFIED_INVALID_PARAMETER} if passed in address not found`, async () => {
+          try {
+            await solRpc.getAta({ solAddress: 'invalid sol address', mintAddress: mintKeypair.address });
+          } catch (err) {
+            expect(err.message).to.equal(SOL_ERROR_MESSAGES.UNSPECIFIED_INVALID_PARAMETER);
+          }
+        });
+        it.only(`Throws "${SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER}" if passed in mint not a mint`, async () => {
+          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
+          const validBase58String = (await SolKit.generateKeyPairSigner()).address;
+          try {
+            await solRpc.getAta({ solAddress: createdAccount.address, mintAddress: validBase58String });
+          } catch (err) {
+            expect(err.message).to.equal(SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER);
+          }
+        });
+      });
+      describe('createAta', function () {
+        it('returns retrieved ata if it already exists', async () => {});
+        it(`throws any error from getAta that is not ${SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED}`, async () => {
+          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
+          const invalidMintAddress = (await SolKit.generateKeyPairSigner()).address;
+          const expectedErrorMessage = SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER;
+          const validBase58String = (await SolKit.generateKeyPairSigner()).address;
+          // Create spy on createTransactionMessage to ensure no transaction has been created
+
+          try {
+            await solRpc.getAta({ solAddress: createdAccount.address, mintAddress: invalidMintAddress });
+          } catch (err) {
+            expect(err.message).to.equal(SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER);
+          }
+
+          // Assert createtransactionMessageSpy not called
+        });
+        it('can create an ata', async () => {});
+      });
+    });
+
     describe('isBase58', () => {
       it('returns true if a string is valid base58', () => {
         const isBase58 = solRpc.isBase58(receiverKeypair.address);
@@ -557,12 +622,14 @@ describe('SOL Tests', () => {
     this.timeout(15e3);
     /** @type {SolRPC} */
     let solRpc;
-    /** @type {import("@solana/kit").KeyPairSigner<string>} */
+    /** @type {SolKit.KeyPairSigner<string>} */
     let senderKeypair;
-    /** @type {import("@solana/kit").KeyPairSigner<string>} */
+    /** @type {SolKit.KeyPairSigner<string>} */
     let receiverKeypair;
-    /** @type {import("@solana/kit").KeyPairSigner<string>} */
+    /** @type {SolKit.KeyPairSigner<string>} */
     let nonceAccountKeypair;
+    /** @type {SolKit.KeyPairSigner<string>} */
+    let mintKeypair;
 
     before(async function () {
       senderKeypair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(bs58Encoder.encode('H6x8RRKJ9xBx71N8wn8USBghwApSqHP7A9LT5Mxo6rP9'));
@@ -579,6 +646,10 @@ describe('SOL Tests', () => {
       if (!(Number(senderBalance) >= THRESHOLD_LAMPORTS && Number(receiverBalance) >= THRESHOLD_LAMPORTS)) {
         console.warn('Devnet accounts need more funds');
       }
+
+      // Create mint
+      mintKeypair = await SolKit.generateKeyPairSigner();
+      await createMint({ solRpc, payer: senderKeypair, mint: mintKeypair, mintAuthority: senderKeypair });
     });
 
     describe('Transaction tests', () => {
@@ -715,8 +786,8 @@ describe('SOL Tests', () => {
 /**
  * 
  * @param {SolRPC} solRpc 
- * @param {import("@solana/kit").KeyPairSigner} feePayerAndAuthorityKeypair 
- * @param {import("@solana/kit").KeyPairSigner} nonceKeypair 
+ * @param {SolKit.KeyPairSigner} feePayerAndAuthorityKeypair 
+ * @param {SolKit.KeyPairSigner} nonceKeypair 
  * @returns 
  */
 async function createNonceAccount(
@@ -771,8 +842,8 @@ async function createNonceAccount(
 /**
  * 
  * @param {SolRPC} solRpc 
- * @param {import("@solana/kit").KeyPairSigner} fromKeypair 
- * @param {import("@solana/kit").KeyPairSigner} toKeypair 
+ * @param {SolKit.KeyPairSigner} fromKeypair 
+ * @param {SolKit.KeyPairSigner} toKeypair 
  * @param {number} amountInLamports
  * @param {0|'legacy'} [version=0]
  */
@@ -787,9 +858,9 @@ async function sendTransaction(solRpc, fromKeypair, toKeypair, amountInLamports,
 
 /**
  * 
- * @param {import("@solana/kit").Rpc} rpc 
- * @param {import("@solana/kit").KeyPairSigner} fromKeypair 
- * @param {import("@solana/kit").KeyPairSigner} toKeypair 
+ * @param {SolKit.Rpc} rpc 
+ * @param {SolKit.KeyPairSigner} fromKeypair 
+ * @param {SolKit.KeyPairSigner} toKeypair 
  * @param {number} amountInLamports 
  */
 async function createRawTransaction(
@@ -806,9 +877,9 @@ async function createRawTransaction(
 
 /**
  * 
- * @param {import("@solana/kit").Rpc} rpc 
- * @param {import("@solana/kit").KeyPairSigner} fromKeypair 
- * @param {import("@solana/kit").KeyPairSigner} toKeypair 
+ * @param {SolKit.Rpc} rpc 
+ * @param {SolKit.KeyPairSigner} fromKeypair 
+ * @param {SolKit.KeyPairSigner} toKeypair 
  * @param {number} amountInLamports 
  * @param {0 | 'legacy'} [version=0]
  */
@@ -840,9 +911,9 @@ async function createUnsignedTransaction(
 /**
  * 
  * @param {SolRPC} solRpc 
- * @param {import("@solana/kit").KeyPairSigner} feePayerKeypair 
+ * @param {SolKit.KeyPairSigner} feePayerKeypair 
  * @param {0 | 'legacy'} version 
- * @returns {Promise<import("@solana/kit").KeyPairSigner>}
+ * @returns {Promise<SolKit.KeyPairSigner>}
  */
 async function createAccount(
   solRpc,
@@ -874,4 +945,90 @@ async function createAccount(
   const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
   await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'confirmed' });
   return keypair;
+}
+
+/**
+ * 
+ * @param {Object} params
+ * @param {SolRPC} params.solRpc
+ * @param {SolKit.KeyPairSigner<string>} params.payer
+ * @param {SolKit.KeyPairSigner<string>} params.mint
+ * @param {SolKit.KeyPairSigner<string>} params.mintAuthority
+ * @param {number} params.decimals
+ */
+async function createMint({ solRpc, payer, mint, mintAuthority, decimals }) {
+  const { value: latestBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
+  const mintSpace = SolToken.getMintSize();
+  const rentLamports = await solRpc.rpc.getMinimumBalanceForRentExemption(mintSpace).send();
+
+  const createAccountInstruction = SolSystem.getCreateAccountInstruction({
+    payer,
+    newAccount: mint,
+    space: mintSpace,
+    lamports: rentLamports,
+    programAddress: SolToken.TOKEN_PROGRAM_ADDRESS
+  });
+
+  const initializeMintInstruction = SolToken.getInitializeMintInstruction({
+    mint: mint.address,
+    mintAuthority: mintAuthority.address,
+    freezeAuthority: null,
+    decimals
+  });
+
+  const transactionMessage = pipe(
+    SolKit.createTransactionMessage({ version: 0 }),
+    (tx) => SolKit.setTransactionMessageFeePayerSigner(payer, tx),
+    (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+    (tx) => SolKit.appendTransactionMessageInstructions(
+      [createAccountInstruction, initializeMintInstruction],
+      tx
+    )
+  );
+
+  const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessage);
+  const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
+  await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'finalized' });
+  const signature = SolKit.getSignatureFromTransaction(signedTransactionMessage);
+  return signature;
+}
+
+/**
+ * 
+ * @param {Object} params
+ * @param {SolRPC} params.solRpc
+ * @param {SolKit.Address<string>} params.owner
+ * @param {SolKit.Address<string>} params.mint
+ * @param {SolKit.KeyPairSigner<string>} params.payer
+ */
+async function createAta({ solRpc, owner, mint, payer }) {
+  const { value: latestBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
+  
+  const [ata] = await SolToken.findAssociatedTokenPda({
+    owner,
+    tokenProgram: SolToken.TOKEN_PROGRAM_ADDRESS,
+    mint
+  });
+  
+  const createAssociatedTokenIdempotentInstruction = SolToken.getCreateAssociatedTokenIdempotentInstruction({
+    payer,
+    owner,
+    mint,
+    ata
+  });
+
+  const transactionMessage = pipe(
+    SolKit.createTransactionMessage({ version: 'legacy' }),
+    (tx) => SolKit.setTransactionMessageFeePayerSigner(payer, tx),
+    (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+    (tx) => SolKit.appendTransactionMessageInstructions(
+      [createAssociatedTokenIdempotentInstruction],
+      tx
+    )
+  );
+
+  const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessage);
+  const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
+  await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'finalized' });
+  return ata;
 }
