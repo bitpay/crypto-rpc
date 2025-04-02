@@ -546,7 +546,7 @@ describe('SOL Tests', () => {
       });
 
       describe('getAta', function () {
-        // Why is this failing?
+        /** @TODO why failing */
         it('Retrieves ATA address string', async () => {
           const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
           const createdAta = await createAta({ solRpc, owner: createdAccount.address, mint: mintKeypair.address, payer: senderKeypair });
@@ -568,7 +568,7 @@ describe('SOL Tests', () => {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.UNSPECIFIED_INVALID_PARAMETER);
           }
         });
-        it.only(`Throws "${SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER}" if passed in mint not a mint`, async () => {
+        it(`Throws "${SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER}" if passed in mint not a mint`, async () => {
           const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
           const validBase58String = (await SolKit.generateKeyPairSigner()).address;
           try {
@@ -580,22 +580,30 @@ describe('SOL Tests', () => {
       });
       describe('createAta', function () {
         it('returns retrieved ata if it already exists', async () => {});
+        /** @TODO create and use spy */
         it(`throws any error from getAta that is not ${SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED}`, async () => {
           const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
           const invalidMintAddress = (await SolKit.generateKeyPairSigner()).address;
           const expectedErrorMessage = SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER;
-          const validBase58String = (await SolKit.generateKeyPairSigner()).address;
           // Create spy on createTransactionMessage to ensure no transaction has been created
 
           try {
             await solRpc.getAta({ solAddress: createdAccount.address, mintAddress: invalidMintAddress });
           } catch (err) {
-            expect(err.message).to.equal(SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER);
+            expect(err.message).to.equal(expectedErrorMessage);
           }
 
           // Assert createtransactionMessageSpy not called
         });
-        it('can create an ata', async () => {});
+        it('can create an ata', async () => {
+          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
+          const result = await solRpc.createAta({ ownerAddress: createdAccount.address, mintAddress: mintKeypair.address, feePayer: senderKeypair });
+          expect(result).to.be.an('object');
+          expect(result).to.have.property('action').that.equals('CREATED');
+          expect(result).to.have.property('ataAddress').that.is.a('string');
+          expect(result).to.have.property('signature').that.is.a('string');
+          expect(result).to.have.property('message').that.equals('The ATA is initialized.');
+        });
       });
     });
 
