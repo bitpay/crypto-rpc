@@ -702,7 +702,6 @@ describe('SOL Tests', () => {
       // Do not include ports
     };
     
-    this.timeout(15e3);
     /** @type {SolRPC} */
     let solRpc;
     /** @type {SolKit.KeyPairSigner<string>} */
