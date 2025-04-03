@@ -369,7 +369,7 @@ describe('SOL Tests', () => {
       let targetKeypair;
       beforeEach(async function() {
         this.timeout(5e3);
-        targetKeypair = await createAccount(solRpc, senderKeypair);
+        targetKeypair = await createAccount({ solRpc, feePayerKeypair: senderKeypair });
         for (let i = 0; i < 2; i++) {
           await sendTransaction(solRpc, senderKeypair, targetKeypair, 1000 * (i + 1));
         }
@@ -391,7 +391,7 @@ describe('SOL Tests', () => {
       let targetKeypair;
       beforeEach(async function() {
         this.timeout(5e3);
-        targetKeypair = await createAccount(solRpc, senderKeypair);
+        targetKeypair = await createAccount({ solRpc, feePayerKeypair: senderKeypair });
         for (let i = 0; i < numTransactions; i++) {
           await new Promise(resolve => setTimeout(resolve, 250));
           await sendTransaction(solRpc, senderKeypair, targetKeypair, 1000 * (i + 1));
@@ -536,50 +536,93 @@ describe('SOL Tests', () => {
       });
     });
 
-    describe('Mint tests', function () {
+    describe('Mint tests (requires waiting for transaction finalization in places)', function () {
+      const REQUIRED_FRESH_ACCOUNT_NUMBER = 11; // This number should be updated to reflect the number of TESTS (not required test accounts) in this block
       /** @type {SolKit.KeyPairSigner<string>} */
       let mintKeypair;
+      let resolvedCreateAccountArray;
+      let resolvedCreateAccountIndex = 0;
+      /** @type {SolKit.KeyPairSigner<string>} */
+      let testKeypair;
       before(async function () {
-        this.timeout(20e3);
+        this.timeout(40e3); // Setup requires awaiting finalization of transactions
         // Create mint
         mintKeypair = await SolKit.generateKeyPairSigner();
         await createMint({ solRpc, payer: senderKeypair, mint: mintKeypair, mintAuthority: senderKeypair });
+
+        // createAccount waits for transaction finalization. This takes a lot of time. Processing in parallel mitigates this issue to a large extent.
+        // Update REQUIRED_FRESH_ACCOUNT_NUMBER when adding/removing tests to the "getOrCreateAta" describe block.
+        resolvedCreateAccountArray = await Promise.all(
+          Array(REQUIRED_FRESH_ACCOUNT_NUMBER).fill(0)
+            .map(async () => createAccount({ solRpc, feePayerKeypair: senderKeypair, version: 'legacy', commitment: 'finalized' }))
+        );
       });
 
-      describe('getAta', function () {
-        /** @TODO why failing */
-        it('Retrieves ATA address string', async () => {
-          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
-          const createdAta = await createAta({ solRpc, owner: createdAccount.address, mint: mintKeypair.address, payer: senderKeypair });
-          const result = await solRpc.getAta({ solAddress: createdAccount.address, mintAddress: mintKeypair.address });
+      beforeEach(function () {
+        testKeypair = resolvedCreateAccountArray[resolvedCreateAccountIndex];
+        resolvedCreateAccountIndex++;
+      });
+
+      describe('deriveAta', function() {
+        it('can find the associated token address string given a valid solAddress and mint address', async () => {
+          const destinationAta = await solRpc.deriveAta({ solAddress: testKeypair.address, mintAddress: mintKeypair.address });
+          expect(destinationAta).to.be.a('string');
+        });
+        it('throws an error if a provided param is non-base58', async () => {
+          try {
+            await solRpc.deriveAta({ solAddress: 'invalid string', mintAddress: mintKeypair.address });
+            assert.fail('Test failed: deriveAta did not throw as expected');
+          } catch (err) {
+            expect(err.message).to.equal(SOL_ERROR_MESSAGES.NON_BASE58_PARAM);
+          }
+        });
+        it('throws an error if a provided param is missing', async () => {
+          try {
+            await solRpc.deriveAta({ mintAddress: mintKeypair.address });
+            assert.fail('Test failed: deriveAta did not throw as expected');
+          } catch (err) {
+            expect(err.message).to.equal('Missing parameters: solAddress');
+          }
+        });
+        it('returns a string even if mint address does not correspond to a valid mint', async () => {
+          const notMintKeypair = await SolKit.generateKeyPairSigner();
+          const destinationAta = await solRpc.deriveAta({ solAddress: testKeypair.address, mintAddress: notMintKeypair.address });
+          expect(destinationAta).to.be.a('string');
+        });
+      });
+
+      describe('getConfirmedAta', function () {
+        this.timeout(20e3);
+        it('Retrieves ATA address string', async function () {
+          const createdAta = await createAta({ solRpc, owner: testKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
+          const result = await solRpc.getConfirmedAta({ solAddress: testKeypair.address, mintAddress: mintKeypair.address });
           expect(result).to.equal(createdAta);
         });
         it(`Throws "${SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED}" if ATA not found`, async () => {
-          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
           try {
-            await solRpc.getAta({ solAddress: createdAccount.address, mintAddress: mintKeypair.address });
+            await solRpc.getConfirmedAta({ solAddress: testKeypair.address, mintAddress: mintKeypair.address });
           } catch (err) {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED);
           }
         });
         it(`Throws ${SOL_ERROR_MESSAGES.UNSPECIFIED_INVALID_PARAMETER} if passed in address not found`, async () => {
           try {
-            await solRpc.getAta({ solAddress: 'invalid sol address', mintAddress: mintKeypair.address });
+            await solRpc.getConfirmedAta({ solAddress: 'invalid sol address', mintAddress: mintKeypair.address });
           } catch (err) {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.UNSPECIFIED_INVALID_PARAMETER);
           }
         });
         it(`Throws "${SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER}" if passed in mint not a mint`, async () => {
-          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
           const validBase58String = (await SolKit.generateKeyPairSigner()).address;
           try {
-            await solRpc.getAta({ solAddress: createdAccount.address, mintAddress: validBase58String });
+            await solRpc.getConfirmedAta({ solAddress: testKeypair.address, mintAddress: validBase58String });
           } catch (err) {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER);
           }
         });
       });
       describe('createAta', function () {
+        this.timeout(20e3);
         // Spy on the three possible factory methods for generating a method to send a transaction
         let sendAndConfirmFactorySpy;
         let sendAndConfirmDurableNonceFactorySpy;
@@ -594,10 +637,24 @@ describe('SOL Tests', () => {
           sinon.restore();
         });
 
-        it('returns retrieved ata if it already exists', async () => {});
+        it('returns retrieved ata if it already exists', async () => {
+          const createdAta = await createAta({ solRpc, owner: testKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
+          sendAndConfirmFactorySpy.resetHistory();
+          sendAndConfirmDurableNonceFactorySpy.resetHistory();
+          sendTransactionWithoutConfirmingFactorySpy.resetHistory();
+
+          const result = await solRpc.createAta({ ownerAddress: testKeypair.address, mintAddress: mintKeypair.address });
+          expect(result).to.be.an('object');
+          expect(result).to.have.property('action').that.equals('RETRIEVED');
+          expect(result).to.have.property('ataAddress').that.equals(createdAta);
+          expect(result).to.have.property('message').that.equals('The ATA was previously initialized.');
+
+          // Additional tests ensure that no transaction was sent
+          expect(sendAndConfirmFactorySpy.callCount).to.equal(0);
+          expect(sendAndConfirmDurableNonceFactorySpy.callCount).to.equal(0);
+          expect(sendTransactionWithoutConfirmingFactorySpy.callCount).to.equal(0);
+        });
         it('does not create a transaction message if getAta throws any error that is not ata not initialized error', async function () {
-          this.timeout(20e3);
-          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
           const invalidMintAddress = (await SolKit.generateKeyPairSigner()).address;
           const expectedErrorMessage = SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER;
           sendAndConfirmFactorySpy.resetHistory();
@@ -605,7 +662,7 @@ describe('SOL Tests', () => {
           sendTransactionWithoutConfirmingFactorySpy.resetHistory();
 
           try {
-            await solRpc.createAta({ ownerAddress: createdAccount.address, mintAddress: invalidMintAddress });
+            await solRpc.createAta({ ownerAddress: testKeypair.address, mintAddress: invalidMintAddress });
           } catch (err) {
             expect(err.message).to.equal(expectedErrorMessage);
           } finally {
@@ -615,8 +672,7 @@ describe('SOL Tests', () => {
           }
         });
         it('can create an ata', async () => {
-          const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
-          const result = await solRpc.createAta({ ownerAddress: createdAccount.address, mintAddress: mintKeypair.address, feePayer: senderKeypair });
+          const result = await solRpc.createAta({ ownerAddress: testKeypair.address, mintAddress: mintKeypair.address, feePayer: senderKeypair });
           expect(result).to.be.an('object');
           expect(result).to.have.property('action').that.equals('CREATED');
           expect(result).to.have.property('ataAddress').that.is.a('string');
@@ -638,7 +694,7 @@ describe('SOL Tests', () => {
     });
   });
   describe('Devnet tests', function () {
-    this.timeout(1.5e4);
+    this.timeout(20e3);
     const config = {
       chain: 'SOL',
       host: 'api.devnet.solana.com',
@@ -936,16 +992,19 @@ async function createUnsignedTransaction(
 }
 
 /**
- * 
- * @param {SolRPC} solRpc 
- * @param {SolKit.KeyPairSigner} feePayerKeypair 
- * @param {0 | 'legacy'} version 
+ * @param {Object} params
+ * @param {SolRPC} params.solRpc 
+ * @param {SolKit.KeyPairSigner} params.feePayerKeypair 
+ * @param {0 | 'legacy'} params.version
+ * @param {'confirmed' | 'finalized'} params.commitment
  * @returns {Promise<SolKit.KeyPairSigner>}
  */
-async function createAccount(
+async function createAccount( {
   solRpc,
   feePayerKeypair,
-  version = 0
+  version = 0,
+  commitment = 'confirmed'
+}
 ) {
   const keypair = await SolKit.generateKeyPairSigner();
   const space = 0;
@@ -970,7 +1029,7 @@ async function createAccount(
   const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessage);
 
   const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
-  await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'finalized' });
+  await sendAndConfirmTransaction(signedTransactionMessage, { commitment });
   return keypair;
 }
 
