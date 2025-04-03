@@ -694,7 +694,7 @@ describe('SOL Tests', () => {
     });
   });
   describe('Devnet tests', function () {
-    this.timeout(20e3);
+    this.timeout(10e4);
     const config = {
       chain: 'SOL',
       host: 'api.devnet.solana.com',
