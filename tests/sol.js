@@ -143,7 +143,7 @@ describe('SOL Tests', () => {
           const airdropSignature = await solRpc.rpc.requestAirdrop(address, 1e10).send();
           const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
           let status = statuses[0];
-          let remainingTries = 10;
+          let remainingTries = 20;
           while (remainingTries > 0 && status?.confirmationStatus !== 'finalized') {
             await new Promise(resolve => setTimeout(resolve, 250));
             const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
