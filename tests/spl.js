@@ -243,7 +243,7 @@ describe('SPL Tests', () => {
         expect(sendAndConfirmFactorySpy.callCount).to.equal(0);
       });
 
-      it('throws "SolanaError: invalid mint parameter" error if invalid mint', async () => {
+      it('throws "SolanaError: Invalid parameter (mint)" error if invalid mint', async () => {
         const invalidMint = receiverKeypair.address;
         try {
           await splRpc.getOrCreateAta({
@@ -252,7 +252,7 @@ describe('SPL Tests', () => {
             feePayer: senderKeypair
           });
         } catch (err) {
-          expect(err.message).to.equal(`SolanaError: invalid mint parameter ${invalidMint}`);
+          expect(err.message).to.equal('SolanaError: Invalid parameter (mint)');
         }
       });
     });
