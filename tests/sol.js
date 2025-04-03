@@ -9,6 +9,7 @@ const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
 const SolToken = require('@solana-program/token');
 const SOL_ERROR_MESSAGES = require('../lib/sol/error_messages');
 const bs58Encoder = SolKit.getBase58Encoder();
+const sinon = require('sinon');
 
 describe('SOL Tests', () => {
   // Reusable assertion set
@@ -579,21 +580,39 @@ describe('SOL Tests', () => {
         });
       });
       describe('createAta', function () {
+        // Spy on the three possible factory methods for generating a method to send a transaction
+        let sendAndConfirmFactorySpy;
+        let sendAndConfirmDurableNonceFactorySpy;
+        let sendTransactionWithoutConfirmingFactorySpy;
+        beforeEach(async function () {
+          sendAndConfirmFactorySpy = sinon.spy(SolKit, 'sendAndConfirmTransactionFactory');
+          sendAndConfirmDurableNonceFactorySpy = sinon.spy(SolKit, 'sendAndConfirmDurableNonceTransactionFactory');
+          sendTransactionWithoutConfirmingFactorySpy = sinon.spy(SolKit, 'sendTransactionWithoutConfirmingFactory');
+        });
+
+        afterEach(function () {
+          sinon.restore();
+        });
+
         it('returns retrieved ata if it already exists', async () => {});
-        /** @TODO create and use spy */
-        it(`throws any error from getAta that is not ${SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED}`, async () => {
+        it('does not create a transaction message if getAta throws any error that is not ata not initialized error', async function () {
+          this.timeout(20e3);
           const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
           const invalidMintAddress = (await SolKit.generateKeyPairSigner()).address;
           const expectedErrorMessage = SOL_ERROR_MESSAGES.INVALID_MINT_PARAMETER;
-          // Create spy on createTransactionMessage to ensure no transaction has been created
+          sendAndConfirmFactorySpy.resetHistory();
+          sendAndConfirmDurableNonceFactorySpy.resetHistory();
+          sendTransactionWithoutConfirmingFactorySpy.resetHistory();
 
           try {
-            await solRpc.getAta({ solAddress: createdAccount.address, mintAddress: invalidMintAddress });
+            await solRpc.createAta({ ownerAddress: createdAccount.address, mintAddress: invalidMintAddress });
           } catch (err) {
             expect(err.message).to.equal(expectedErrorMessage);
+          } finally {
+            expect(sendAndConfirmFactorySpy.callCount).to.equal(0);
+            expect(sendAndConfirmDurableNonceFactorySpy.callCount).to.equal(0);
+            expect(sendTransactionWithoutConfirmingFactorySpy.callCount).to.equal(0);
           }
-
-          // Assert createtransactionMessageSpy not called
         });
         it('can create an ata', async () => {
           const createdAccount = await createAccount(solRpc, senderKeypair, 'legacy');
@@ -951,7 +970,7 @@ async function createAccount(
   const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessage);
 
   const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
-  await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'confirmed' });
+  await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'finalized' });
   return keypair;
 }
 
