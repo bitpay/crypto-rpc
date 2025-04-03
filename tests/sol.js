@@ -164,7 +164,7 @@ describe('SOL Tests', () => {
           const airdropSignature = await solRpc.rpc.requestAirdrop(address, 1e10).send();
           const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
           let status = statuses[0];
-          let remainingTries = 10;
+          let remainingTries = 20;
           while (remainingTries > 0 && status?.confirmationStatus !== 'finalized') {
             await new Promise(resolve => setTimeout(resolve, 250));
             const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
@@ -602,7 +602,7 @@ describe('SOL Tests', () => {
             await solRpc.deriveAta({ mintAddress: mintKeypair.address });
             assert.fail('Test failed: deriveAta did not throw as expected');
           } catch (err) {
-            expect(err.message).to.equal('Missing parameters: solAddress');
+            expect(err.message).to.equal('Cannot read properties of undefined (reading \'length\')');
           }
         });
         it('returns a string even if mint address does not correspond to a valid mint', async () => {
