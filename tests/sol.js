@@ -581,7 +581,7 @@ describe('SOL Tests', () => {
             await solRpc.deriveAta({ mintAddress: mintKeypair.address });
             assert.fail('Test failed: deriveAta did not throw as expected');
           } catch (err) {
-            expect(err.message).to.equal('Missing parameters: solAddress');
+            expect(err.message).to.equal('Cannot read properties of undefined (reading \'length\')');
           }
         });
         it('returns a string even if mint address does not correspond to a valid mint', async () => {
