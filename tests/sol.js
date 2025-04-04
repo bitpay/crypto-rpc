@@ -59,52 +59,73 @@ describe('SOL Tests', () => {
       transferToken,
     } = retVal.instructions;
     if (transferSol) {
-      expect(transferSol).to.be.an('object');
-      expect(transferSol).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
-      expect(transferSol).to.have.property('currency').that.is.a('string');
-      expect(transferSol.currency).to.equal('SOL');
-      expect(transferSol).to.have.property('destination').that.is.a('string');
-      expect(transferSol).to.have.property('source').that.is.a('string');
+      expect(transferSol).to.be.an('array').with.length.greaterThan(0);
+      for (const instruction of transferSol) {
+        expect(instruction).to.be.an('object');
+        expect(instruction).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
+        expect(instruction).to.have.property('currency').that.is.a('string');
+        expect(instruction.currency).to.equal('SOL');
+        expect(instruction).to.have.property('destination').that.is.a('string');
+        expect(instruction).to.have.property('source').that.is.a('string');
+      }
     }
 
     if (advanceNonceAccount) {
-      expect(advanceNonceAccount).to.be.an('object');
-      expect(advanceNonceAccount).to.have.property('nonceAccount').that.is.a('string');
-      expect(advanceNonceAccount).to.have.property('nonceAuthority').that.is.a('string');
+      expect(advanceNonceAccount).to.be.an('array').with.length.greaterThan(0);
+      for (const instruction of advanceNonceAccount) {
+        expect(instruction).to.be.an('object');
+        expect(instruction).to.have.property('nonceAccount').that.is.a('string');
+        expect(instruction).to.have.property('nonceAuthority').that.is.a('string');
+      }
     }
 
     if (setComputeUnitLimit) {
-      expect(setComputeUnitLimit).to.be.an('object');
-      expect(setComputeUnitLimit).to.have.property('computeUnitLimit').that.is.a('number').greaterThan(0);
+      expect(setComputeUnitLimit).to.be.an('array').with.length.greaterThan(0);
+      for (const instruction of setComputeUnitLimit) {
+        expect(instruction).to.be.an('object');
+        expect(instruction).to.have.property('computeUnitLimit').that.is.a('number').greaterThan(0);
+      }
     }
 
     if (setComputeUnitPrice) {
-      expect(setComputeUnitPrice).to.be.an('object');
-      expect(setComputeUnitPrice).to.have.property('priority').that.is.a('boolean').that.is.true;
-      expect(setComputeUnitPrice).to.have.property('microLamports').that.is.a('number').greaterThan(0);
+      expect(setComputeUnitPrice).to.be.an('array').with.length.greaterThan(0);
+      for (const instruction of setComputeUnitPrice) {
+        expect(instruction).to.be.an('object');
+        expect(instruction).to.have.property('priority').that.is.a('boolean').that.is.true;
+        expect(instruction).to.have.property('microLamports').that.is.a('number').greaterThan(0);
+      }
     }
 
     if (memo) {
-      expect(memo).to.be.an('object');
-      expect(memo).to.have.property('memo').that.is.a('string');
+      expect(memo).to.be.an('array').with.length.greaterThan(0);
+      for (const instruction of memo) {
+        expect(instruction).to.be.an('object');
+        expect(instruction).to.have.property('memo').that.is.a('string');
+      }
     }
 
     if (transferCheckedToken) {
-      expect(transferCheckedToken).to.be.an('object');
-      expect(transferCheckedToken).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
-      expect(transferCheckedToken).to.have.property('authority').that.is.a('string');
-      expect(transferCheckedToken).to.have.property('decimals').that.is.a('number').that.is.greaterThan(0);
-      expect(transferCheckedToken).to.have.property('destination').that.is.a('string');
-      expect(transferCheckedToken).to.have.property('mint').that.is.a('string');
-      expect(transferCheckedToken).to.have.property('source').that.is.a('string');
+      expect(transferCheckedToken).to.be.an('array').with.length.greaterThan(0);
+      for (const instruction of transferCheckedToken) {
+        expect(instruction).to.be.an('object');
+        expect(instruction).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
+        expect(instruction).to.have.property('authority').that.is.a('string');
+        expect(instruction).to.have.property('decimals').that.is.a('number').that.is.greaterThan(0);
+        expect(instruction).to.have.property('destination').that.is.a('string');
+        expect(instruction).to.have.property('mint').that.is.a('string');
+        expect(instruction).to.have.property('source').that.is.a('string');
+      }
     }
 
     if (transferToken) {
-      expect(transferToken).to.be.an('object');
-      expect(transferToken).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
-      expect(transferToken).to.have.property('authority').that.is.a('string');
-      expect(transferToken).to.have.property('destination').that.is.a('string');
-      expect(transferToken).to.have.property('source').that.is.a('string');
+      expect(transferToken).to.be.an('array').with.length.greaterThan(0);
+      for (const instruction of transferToken) {
+        expect(instruction).to.be.an('object');
+        expect(instruction).to.have.property('amount').that.is.a('number').that.is.greaterThan(0);
+        expect(instruction).to.have.property('authority').that.is.a('string');
+        expect(instruction).to.have.property('destination').that.is.a('string');
+        expect(instruction).to.have.property('source').that.is.a('string');
+      }
     }
 
     // Add specific instruction checks as needed
@@ -581,7 +602,7 @@ describe('SOL Tests', () => {
             await solRpc.deriveAta({ mintAddress: mintKeypair.address });
             assert.fail('Test failed: deriveAta did not throw as expected');
           } catch (err) {
-            expect(err.message).to.equal('Cannot read properties of undefined (reading \'length\')');
+            expect(err.message).to.equal('Missing parameters: solAddress');
           }
         });
         it('returns a string even if mint address does not correspond to a valid mint', async () => {
