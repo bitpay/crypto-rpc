@@ -8,6 +8,7 @@ const { expect } = require('chai');
 const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
 const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
 const sinon = require('sinon');
+const SOL_ERROR_MESSAGES = require('../lib/sol/error_messages');
 const bs58Encoder = SolKit.getBase58Encoder();
 const tokenProgramAddress = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
@@ -66,10 +67,6 @@ describe('SPL Tests', () => {
       sinon.restore();
     });
 
-    it('inherits getBalance method from SolRPC', async () => {
-      await splRpc.getBalance({ address: receiverKeypair.address });
-      expect(SolRPC.prototype.getBalance.callCount).to.equal(1);
-    });
     it('inherits createNonceAccount method from SolRPC', async () => {
       await splRpc.createNonceAccount(senderKeypair, nonceKeypair);
       expect(SolRPC.prototype.createNonceAccount.callCount).to.equal(1);
@@ -194,6 +191,49 @@ describe('SPL Tests', () => {
       await createMint({ splRpc, payer: senderKeypair, mint: mintKeypair, mintAuthority: senderKeypair, decimals: topLevelConfig.decimals });
       senderAta = await createAta({ splRpc, owner: senderKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
       await mintTokens({ splRpc, payer: senderKeypair, mint: mintKeypair.address, mintAuthority: senderKeypair, targetAta: senderAta, decimals: topLevelConfig.decimals });
+    });
+
+    describe.only('getBalance', function () {
+      it('returns an object representing the token balance', async () => {
+        const value = await splRpc.getBalance({ address: senderAta });
+        expect(value).to.be.an('object');
+        expect(value).to.have.property('amount').that.is.a('string');
+        expect(value).to.have.property('decimals').that.is.a('number');
+        if (value.uiAmount) {
+          expect(value.uiAmount).to.be.a('number');
+        } else {
+          expect(value.uiAmount).to.be.null;
+        }
+        expect(value).to.have.property('uiAmountString').that.is.a('string');
+      });
+
+      it('throws error if provided address does not belong to an onchain ATA account', async () => {
+        const badKeypair = await SolKit.generateKeyPairSigner();
+        try {
+          await splRpc.getBalance({ address: badKeypair.address });
+        } catch (err) {
+          expect(err.message).to.equal(SOL_ERROR_MESSAGES.TOKEN_ACCOUNT_NOT_FOUND);
+        }
+      });
+
+      it('throws error if provided address represents a valid ata address for an uninitialized ata account', async () => {
+        // This happens when @solana-program/token 'findAssociatedTokenPda is used to derive an ata address, but the address has not been created
+        try {
+          const solAddress = receiverKeypair.address;
+          const derivedAta = await splRpc.deriveAta({ solAddress, mintAddress: mintKeypair.address });
+          await splRpc.getBalance({ address: derivedAta });
+        } catch (err) {
+          expect(err.message).to.equal(SOL_ERROR_MESSAGES.TOKEN_ACCOUNT_NOT_FOUND);
+        }
+      });
+
+      it('throws error if provided address is a SOL address', async () => {
+        try {
+          await splRpc.getBalance({ address: senderKeypair.address });
+        } catch (err) {
+          expect(err.message).to.equal(SOL_ERROR_MESSAGES.PROVIDED_TOKEN_ADDRESS_IS_SOL);
+        }
+      });
     });
 
     describe('getOrCreateAta', function () {
