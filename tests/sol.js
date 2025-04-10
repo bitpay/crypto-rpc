@@ -929,6 +929,34 @@ describe('SOL Tests', () => {
         expect(ata).to.have.property('state').that.is.a('string');
       }
     });
+    describe('getTokenAccountsByOwner', function () {
+      it('can retrieve an array of atas for a previously-confirmed account and skip account existence check', async () => {
+        const result = await solRpc.getTokenAccountsByOwner({ address: senderKeypair.address, skipExistenceCheck: true });
+        expect(result).to.be.an('array');
+        for (const ata of result) {
+          expect(ata).to.be.an('object');
+          expect(ata).to.have.property('mint').that.is.a('string');
+          expect(ata).to.have.property('pubkey').that.is.a('string').not.equal(senderKeypair.address);
+          expect(ata).to.have.property('state').that.is.a('string');
+        }
+      });
+      it('throws an expected error if existence check is not skipped and provided address is not found onchain', async () => {
+        try {
+          const newKeypair = await SolKit.generateKeyPairSigner();
+          await solRpc.getTokenAccountsByOwner({ address: newKeypair.address });
+        } catch (err) {
+          expect(err.message).to.equal(SOL_ERROR_MESSAGES.SOL_ACCT_NOT_FOUND);
+        }
+      });
+      it('returns empty array if existence check skipped and account not found onchain', async () => {
+        try {
+          const newKeypair = await SolKit.generateKeyPairSigner();
+          await solRpc.getTokenAccountsByOwner({ address: newKeypair.address, skipExistenceCheck: true});
+        } catch (err) {
+          expect(err.message).to.equal(SOL_ERROR_MESSAGES.SOL_ACCT_NOT_FOUND);
+        }
+      });
+    });
   });
 });
 
