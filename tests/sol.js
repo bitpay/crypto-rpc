@@ -558,7 +558,7 @@ describe('SOL Tests', () => {
     });
 
     describe('Mint tests (requires waiting for transaction finalization in places)', function () {
-      const REQUIRED_FRESH_ACCOUNT_NUMBER = 11; // This number should be updated to reflect the number of TESTS (not required test accounts) in this block
+      const REQUIRED_FRESH_ACCOUNT_NUMBER = 14; // This number should be updated to reflect the number of TESTS (not required test accounts) in this block
       /** @type {SolKit.KeyPairSigner<string>} */
       let mintKeypair;
       let resolvedCreateAccountArray;
@@ -611,7 +611,6 @@ describe('SOL Tests', () => {
           expect(destinationAta).to.be.a('string');
         });
       });
-
       describe('getConfirmedAta', function () {
         this.timeout(20e3);
         it('Retrieves ATA address string', async function () {
@@ -699,6 +698,41 @@ describe('SOL Tests', () => {
           expect(result).to.have.property('ataAddress').that.is.a('string');
           expect(result).to.have.property('signature').that.is.a('string');
           expect(result).to.have.property('message').that.equals('The ATA is initialized.');
+        });
+      });
+      describe('getAccountInfo', function () {
+        this.timeout(20e3);
+        it('can return an account balance and array of associated tokens', async () => {
+          // Setup
+          await createAta({ solRpc, owner: testKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
+          
+          // Execution
+          const result = await solRpc.getAccountInfo({ address: testKeypair.address });
+          
+          
+          // Assertions
+          expect(result).to.be.an('object');
+          expect(result).not.to.be.null;
+          expect(result).to.have.property('lamports').that.is.a('number').greaterThan(0);
+          expect(result).to.have.property('atas').that.is.an('array').with.length(1);
+          for (const ata of result.atas) {
+            expect(ata).to.be.an('object');
+            expect(ata).to.have.property('mint').that.is.a('string');
+            expect(ata).to.have.property('pubkey').that.is.a('string').not.equal(testKeypair.address);
+            expect(ata).to.have.property('state').that.is.a('string');
+          }
+        });
+        it('can return an account balance and empty array of associated tokens', async () => {
+          const result = await solRpc.getAccountInfo({ address: testKeypair.address });
+          expect(result).to.be.an('object');
+          expect(result).not.to.be.null;
+          expect(result).to.have.property('lamports').that.is.a('number').greaterThan(0);
+          expect(result).to.have.property('atas').that.is.an('array').with.length(0);
+        });
+        it('does something or the other if the provided address is not associated with an account', async () => {
+          const newKeypair = await SolKit.generateKeyPairSigner();
+          const result = await solRpc.getAccountInfo({ address: newKeypair.address });
+          expect(result).to.be.null;
         });
       });
     });
@@ -881,6 +915,19 @@ describe('SOL Tests', () => {
       expect(serverInfo).to.be.an('object');
       expect(serverInfo).to.have.property('feature-set').that.is.a('number');
       expect(serverInfo).to.have.property('solana-core').that.is.a('string');
+    });
+    it('can retrieve account info including lamports and ata array', async () => {
+      const result = await solRpc.getAccountInfo({ address: senderKeypair.address });
+      expect(result).to.be.an('object');
+      expect(result).not.to.be.null;
+      expect(result).to.have.property('lamports').that.is.a('number').greaterThan(0);
+      expect(result).to.have.property('atas').that.is.an('array');
+      for (const ata of result.atas) {
+        expect(ata).to.be.an('object');
+        expect(ata).to.have.property('mint').that.is.a('string');
+        expect(ata).to.have.property('pubkey').that.is.a('string').not.equal(senderKeypair.address);
+        expect(ata).to.have.property('state').that.is.a('string');
+      }
     });
   });
 });
