@@ -193,7 +193,7 @@ describe('SPL Tests', () => {
       await mintTokens({ splRpc, payer: senderKeypair, mint: mintKeypair.address, mintAuthority: senderKeypair, targetAta: senderAta, decimals: topLevelConfig.decimals });
     });
 
-    describe.only('getBalance', function () {
+    describe('getBalance', function () {
       it('returns an object representing the token balance', async () => {
         const value = await splRpc.getBalance({ address: senderAta });
         expect(value).to.be.an('object');
