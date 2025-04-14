@@ -558,7 +558,7 @@ describe('SOL Tests', () => {
     });
 
     describe('Mint tests (requires waiting for transaction finalization in places)', function () {
-      const REQUIRED_FRESH_ACCOUNT_NUMBER = 14; // This number should be updated to reflect the number of TESTS (not required test accounts) in this block
+      const REQUIRED_FRESH_ACCOUNT_NUMBER = 15; // This number should be updated to reflect the number of TESTS (not required test accounts) in this block
       /** @type {SolKit.KeyPairSigner<string>} */
       let mintKeypair;
       let resolvedCreateAccountArray;
@@ -709,7 +709,6 @@ describe('SOL Tests', () => {
           // Execution
           const result = await solRpc.getAccountInfo({ address: testKeypair.address });
           
-          
           // Assertions
           expect(result).to.be.an('object');
           expect(result).not.to.be.null;
@@ -729,10 +728,19 @@ describe('SOL Tests', () => {
           expect(result).to.have.property('lamports').that.is.a('number').greaterThan(0);
           expect(result).to.have.property('atas').that.is.an('array').with.length(0);
         });
-        it('does something or the other if the provided address is not associated with an account', async () => {
+        it('returns null if provided address is not found onchain', async () => {
           const newKeypair = await SolKit.generateKeyPairSigner();
           const result = await solRpc.getAccountInfo({ address: newKeypair.address });
           expect(result).to.be.null;
+        });
+        it('throws error if provided address is ATA address', async () => {
+          const ata = await createAta({ solRpc, owner: testKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
+          try {
+            await solRpc.getAccountInfo({ address: ata });
+            assert.fail('Expected getAccountInfo to reject, but it resolved.');
+          } catch (err) {
+            expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_ADD_SENT_INSTEAD_OF_SOL_ADD);
+          }
         });
       });
     });
