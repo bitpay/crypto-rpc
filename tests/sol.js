@@ -773,53 +773,20 @@ describe('SOL Tests', () => {
       receiverKeypair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(bs58Encoder.encode('CVFoRgAv6LNQvX6EmPeqGjgUDZYvjHgqbXve4rus4o63'));
 
       solRpc = new SolRPC(config);
-      // nonceAccountKeypair = await SolKit.generateKeyPairSigner();
-      // await createNonceAccount(solRpc, senderKeypair, nonceAccountKeypair);
-      // // Ensure sender and receiver are properly funded - this is important because although the value is held constant, transaction fees are taken out
+      nonceAccountKeypair = await SolKit.generateKeyPairSigner();
+      await createNonceAccount(solRpc, senderKeypair, nonceAccountKeypair);
+      // Ensure sender and receiver are properly funded - this is important because although the value is held constant, transaction fees are taken out
 
-      // const { value: senderBalance } = await solRpc.rpc.getBalance(senderKeypair.address).send();
-      // const { value: receiverBalance } = await solRpc.rpc.getBalance(receiverKeypair.address).send();
-      // const THRESHOLD_LAMPORTS = 100000;
-      // if (!(Number(senderBalance) >= THRESHOLD_LAMPORTS && Number(receiverBalance) >= THRESHOLD_LAMPORTS)) {
-      //   console.warn('Devnet accounts need more funds');
-      // }
-
-      // // Create mint
-      // mintKeypair = await SolKit.generateKeyPairSigner();
-      // await createMint({ solRpc, payer: senderKeypair, mint: mintKeypair, mintAuthority: senderKeypair });
-    });
-
-    it.only('is the test', async function () {
-      this.timeout(10e5);
-      const solAddress = '3v1MBkq73yuitDZKtje2RkZUuVtg6KA2jNgz8EcbqiS7';
-      const atas = [
-        '8Rxzow3cvzW8976Gaq1m3HPDRGwkGxe4jLAtCpzAa8KW',
-        'DLTWMqMyKhV2DiUKzuPwKQNbMdRQ8pq5AoHiTrBTTvnR',
-        '8eJfydvUMBmdPCo4P6evH3WX9aqGoWC8T2aTwJYte8Ya',
-        '6ASj2H3VHdVKvDHo5jKPaQDHSk6hkpfx9ssLjt67uaxW',
-        'Dj1b8a5rVGUzF7PZfqdPsCBqn8rrLGakWeY1t7eiNdcZ',
-        '8f5PWSvRmdFuSdWydgjNhTaAJ8j7dK6MqKqdhcbNWL2W',
-        'EHyqicizdNLWUr7wfF9ZwjeBsCC5GHSnRWy9UWgenK8N',
-        '9h5evzBCgUP27sphRwwsAA2peVAsYKKjM7F1JsDNJvh6',
-      ];
-      
-      let trialsRun = 0;
-      while (trialsRun <= 10) {
-        const solCheck = await solRpc.getAccountInfo({ address: solAddress });
-        expect(solCheck).to.be.an('object');
-        console.log('passes');
-        for (const ata of atas) {
-          try {
-            await solRpc.getAccountInfo({ address: ata });
-            assert.fail('Should have thrown');
-          } catch (err) {
-            expect(err.message).to.equal('SolanaError: Request object exceeds 127 bytes. This may be caused by the provided address belonging to an Associated Token Account instead of a Solana account.');
-            console.log('passes');
-          }
-        }
-
-        trialsRun++;
+      const { value: senderBalance } = await solRpc.rpc.getBalance(senderKeypair.address).send();
+      const { value: receiverBalance } = await solRpc.rpc.getBalance(receiverKeypair.address).send();
+      const THRESHOLD_LAMPORTS = 100000;
+      if (!(Number(senderBalance) >= THRESHOLD_LAMPORTS && Number(receiverBalance) >= THRESHOLD_LAMPORTS)) {
+        console.warn('Devnet accounts need more funds');
       }
+
+      // Create mint
+      mintKeypair = await SolKit.generateKeyPairSigner();
+      await createMint({ solRpc, payer: senderKeypair, mint: mintKeypair, mintAuthority: senderKeypair });
     });
 
     describe('Transaction tests', () => {
