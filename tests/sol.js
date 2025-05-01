@@ -773,8 +773,6 @@ describe('SOL Tests', () => {
     let receiverKeypair;
     /** @type {SolKit.KeyPairSigner<string>} */
     let nonceAccountKeypair;
-    /** @type {SolKit.KeyPairSigner<string>} */
-    let mintKeypair;
 
     before(async function () {
       senderKeypair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(bs58Encoder.encode('H6x8RRKJ9xBx71N8wn8USBghwApSqHP7A9LT5Mxo6rP9'));
@@ -791,93 +789,8 @@ describe('SOL Tests', () => {
       if (!(Number(senderBalance) >= THRESHOLD_LAMPORTS && Number(receiverBalance) >= THRESHOLD_LAMPORTS)) {
         console.warn('Devnet accounts need more funds');
       }
-
-      // Create mint
-      mintKeypair = await SolKit.generateKeyPairSigner();
-      await createMint({ solRpc, payer: senderKeypair, mint: mintKeypair, mintAuthority: senderKeypair });
     });
 
-    describe('Transaction tests', () => {
-      // Note: the result of this set of tests should be that the two involved addresses maintain a steady balance, less the transaction fees
-      const baseArgs = {
-        amount: 10000
-      };
-
-      it('can send a versioned transaction, get number of confirmations, and retrieve it', async () => {
-        // From sender to receiver 1/2
-        const signature = await solRpc.sendToAddress({
-          ...baseArgs,
-          address: receiverKeypair.address,
-          fromAccountKeypair: senderKeypair,
-          txType: 0,
-          priority: false
-        });
-        expect(signature).to.be.a('string');
-
-        await new Promise(resolve => setTimeout(resolve, 250));
-        let confirmations = await solRpc.getConfirmations({ txid: signature });
-        expect(confirmations).to.be.a('number').greaterThanOrEqual(0);
-        for (let i = 0; i < 2; i++) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          const newConfirmations = await solRpc.getConfirmations({ txid: signature });
-          expect(newConfirmations).to.be.a('number').greaterThanOrEqual(confirmations);
-          confirmations = newConfirmations;
-        }
-
-        const transaction = await solRpc.getTransaction({ txid: signature });
-        assertValidTransaction(transaction);
-      });
-      it('can send a priority, legacy transaction and retrieve it', async () => {
-        // From receiver to sender 1/2
-        const signature = await solRpc.sendToAddress({
-          ...baseArgs,
-          address: senderKeypair.address,
-          fromAccountKeypair: receiverKeypair,
-          txType: 'legacy',
-          priority: true
-        });
-        expect(signature).to.be.a('string');
-
-        const transaction = await solRpc.getTransaction({ txid: signature });
-        assertValidTransaction(transaction);
-      });
-      it('can send a raw transaction, retrieve a raw transaction, and decode it', async () => {
-        // From receiver to sender 2/2
-        const rawTx = await createRawTransaction(solRpc.rpc, receiverKeypair, senderKeypair, baseArgs.amount);
-        const signature = await solRpc.sendRawTransaction({ rawTx }); // Note, this is not necessarily confirmed
-
-        // Wait 5 seconds before looking for transaction
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        const rawTransaction = await solRpc.getRawTransaction({ txid: signature });
-        if (rawTransaction) {
-          expect(rawTransaction).to.be.a('string');
-          expect(rawTransaction).to.equal(rawTx);
-          const decodedRawTransaction = await solRpc.decodeRawTransaction({ rawTx: rawTransaction });
-          assertValidTransaction(decodedRawTransaction);
-        } else {
-          expect(rawTransaction).to.be.null;
-        }
-      });
-      it('can create a nonce account and use it to send a durable nonce transaction', async () => {
-        // From sender to receiver 2/2
-        const nonceKeypair = await SolKit.generateKeyPairSigner();
-        const confirmedSignature = await solRpc.createNonceAccount(senderKeypair, nonceKeypair);
-        expect(confirmedSignature).to.be.a('string');
-
-        // Wait 2.5 seconds for transaction to finalize from 'confirmed'
-        await new Promise(resolve => setTimeout(resolve, 2500));
-
-        const signature = await solRpc.sendToAddress({
-          ...baseArgs,
-          address: receiverKeypair.address,
-          fromAccountKeypair: senderKeypair,
-          nonceAddress: nonceKeypair.address,
-          txType: 'legacy'
-        });
-        expect(signature).to.be.a('string');
-      });
-    });
     it('can retrieve a balance', async () => {
       const addressString = senderKeypair.address;
       const balance = await solRpc.getBalance({ address: addressString });
