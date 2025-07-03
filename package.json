@@ -22,6 +22,7 @@
   "author": "Micah Riggan",
   "license": "ISC",
   "dependencies": {
+    "@solana-program/address-lookup-table": "^0.7.0",
     "@solana-program/compute-budget": "^0.7.0",
     "@solana-program/memo": "^0.7.0",
     "@solana-program/system": "^0.7.0",

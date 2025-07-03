@@ -1,5 +1,6 @@
 const SolKit = require('@solana/kit');
 const SolSystem = require('@solana-program/system');
+const SolLookUpTable = require('@solana-program/address-lookup-table');
 const { pipe } = require('@solana/functional');
 const SolRPC = require('../lib/sol/SolRpc');
 const { expect } = require('chai');
@@ -140,7 +141,8 @@ describe('SOL Tests', () => {
       wsPort: 8900
     };
     
-    this.timeout(10e3);
+    // Required for waiting on finalized transactions (e.g. creating a lookup table)
+    this.timeout(10e7);
     /** @type {SolRPC} */
     let solRpc;
     /** @type {SolKit.KeyPairSigner<string>} */
@@ -149,12 +151,17 @@ describe('SOL Tests', () => {
     let receiverKeypair;
     /** @type {SolKit.KeyPairSigner<string>} */
     let nonceAccountKeypair;
-    before(async function () {
+    before(async function() {
       // For these tests, the nonce authority will be the sender
       senderKeypair = await SolKit.createKeyPairSignerFromBytes(Uint8Array.from(privateKey1));
       receiverKeypair = await SolKit.createKeyPairSignerFromBytes(Uint8Array.from(privateKey2));
 
       solRpc = new SolRPC(config);
+      // Check health
+      const health = await solRpc.rpc.getHealth().send();
+      if (health !== 'ok') {
+        throw new Error('Healthcheck failed - rpc connection not correctly established');
+      }
 
       // Airdrop if no money on sender
       const addresses = [senderKeypair.address, receiverKeypair.address];
@@ -382,6 +389,21 @@ describe('SOL Tests', () => {
         const retVal = await solRpc.getTransaction({ txid: legacy_txid });
         expect(retVal.version).to.equal('legacy');
         assertValidTransaction(retVal);
+      });
+
+      describe('lookup table tests', () => {
+        let lookupTableAddress;
+  
+        before(async function() {
+          lookupTableAddress = await createLookupTable({ solRpc, fromKeypair: senderKeypair, toKeypair: receiverKeypair });
+        });
+  
+        it('works with a versioned transaction', async () => {
+          const txid = await sendTransactionUsingLookupTables({ solRpc, fromKeypair: senderKeypair, toKeypair: receiverKeypair, version: 0, lookupTableAddress });
+  
+          const result = await solRpc.getTransaction({ txid });
+          expect(result).to.be.an('object');
+        });
       });
     });
 
@@ -975,7 +997,7 @@ async function createRawTransaction(
 }
 
 /**
- * 
+ * Returns an unsigned transaction message
  * @param {SolKit.Rpc} rpc 
  * @param {SolKit.KeyPairSigner} fromKeypair 
  * @param {SolKit.KeyPairSigner} toKeypair 
@@ -1133,4 +1155,100 @@ async function createAta({ solRpc, owner, mint, payer }) {
   const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
   await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'finalized' });
   return ata;
+}
+
+/**
+ * @param {SolRPC} params.solRpc
+ * @param {SolKit.KeyPairSigner} fromKeypair 
+ * @param {SolKit.KeyPairSigner} toKeypair 
+ * @param {number} amountInLamports 
+ * @param {0 | 'legacy'} [version=0]
+ */
+async function sendTransactionUsingLookupTables({ solRpc, fromKeypair, toKeypair, version, lookupTableAddress }) {
+  try {
+    const unsignedTransactionMessage = await createUnsignedTransaction(solRpc.rpc, fromKeypair, toKeypair, 1000, version);
+  
+    // Fetch JSON parsed representation of the lookup table from the RPC
+    const lookupTableAccount = await SolKit.fetchJsonParsedAccount(solRpc.rpc, lookupTableAddress);
+    SolKit.assertAccountDecoded(lookupTableAccount);
+    SolKit.assertAccountExists(lookupTableAccount);
+  
+    // Compress transaction message using lookup table
+    const transactionMessageWithLookupTables = SolKit.compressTransactionMessageUsingAddressLookupTables(unsignedTransactionMessage, {
+      [lookupTableAddress]: lookupTableAccount.data.addresses
+    });
+  
+    const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessageWithLookupTables);
+    const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
+    await sendAndConfirmTransaction(signedTransactionMessage, { commitment: 'confirmed' });
+    const signature = SolKit.getSignatureFromTransaction(signedTransactionMessage);
+    return signature;
+  } catch (err) {
+    console.error('err', err);
+    throw err;
+  }
+}
+
+/**
+ * 
+ * @param {Object} params
+ * @param {SolRPC} params.solRpc
+ * @param {SolKit.KeyPairSigner<string>} params.fromKeypair
+ * @param {SolKit.KeyPairSigner<string>} params.toKeypair
+ */
+async function createLookupTable({ solRpc, fromKeypair, toKeypair }) {  
+  try {
+    const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
+    const { value: recentBlockhash } = await solRpc.rpc.getLatestBlockhash({ commitment: 'confirmed' }).send();
+    const recentSlot = await solRpc.rpc.getSlot({ commitment: 'finalized' }).send();
+  
+    // Create CreateLookupTable Instruction
+    const createLookupTableInstruction = await SolLookUpTable.getCreateLookupTableInstructionAsync({
+      authority: fromKeypair,
+      recentSlot
+    });
+
+    const lookupTableAddress = createLookupTableInstruction?.accounts?.find(account => account.role === 1)?.address;
+    if (!lookupTableAddress) {
+      throw new Error('Lookup table address not found');
+    }
+  
+    const createLookupTableTransactionMessage = pipe(
+      SolKit.createTransactionMessage({ version: 0 }),
+      (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeypair, tx),
+      (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
+      (tx) => SolKit.appendTransactionMessageInstructions([createLookupTableInstruction], tx)
+    );
+
+    const signedCreateLookupTableTransaction = await SolKit.signTransactionMessageWithSigners(createLookupTableTransactionMessage);
+    // Must wait on finality for extending the table
+    await sendAndConfirmTransaction(signedCreateLookupTableTransaction, { commitment: 'finalized' });
+
+    // Add address (note: signers may be leverage lookup tables - their full address must be serialized in the transaction)
+    const extendLookupTableInstruction = SolLookUpTable.getExtendLookupTableInstruction({
+      address: lookupTableAddress,
+      payer: fromKeypair.address,
+      authority: fromKeypair.address,
+      addresses: [
+        toKeypair.address
+      ]
+    });
+
+    const { value: recenterBlockhash } = await solRpc.rpc.getLatestBlockhash({ commitment: 'confirmed' }).send();
+    const extendLookupTableTransactionMessage = pipe(
+      SolKit.createTransactionMessage({ version: 0 }),
+      (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeypair, tx),
+      (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(recenterBlockhash, tx),
+      (tx) => SolKit.appendTransactionMessageInstructions([extendLookupTableInstruction], tx)
+    );
+
+    const signedExtendLookupTableTransaction = await SolKit.signTransactionMessageWithSigners(extendLookupTableTransactionMessage);
+
+    await sendAndConfirmTransaction(signedExtendLookupTableTransaction, { commitment: 'confirmed' });
+    
+    return lookupTableAddress;
+  } catch (err) {
+    console.error('err', err);
+    throw err;
+  }
 }
