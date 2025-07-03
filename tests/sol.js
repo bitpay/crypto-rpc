@@ -401,8 +401,8 @@ describe('SOL Tests', () => {
         it('works with a versioned transaction', async () => {
           const txid = await sendTransactionUsingLookupTables({ solRpc, fromKeypair: senderKeypair, toKeypair: receiverKeypair, version: 0, lookupTableAddress });
   
-          const result = await solRpc.getTransaction({ txid });
-          expect(result).to.be.an('object');
+          const retVal = await solRpc.getTransaction({ txid });
+          assertValidTransaction(retVal);
         });
       });
     });
@@ -1244,7 +1244,7 @@ async function createLookupTable({ solRpc, fromKeypair, toKeypair }) {
 
     const signedExtendLookupTableTransaction = await SolKit.signTransactionMessageWithSigners(extendLookupTableTransactionMessage);
 
-    await sendAndConfirmTransaction(signedExtendLookupTableTransaction, { commitment: 'confirmed' });
+    await sendAndConfirmTransaction(signedExtendLookupTableTransaction, { commitment: 'finalized' });
     
     return lookupTableAddress;
   } catch (err) {
