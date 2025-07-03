@@ -1244,7 +1244,7 @@ async function createLookupTable({ solRpc, fromKeypair, toKeypair }) {
 
     const signedExtendLookupTableTransaction = await SolKit.signTransactionMessageWithSigners(extendLookupTableTransactionMessage);
 
-    await sendAndConfirmTransaction(signedExtendLookupTableTransaction, { commitment: 'confirmed' });
+    await sendAndConfirmTransaction(signedExtendLookupTableTransaction, { commitment: 'finalized' });
     
     return lookupTableAddress;
   } catch (err) {
