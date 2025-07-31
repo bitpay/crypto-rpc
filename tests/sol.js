@@ -750,10 +750,13 @@ describe('SOL Tests', () => {
           expect(result).to.have.property('lamports').that.is.a('number').greaterThan(0);
           expect(result).to.have.property('atas').that.is.an('array').with.length(0);
         });
-        it('returns null if provided address is not found onchain', async () => {
+        it('returns an object with lamports 0 if provided address is not found onchain', async () => {
           const newKeypair = await SolKit.generateKeyPairSigner();
           const result = await solRpc.getAccountInfo({ address: newKeypair.address });
-          expect(result).to.be.null;
+          expect(result).to.be.an('object');
+          expect(result).not.to.be.null;
+          expect(result).to.have.property('lamports').that.equals(0);
+          expect(result).to.have.property('atas').that.is.an('array').with.length(0);
         });
         it('throws error if provided address is ATA address', async () => {
           const ata = await createAta({ solRpc, owner: testKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
