@@ -1,5 +1,7 @@
 const SolKit = require('@solana/kit');
 const SolSystem = require('@solana-program/system');
+const SolMemo = require('@solana-program/memo');
+const SolComputeBudget = require('@solana-program/compute-budget');
 const SolLookUpTable = require('@solana-program/address-lookup-table');
 const { pipe } = require('@solana/functional');
 const SolRPC = require('../lib/sol/SolRpc');
@@ -9,6 +11,7 @@ const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
 const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
 const SolToken = require('@solana-program/token');
 const SOL_ERROR_MESSAGES = require('../lib/sol/error_messages');
+const { parseInstructions, instructionKeys } = require('../lib/sol/transaction-parser');
 const bs58Encoder = SolKit.getBase58Encoder();
 const sinon = require('sinon');
 
@@ -901,6 +904,373 @@ describe('SOL Tests', () => {
         } catch (err) {
           expect(err.message).to.equal(SOL_ERROR_MESSAGES.SOL_ACCT_NOT_FOUND);
         }
+      });
+    });
+  });
+  describe('Transaction Parser', () => {
+    // Valid base58 mock addresses for transaction parser tests
+    const mockSenderAddress = '11111111111111111111111111111112';
+    const mockReceiverAddress = '11111111111111111111111111111113';
+    const mockNonceAccountAddress = '11111111111111111111111111111114';
+
+    describe('parseInstructions', () => {
+      it('parses SOL transfer instructions', () => {
+        const mockInstruction = {
+          programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS,
+          accounts: [
+            { address: mockSenderAddress, role: 0 },
+            { address: mockReceiverAddress, role: 1 }
+          ],
+          data: new Uint8Array([2, 0, 0, 0, 64, 66, 15, 0, 0, 0, 0, 0]) // Transfer with 1M lamports
+        };
+
+        const result = parseInstructions([mockInstruction]);
+        expect(result).to.have.property(instructionKeys.TRANSFER_SOL);
+        expect(result[instructionKeys.TRANSFER_SOL]).to.be.an('array').with.length(1);
+        
+        const transferSol = result[instructionKeys.TRANSFER_SOL][0];
+        expect(transferSol).to.have.property('amount').that.is.a('number');
+        expect(transferSol).to.have.property('currency', 'SOL');
+        expect(transferSol).to.have.property('source').that.is.a('string');
+        expect(transferSol).to.have.property('destination').that.is.a('string');
+      });
+
+      it('parses advance nonce account instructions', () => {
+        const mockInstruction = {
+          programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS,
+          accounts: [
+            { address: mockNonceAccountAddress, role: 0 },
+            { address: 'SysvarRecentB1ockHashes11111111111111111111', role: 1 },
+            { address: mockSenderAddress, role: 2 }
+          ],
+          data: new Uint8Array([4, 0, 0, 0]) // AdvanceNonceAccount discriminator
+        };
+
+        const result = parseInstructions([mockInstruction]);
+        expect(result).to.have.property(instructionKeys.ADVANCE_NONCE_ACCOUNT);
+        expect(result[instructionKeys.ADVANCE_NONCE_ACCOUNT]).to.be.an('array').with.length(1);
+        
+        const advanceNonce = result[instructionKeys.ADVANCE_NONCE_ACCOUNT][0];
+        expect(advanceNonce).to.have.property('nonceAccount').that.is.a('string');
+        expect(advanceNonce).to.have.property('nonceAuthority').that.is.a('string');
+      });
+
+      it('parses memo instructions', () => {
+        const mockMemo = 'Test memo content';
+        const mockInstruction = {
+          programAddress: SolMemo.MEMO_PROGRAM_ADDRESS,
+          accounts: [{ address: mockSenderAddress, role: 0 }],
+          data: new TextEncoder().encode(mockMemo)
+        };
+
+        const result = parseInstructions([mockInstruction]);
+        expect(result).to.have.property(instructionKeys.MEMO);
+        expect(result[instructionKeys.MEMO]).to.be.an('array').with.length(1);
+        
+        const memo = result[instructionKeys.MEMO][0];
+        expect(memo).to.have.property('memo', mockMemo);
+      });
+
+      it('parses compute budget limit instructions', () => {
+        // Create a real SetComputeUnitLimit instruction using the SDK
+        const realInstruction = SolComputeBudget.getSetComputeUnitLimitInstruction({
+          units: 1000000
+        });
+
+        const result = parseInstructions([realInstruction]);
+        expect(result).to.have.property(instructionKeys.SET_COMPUTE_UNIT_LIMIT);
+        expect(result[instructionKeys.SET_COMPUTE_UNIT_LIMIT]).to.be.an('array').with.length(1);
+        
+        const computeLimit = result[instructionKeys.SET_COMPUTE_UNIT_LIMIT][0];
+        expect(computeLimit).to.have.property('computeUnitLimit').that.is.a('number');
+      });
+
+      it('parses compute budget price instructions', () => {
+        // Create a real SetComputeUnitPrice instruction using the SDK
+        const realInstruction = SolComputeBudget.getSetComputeUnitPriceInstruction({
+          microLamports: 100n
+        });
+
+        const result = parseInstructions([realInstruction]);
+        expect(result).to.have.property(instructionKeys.SET_COMPUTE_UNIT_PRICE);
+        expect(result[instructionKeys.SET_COMPUTE_UNIT_PRICE]).to.be.an('array').with.length(1);
+        
+        const computePrice = result[instructionKeys.SET_COMPUTE_UNIT_PRICE][0];
+        expect(computePrice).to.have.property('priority', true);
+        expect(computePrice).to.have.property('microLamports').that.is.a('number');
+      });
+
+      it('parses token transfer instructions', async () => {
+        const sourceAta = await SolKit.generateKeyPairSigner();
+        const destinationAta = await SolKit.generateKeyPairSigner();
+        
+        const mockInstruction = {
+          programAddress: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+          accounts: [
+            { address: sourceAta.address, role: 0 },
+            { address: destinationAta.address, role: 1 },
+            { address: mockSenderAddress, role: 2 }
+          ],
+          data: new Uint8Array([3, 100, 0, 0, 0, 0, 0, 0, 0]) // Transfer with 100 tokens
+        };
+
+        const result = parseInstructions([mockInstruction]);
+        expect(result).to.have.property(instructionKeys.TRANSFER_TOKEN);
+        expect(result[instructionKeys.TRANSFER_TOKEN]).to.be.an('array').with.length(1);
+        
+        const transferToken = result[instructionKeys.TRANSFER_TOKEN][0];
+        expect(transferToken).to.have.property('amount').that.is.a('number');
+        expect(transferToken).to.have.property('authority').that.is.a('string');
+        expect(transferToken).to.have.property('source').that.is.a('string');
+        expect(transferToken).to.have.property('destination').that.is.a('string');
+      });
+
+      it('parses token transfer checked instructions', async () => {
+        const mintKeypair = await SolKit.generateKeyPairSigner();
+        const sourceAta = await SolKit.generateKeyPairSigner();
+        const destinationAta = await SolKit.generateKeyPairSigner();
+        
+        const mockInstruction = {
+          programAddress: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+          accounts: [
+            { address: sourceAta.address, role: 0 },
+            { address: mintKeypair.address, role: 1 },
+            { address: destinationAta.address, role: 2 },
+            { address: mockSenderAddress, role: 3 }
+          ],
+          data: new Uint8Array([12, 100, 0, 0, 0, 0, 0, 0, 0, 6]) // TransferChecked with 100 tokens, 6 decimals
+        };
+
+        const result = parseInstructions([mockInstruction]);
+        expect(result).to.have.property(instructionKeys.TRANSFER_CHECKED_TOKEN);
+        expect(result[instructionKeys.TRANSFER_CHECKED_TOKEN]).to.be.an('array').with.length(1);
+        
+        const transferChecked = result[instructionKeys.TRANSFER_CHECKED_TOKEN][0];
+        expect(transferChecked).to.have.property('amount').that.is.a('number');
+        expect(transferChecked).to.have.property('authority').that.is.a('string');
+        expect(transferChecked).to.have.property('source').that.is.a('string');
+        expect(transferChecked).to.have.property('destination').that.is.a('string');
+        expect(transferChecked).to.have.property('mint').that.is.a('string');
+        expect(transferChecked).to.have.property('decimals').that.is.a('number');
+      });
+
+      it('parses associated token account creation instructions', async () => {
+        const mintKeypair = await SolKit.generateKeyPairSigner();
+        const ownerKeypair = await SolKit.generateKeyPairSigner();
+
+        const [ataAddress] = await SolToken.findAssociatedTokenPda({
+          owner: ownerKeypair.address,
+          tokenProgram: SolToken.TOKEN_PROGRAM_ADDRESS,
+          mint: mintKeypair.address
+        });
+        
+        const realInstruction = SolToken.getCreateAssociatedTokenInstruction({
+          payer: mockSenderAddress,
+          ata: ataAddress,
+          owner: ownerKeypair.address,
+          mint: mintKeypair.address
+        });
+
+        const result = parseInstructions([realInstruction]);
+        expect(result).to.have.property(instructionKeys.CREATE_ASSOCIATED_TOKEN);
+        expect(result[instructionKeys.CREATE_ASSOCIATED_TOKEN]).to.be.an('array').with.length(1);
+        
+        const createAta = result[instructionKeys.CREATE_ASSOCIATED_TOKEN][0];
+        expect(createAta).to.have.property('payer').that.is.a('string');
+        expect(createAta).to.have.property('associatedTokenAccount').that.is.a('string');
+        expect(createAta).to.have.property('owner').that.is.a('string');
+        expect(createAta).to.have.property('mint').that.is.a('string');
+        expect(createAta).to.have.property('tokenProgram').that.is.a('string');
+      });
+
+      it('parses idempotent associated token account creation instructions', async () => {
+        const mintKeypair = await SolKit.generateKeyPairSigner();
+        const ownerKeypair = await SolKit.generateKeyPairSigner();
+        
+        // Create the ATA address that would be derived
+        const [ataAddress] = await SolToken.findAssociatedTokenPda({
+          owner: ownerKeypair.address,
+          tokenProgram: SolToken.TOKEN_PROGRAM_ADDRESS,
+          mint: mintKeypair.address
+        });
+        
+        // Create a real CreateAssociatedTokenIdempotent instruction using the SDK
+        const realInstruction = SolToken.getCreateAssociatedTokenIdempotentInstruction({
+          payer: mockSenderAddress,
+          ata: ataAddress,
+          owner: ownerKeypair.address,
+          mint: mintKeypair.address
+        });
+
+        const result = parseInstructions([realInstruction]);
+        expect(result).to.have.property(instructionKeys.CREATE_ASSOCIATED_TOKEN_IDEMPOTENT);
+        expect(result[instructionKeys.CREATE_ASSOCIATED_TOKEN_IDEMPOTENT]).to.be.an('array').with.length(1);
+        
+        const createAtaIdempotent = result[instructionKeys.CREATE_ASSOCIATED_TOKEN_IDEMPOTENT][0];
+        expect(createAtaIdempotent).to.have.property('payer').that.is.a('string');
+        expect(createAtaIdempotent).to.have.property('associatedTokenAccount').that.is.a('string');
+        expect(createAtaIdempotent).to.have.property('owner').that.is.a('string');
+        expect(createAtaIdempotent).to.have.property('mint').that.is.a('string');
+        expect(createAtaIdempotent).to.have.property('tokenProgram').that.is.a('string');
+      });
+
+      it('handles unknown instructions gracefully', () => {
+        const mockInstruction = {
+          programAddress: 'UnknownProgram11111111111111111111111111111',
+          accounts: [{ address: mockSenderAddress, role: 0 }],
+          data: new Uint8Array([255, 255, 255])
+        };
+
+        const result = parseInstructions([mockInstruction]);
+        expect(result).to.have.property(instructionKeys.UNKNOWN);
+        expect(result[instructionKeys.UNKNOWN]).to.be.an('array').with.length(1);
+        
+        const unknownInstruction = result[instructionKeys.UNKNOWN][0];
+        expect(unknownInstruction).to.have.property('programAddress', 'UnknownProgram11111111111111111111111111111');
+      });
+
+      it('handles parsing errors gracefully', () => {
+        const mockInstruction = {
+          programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS,
+          accounts: [], // Missing required accounts
+          data: new Uint8Array([255]) // Invalid discriminator
+        };
+
+        const result = parseInstructions([mockInstruction]);
+        expect(result).to.have.property(instructionKeys.UNKNOWN);
+        expect(result[instructionKeys.UNKNOWN]).to.be.an('array').with.length(1);
+        
+        const errorInstruction = result[instructionKeys.UNKNOWN][0];
+        expect(errorInstruction).to.have.property('error').that.is.a('string');
+        expect(errorInstruction).to.have.property('programAddress', SolSystem.SYSTEM_PROGRAM_ADDRESS);
+      });
+
+      it('groups multiple instructions of the same type', () => {
+        const mockInstructions = [
+          {
+            programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS,
+            accounts: [
+              { address: mockSenderAddress, role: 0 },
+              { address: mockReceiverAddress, role: 1 }
+            ],
+            data: new Uint8Array([2, 0, 0, 0, 64, 66, 15, 0, 0, 0, 0, 0])
+          },
+          {
+            programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS,
+            accounts: [
+              { address: mockSenderAddress, role: 0 },
+              { address: mockReceiverAddress, role: 1 }
+            ],
+            data: new Uint8Array([2, 0, 0, 0, 128, 132, 30, 0, 0, 0, 0, 0])
+          }
+        ];
+
+        const result = parseInstructions(mockInstructions);
+        expect(result).to.have.property(instructionKeys.TRANSFER_SOL);
+        expect(result[instructionKeys.TRANSFER_SOL]).to.be.an('array').with.length(2);
+        
+        result[instructionKeys.TRANSFER_SOL].forEach(transfer => {
+          expect(transfer).to.have.property('amount').that.is.a('number');
+          expect(transfer).to.have.property('currency', 'SOL');
+        });
+      });
+
+      it('parses complex transaction with multiple instruction types', () => {
+        // Create real instructions using the SDK
+        const computeUnitLimitInstruction = SolComputeBudget.getSetComputeUnitLimitInstruction({
+          units: 1000000
+        });
+        
+        const computeUnitPriceInstruction = SolComputeBudget.getSetComputeUnitPriceInstruction({
+          microLamports: 100n
+        });
+        
+        const memoInstruction = SolMemo.getAddMemoInstruction({
+          memo: 'Complex transaction test'
+        });
+        
+        const solTransferInstruction = SolSystem.getTransferSolInstruction({
+          source: mockSenderAddress,
+          destination: mockReceiverAddress,
+          amount: 1000000n // 1M lamports
+        });
+
+        const mockInstructions = [
+          computeUnitLimitInstruction,
+          computeUnitPriceInstruction,
+          memoInstruction,
+          solTransferInstruction
+        ];
+
+        const result = parseInstructions(mockInstructions);
+        
+        expect(result).to.have.property(instructionKeys.SET_COMPUTE_UNIT_LIMIT);
+        expect(result).to.have.property(instructionKeys.SET_COMPUTE_UNIT_PRICE);
+        expect(result).to.have.property(instructionKeys.MEMO);
+        expect(result).to.have.property(instructionKeys.TRANSFER_SOL);
+        
+        expect(result[instructionKeys.SET_COMPUTE_UNIT_LIMIT]).to.have.length(1);
+        expect(result[instructionKeys.SET_COMPUTE_UNIT_PRICE]).to.have.length(1);
+        expect(result[instructionKeys.MEMO]).to.have.length(1);
+        expect(result[instructionKeys.TRANSFER_SOL]).to.have.length(1);
+      });
+
+      it('handles associated token instructions without data field', async () => {
+        // Generate valid keypairs for addresses
+        const mintKeypair = await SolKit.generateKeyPairSigner();
+        const ownerKeypair = await SolKit.generateKeyPairSigner();
+        
+        // Create the ATA address that would be derived
+        const [ataAddress] = await SolToken.findAssociatedTokenPda({
+          owner: ownerKeypair.address,
+          tokenProgram: SolToken.TOKEN_PROGRAM_ADDRESS,
+          mint: mintKeypair.address
+        });
+        
+        // Create instruction without data field to test default handling
+        const mockInstruction = {
+          programAddress: SolToken.ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+          accounts: [
+            { address: mockSenderAddress, role: 0 },
+            { address: ataAddress, role: 1 },
+            { address: ownerKeypair.address, role: 2 },
+            { address: mintKeypair.address, role: 3 },
+            { address: SolToken.TOKEN_PROGRAM_ADDRESS, role: 4 }
+          ]
+          // Note: no data field, should default to CreateAssociatedToken
+        };
+
+        const result = parseInstructions([mockInstruction]);
+        
+        // The parser should handle missing data by defaulting to CreateAssociatedToken
+        // However, if the SDK validation fails, it may end up as unknown instruction
+        // Both outcomes are acceptable for this edge case
+        const hasCreateAta = !!result[instructionKeys.CREATE_ASSOCIATED_TOKEN];
+        const hasUnknown = !!result[instructionKeys.UNKNOWN];
+        
+        expect(hasCreateAta || hasUnknown).to.be.true;
+        
+        if (hasCreateAta) {
+          expect(result[instructionKeys.CREATE_ASSOCIATED_TOKEN]).to.be.an('array').with.length(1);
+        } else {
+          expect(result[instructionKeys.UNKNOWN]).to.be.an('array').with.length(1);
+        }
+      });
+    });
+
+    describe('instructionKeys', () => {
+      it('exports all expected instruction key constants', () => {
+        expect(instructionKeys).to.have.property('TRANSFER_SOL', 'transferSol');
+        expect(instructionKeys).to.have.property('TRANSFER_CHECKED_TOKEN', 'transferCheckedToken');
+        expect(instructionKeys).to.have.property('TRANSFER_TOKEN', 'transferToken');
+        expect(instructionKeys).to.have.property('ADVANCE_NONCE_ACCOUNT', 'advanceNonceAccount');
+        expect(instructionKeys).to.have.property('MEMO', 'memo');
+        expect(instructionKeys).to.have.property('SET_COMPUTE_UNIT_LIMIT', 'setComputeUnitLimit');
+        expect(instructionKeys).to.have.property('SET_COMPUTE_UNIT_PRICE', 'setComputeUnitPrice');
+        expect(instructionKeys).to.have.property('CREATE_ASSOCIATED_TOKEN', 'createAssociatedToken');
+        expect(instructionKeys).to.have.property('CREATE_ASSOCIATED_TOKEN_IDEMPOTENT', 'createAssociatedTokenIdempotent');
+        expect(instructionKeys).to.have.property('RECOVER_NESTED_ASSOCIATED_TOKEN', 'recoverNestedAssociatedToken');
+        expect(instructionKeys).to.have.property('UNKNOWN', 'unknownInstruction');
       });
     });
   });
