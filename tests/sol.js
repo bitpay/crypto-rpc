@@ -770,6 +770,36 @@ describe('SOL Tests', () => {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_ADD_SENT_INSTEAD_OF_SOL_ADD);
           }
         });
+        it('returns nested ATAs across multiple depths in one run', async function() {
+          // Three atas have to be created - each transaction has to be finalized before the next can be created
+          this.timeout(60e3);
+          // Create three-level nested ATA graph for a single mint
+          const ataLevel1 = await createAta({ solRpc, owner: testKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
+          const ataLevel2 = await createAta({ solRpc, owner: ataLevel1, mint: mintKeypair.address, payer: senderKeypair });
+          const ataLevel3 = await createAta({ solRpc, owner: ataLevel2, mint: mintKeypair.address, payer: senderKeypair });
+
+          const result = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
+          expect(result).to.be.an('object');
+          expect(result).to.have.property('atas').that.is.an('array').with.length.greaterThan(0);
+
+          const findAtaNode = (nodes, targetPubkey) => {
+            for (const node of nodes) {
+              if (node.pubkey === targetPubkey) return node;
+              if (node.atas && node.atas.length) {
+                const found = findAtaNode(node.atas, targetPubkey);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+
+          const node1 = findAtaNode(result.atas, ataLevel1);
+          expect(node1).to.be.an('object');
+          const node2 = findAtaNode(node1.atas || [], ataLevel2);
+          expect(node2).to.be.an('object');
+          const node3 = findAtaNode(node2.atas || [], ataLevel3);
+          expect(node3).to.be.an('object');
+        });
       });
     });
 
