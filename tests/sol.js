@@ -769,7 +769,7 @@ describe('SOL Tests', () => {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_ADD_SENT_INSTEAD_OF_SOL_ADD);
           }
         });
-        it.only('returns nested ATAs across multiple depths in one run', async function() {
+        it('returns nested ATAs across multiple depths in one run', async function() {
           // !! NOTE !! This is a large test because it involves some sequencing and testing along the way
 
           // Three atas have to be created - each transaction has to be finalized before the next can be created
@@ -887,8 +887,8 @@ describe('SOL Tests', () => {
           getTokenAccountsByOwnerSpy.resetHistory();
 
           // Test maxDepth: 3 - should make 3 calls total (2 recursions)
-          const result_4_3 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 3 });
-          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(3);
+          const result_4_3 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(4); // 1: base SOL acct, 2: SOL ATA, 3: SOL ATA ATA, 4: base case
           expect(result_4_3).to.have.property('atas').that.is.an('array').with.length(1);
           expect(result_4_3.atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
           expect(result_4_3.atas[0].atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
