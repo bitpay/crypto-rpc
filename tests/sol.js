@@ -583,8 +583,7 @@ describe('SOL Tests', () => {
     });
 
     describe('Mint tests (requires waiting for transaction finalization in places)', function() {
-      const REQUIRED_FRESH_ACCOUNT_NUMBER = 15; // This number should be updated to reflect the number of TESTS (not required test accounts) in this block
-      /** @type {SolKit.KeyPairSigner<string>} */
+      const REQUIRED_FRESH_ACCOUNT_NUMBER = 16; // This number should be updated to reflect the number of TESTS (not required test accounts) in this block
       let mintKeypair;
       let resolvedCreateAccountArray;
       let resolvedCreateAccountIndex = 0;
@@ -770,13 +769,55 @@ describe('SOL Tests', () => {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_ADD_SENT_INSTEAD_OF_SOL_ADD);
           }
         });
-        it('returns nested ATAs across multiple depths in one run', async function() {
+        it.only('returns nested ATAs across multiple depths in one run', async function() {
+          // !! NOTE !! This is a large test because it involves some sequencing and testing along the way
+
           // Three atas have to be created - each transaction has to be finalized before the next can be created
           this.timeout(60e3);
-          // Create three-level nested ATA graph for a single mint
+
+          /**
+           * TEST BLOCK 1: No ATAS
+           */ 
+          // Test 1.1: infinite max depth
+          const result_1_1 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
+          // expect solRpc.getTokenAccountsByOwner should be called ONCE
+          // expect result*.atas to be an array with length 0
+
+          // Test 1.2: max depth greater than expected number of getTokenAccountsByOwner calls
+          const result_1_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 6 });
+          // expect solRpc.getTokenAccountsByOwner should be called ONCE
+          // expect result*.atas to be an array with length 0
+
+
+          /**
+           * TEST BLOCK 2: One ATA
+           */
           const ataLevel1 = await createAta({ solRpc, owner: testKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
+          // Test 2.1: infinite max depth
+          const result_2_1 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
+          // expect solRpc.getTokenAccountsByOwner should be called TWICE
+          // expect result*.atas to be an array with length 1
+          // expect result*.atas to have nested atas with length 0
+
+          // Test 2.2: max depth greater than expected number of getTokenAccountsByOwner calls
+          const result_2_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 6 });
+          // expect solRpc.getTokenAccountsByOwner should be called TWICE
+          // expect result*.atas to be an array with length 1
+          // expect result*.atas to have nested atas with length 0
+
+          /**
+           * TEST BLOCK 3: One ATA once-nested
+           */
           const ataLevel2 = await createAta({ solRpc, owner: ataLevel1, mint: mintKeypair.address, payer: senderKeypair });
+          // similar tests as above, result_3_1 and result_3_2
+          const result_3_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 1 });
+          // NEW test: there will be 1 ata, but its nesteds won't exist (or something)
+
+          /**
+           * TEST BLOCK 4: One ATA twice-nested
+           */
           const ataLevel3 = await createAta({ solRpc, owner: ataLevel2, mint: mintKeypair.address, payer: senderKeypair });
+          // similar tests as above. Test maxDepth: 1 and max depth 2 though
 
           const result = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
           expect(result).to.be.an('object');
