@@ -583,8 +583,7 @@ describe('SOL Tests', () => {
     });
 
     describe('Mint tests (requires waiting for transaction finalization in places)', function() {
-      const REQUIRED_FRESH_ACCOUNT_NUMBER = 15; // This number should be updated to reflect the number of TESTS (not required test accounts) in this block
-      /** @type {SolKit.KeyPairSigner<string>} */
+      const REQUIRED_FRESH_ACCOUNT_NUMBER = 16; // This number should be updated to reflect the number of TESTS (not required test accounts) in this block
       let mintKeypair;
       let resolvedCreateAccountArray;
       let resolvedCreateAccountIndex = 0;
@@ -769,6 +768,134 @@ describe('SOL Tests', () => {
           } catch (err) {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_ADD_SENT_INSTEAD_OF_SOL_ADD);
           }
+        });
+        it('returns nested ATAs across multiple depths in one run', async function() {
+          // !! NOTE !! This is a large test because it involves some sequencing and testing along the way
+
+          // Three atas have to be created - each transaction has to be finalized before the next can be created
+          this.timeout(60e3);
+
+          // Set up spy on getTokenAccountsByOwner
+          let getTokenAccountsByOwnerSpy = sinon.spy(solRpc, 'getTokenAccountsByOwner');
+
+          /**
+           * TEST BLOCK 1: No ATAS
+           */ 
+          // Test 1.1: infinite max depth
+          const result_1_1 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
+          // expect solRpc.getTokenAccountsByOwner should be called ONCE
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(1);
+          // expect result*.atas to be an array with length 0
+          expect(result_1_1).to.have.property('atas').that.is.an('array').with.length(0);
+
+          getTokenAccountsByOwnerSpy.resetHistory();
+
+          // Test 1.2: max depth greater than expected number of getTokenAccountsByOwner calls
+          const result_1_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 6 });
+          // expect solRpc.getTokenAccountsByOwner should be called ONCE
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(1);
+          // expect result*.atas to be an array with length 0
+          expect(result_1_2).to.have.property('atas').that.is.an('array').with.length(0);
+
+          getTokenAccountsByOwnerSpy.resetHistory();
+
+          /**
+           * TEST BLOCK 2: One ATA
+           */
+          const ataLevel1 = await createAta({ solRpc, owner: testKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
+          
+          // Test 2.1: infinite max depth
+          const result_2_1 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
+          // expect solRpc.getTokenAccountsByOwner should be called TWICE
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(2);
+          // expect result*.atas to be an array with length 1
+          expect(result_2_1).to.have.property('atas').that.is.an('array').with.length(1);
+          // expect result*.atas to have nested atas with length 0
+          expect(result_2_1.atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
+
+          getTokenAccountsByOwnerSpy.resetHistory();
+
+          // Test 2.2: max depth greater than expected number of getTokenAccountsByOwner calls
+          const result_2_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 6 });
+          // expect solRpc.getTokenAccountsByOwner should be called TWICE
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(2);
+          // expect result*.atas to be an array with length 1
+          expect(result_2_2).to.have.property('atas').that.is.an('array').with.length(1);
+          // expect result*.atas to have nested atas with length 0
+          expect(result_2_2.atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
+
+          getTokenAccountsByOwnerSpy.resetHistory();
+
+          // Test 2.3: maxDepth: 1 - should mean "1 call total" (no recursion)
+          const result_2_3 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 1 });
+          // Should be called only once: just the initial call, no recursion
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(1);
+          expect(result_2_3).to.have.property('atas').that.is.an('array').with.length(1);
+          // The nested atas should be empty because maxDepth: 1 means no recursion
+          expect(result_2_3.atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
+
+          getTokenAccountsByOwnerSpy.resetHistory();
+
+          /**
+           * TEST BLOCK 3: One ATA once-nested
+           */
+          const ataLevel2 = await createAta({ solRpc, owner: ataLevel1, mint: mintKeypair.address, payer: senderKeypair });
+          
+          // Test with maxDepth: 2 - should allow 2 calls total (1 recursion)
+          const result_3_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 2 });
+          // Should be called twice: initial call + 1 recursion
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(2);
+          // Should have 1 ata at root level
+          expect(result_3_2).to.have.property('atas').that.is.an('array').with.length(1);
+          // The nested atas should be empty because we only have 2 levels but maxDepth: 2 stops before level 3
+          expect(result_3_2.atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
+          expect(result_3_2.atas[0].atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
+
+          getTokenAccountsByOwnerSpy.resetHistory();
+
+          // Test 3.1: infinite max depth - should find all nested levels
+          const result_3_1 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
+          // Should be called three times: testKeypair -> ataLevel1 -> ataLevel2
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(3);
+          expect(result_3_1).to.have.property('atas').that.is.an('array').with.length(1);
+          expect(result_3_1.atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
+          expect(result_3_1.atas[0].atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
+
+          getTokenAccountsByOwnerSpy.resetHistory();
+
+          /**
+           * TEST BLOCK 4: One ATA twice-nested
+           */
+          // eslint-disable-next-line no-unused-vars
+          const ataLevel3 = await createAta({ solRpc, owner: ataLevel2, mint: mintKeypair.address, payer: senderKeypair });
+          
+          // Test maxDepth: 1 - should only make 1 call (no recursion)
+          const result_4_1 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 1 });
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(1);
+          expect(result_4_1).to.have.property('atas').that.is.an('array').with.length(1);
+          expect(result_4_1.atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
+
+          getTokenAccountsByOwnerSpy.resetHistory();
+
+          // Test maxDepth: 2 - should make 2 calls total (1 recursion)
+          const result_4_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 2 });
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(2);
+          expect(result_4_2).to.have.property('atas').that.is.an('array').with.length(1);
+          expect(result_4_2.atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
+          expect(result_4_2.atas[0].atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
+
+          getTokenAccountsByOwnerSpy.resetHistory();
+
+          // Test maxDepth: 3 - should make 3 calls total (2 recursions)
+          const result_4_3 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(4); // 1: base SOL acct, 2: SOL ATA, 3: SOL ATA ATA, 4: base case
+          expect(result_4_3).to.have.property('atas').that.is.an('array').with.length(1);
+          expect(result_4_3.atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
+          expect(result_4_3.atas[0].atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
+          expect(result_4_3.atas[0].atas[0].atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
+
+          // Clean up spy
+          getTokenAccountsByOwnerSpy.restore();
         });
       });
     });

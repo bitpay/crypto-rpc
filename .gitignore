@@ -25,3 +25,4 @@ src/dist
 config.js
 blockchain/EVM/build
 blockchain/solana/test/data
+tmp/
