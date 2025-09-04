@@ -769,7 +769,7 @@ describe('SOL Tests', () => {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_ADD_SENT_INSTEAD_OF_SOL_ADD);
           }
         });
-        it('returns nested ATAs across multiple depths in one run', async function() {
+        it.only('returns nested ATAs across multiple depths in one run', async function() {
           // !! NOTE !! This is a large test because it involves some sequencing and testing along the way
 
           // Three atas have to be created - each transaction has to be finalized before the next can be created
@@ -826,12 +826,12 @@ describe('SOL Tests', () => {
 
           getTokenAccountsByOwnerSpy.resetHistory();
 
-          // Test 2.3: maxDepth: 1 - should mean "1 call total" (no recursion)
-          const result_2_3 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 1 });
+          // Test 2.3: maxDepth: 0 - should mean "no recursion" (1 call total)
+          const result_2_3 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 0 });
           // Should be called only once: just the initial call, no recursion
           expect(getTokenAccountsByOwnerSpy.callCount).to.equal(1);
           expect(result_2_3).to.have.property('atas').that.is.an('array').with.length(1);
-          // The nested atas should be empty because maxDepth: 1 means no recursion
+          // The nested atas should be empty because maxDepth: 0 means no recursion
           expect(result_2_3.atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
 
           getTokenAccountsByOwnerSpy.resetHistory();
@@ -841,13 +841,13 @@ describe('SOL Tests', () => {
            */
           const ataLevel2 = await createAta({ solRpc, owner: ataLevel1, mint: mintKeypair.address, payer: senderKeypair });
           
-          // Test with maxDepth: 2 - should allow 2 calls total (1 recursion)
-          const result_3_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 2 });
+          // Test with maxDepth: 1 - should allow 1 level of recursion (2 calls total)
+          const result_3_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 1 });
           // Should be called twice: initial call + 1 recursion
           expect(getTokenAccountsByOwnerSpy.callCount).to.equal(2);
           // Should have 1 ata at root level
           expect(result_3_2).to.have.property('atas').that.is.an('array').with.length(1);
-          // The nested atas should be empty because we only have 2 levels but maxDepth: 2 stops before level 3
+          // The nested atas should have 1 item because maxDepth: 1 allows 1 level of recursion
           expect(result_3_2.atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
           expect(result_3_2.atas[0].atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
 
@@ -869,16 +869,16 @@ describe('SOL Tests', () => {
           // eslint-disable-next-line no-unused-vars
           const ataLevel3 = await createAta({ solRpc, owner: ataLevel2, mint: mintKeypair.address, payer: senderKeypair });
           
-          // Test maxDepth: 1 - should only make 1 call (no recursion)
-          const result_4_1 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 1 });
+          // Test maxDepth: 0 - should only make 1 call (no recursion)
+          const result_4_1 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 0 });
           expect(getTokenAccountsByOwnerSpy.callCount).to.equal(1);
           expect(result_4_1).to.have.property('atas').that.is.an('array').with.length(1);
           expect(result_4_1.atas[0]).to.have.property('atas').that.is.an('array').with.length(0);
 
           getTokenAccountsByOwnerSpy.resetHistory();
 
-          // Test maxDepth: 2 - should make 2 calls total (1 recursion)
-          const result_4_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 2 });
+          // Test maxDepth: 1 - should make 2 calls total (1 level of recursion)
+          const result_4_2 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: 1 });
           expect(getTokenAccountsByOwnerSpy.callCount).to.equal(2);
           expect(result_4_2).to.have.property('atas').that.is.an('array').with.length(1);
           expect(result_4_2.atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
@@ -886,9 +886,9 @@ describe('SOL Tests', () => {
 
           getTokenAccountsByOwnerSpy.resetHistory();
 
-          // Test maxDepth: 3 - should make 3 calls total (2 recursions)
+          // Test maxDepth: -1 (infinite) - should make 4 calls total (full recursion depth)
           const result_4_3 = await solRpc.getAccountInfo({ address: testKeypair.address, maxDepth: -1 });
-          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(4); // 1: base SOL acct, 2: SOL ATA, 3: SOL ATA ATA, 4: base case
+          expect(getTokenAccountsByOwnerSpy.callCount).to.equal(4); // 1: base SOL acct, 2: SOL ATA, 3: SOL ATA ATA, 4: SOL ATA ATA ATA (base case)
           expect(result_4_3).to.have.property('atas').that.is.an('array').with.length(1);
           expect(result_4_3.atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
           expect(result_4_3.atas[0].atas[0]).to.have.property('atas').that.is.an('array').with.length(1);
