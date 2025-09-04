@@ -769,7 +769,7 @@ describe('SOL Tests', () => {
             expect(err.message).to.equal(SOL_ERROR_MESSAGES.ATA_ADD_SENT_INSTEAD_OF_SOL_ADD);
           }
         });
-        it.only('returns nested ATAs across multiple depths in one run', async function() {
+        it('returns nested ATAs across multiple depths in one run', async function() {
           // !! NOTE !! This is a large test because it involves some sequencing and testing along the way
 
           // Three atas have to be created - each transaction has to be finalized before the next can be created
