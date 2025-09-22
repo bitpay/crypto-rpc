@@ -48,6 +48,40 @@ describe('SOL Tests', () => {
       }
     }
 
+    expect(retVal).to.have.property('staticAccounts').that.is.an('array');
+    expect(retVal.staticAccounts.every(acct => typeof acct === 'string')).to.be.true;
+    expect(retVal).to.have.property('meta').that.is.an('object');
+    expect(retVal.meta).to.have.property('preBalances').that.is.an('array');
+    expect(retVal.meta.preBalances.every(bal => typeof bal === 'bigint'));
+    expect(retVal.meta).to.have.property('postBalances').that.is.an('array');
+    expect(retVal.meta.postBalances.every(bal => typeof bal === 'bigint'));
+    expect(retVal.meta).to.have.property('preTokenBalances').that.is.an('array');
+    expect(retVal.meta).to.have.property('postTokenBalances').that.is.an('array');
+    expect(retVal.meta.preTokenBalances.every(bal => {
+      try {
+        return typeof bal.uiTokenAmount.decimals == 'number' && typeof bal.uiTokenAmount.uiAmount == 'number';
+      } catch (err) {
+        return false;
+      }
+    })).to.be.true;
+    expect(retVal.meta.postTokenBalances.every(bal => {
+      try {
+        return typeof bal.uiTokenAmount.decimals == 'number' && typeof bal.uiTokenAmount.uiAmount == 'number';
+      } catch (err) {
+        return false;
+      }
+    })).to.be.true;
+    
+    for (let i = 0; i < retVal.meta.preTokenBalances.length; i++) {
+      try {
+        const preTokenBalanceDecimals = retVal.meta.preTokenBalances[i].decimals;
+        const postTokenBalanceDecimals = retVal.meta.postTokenBalances[i].decimals;
+        expect(preTokenBalanceDecimals).to.equal(postTokenBalanceDecimals);
+      } catch (err) {
+        expect.fail('Pre and post token balances decimals do not align');
+      }
+    }
+
 
     expect(retVal).to.have.property('instructions').that.is.an('object');
     expect(Array.isArray(retVal.instructions)).to.be.false;
@@ -176,7 +210,7 @@ describe('SOL Tests', () => {
           let status = statuses[0];
           let remainingTries = 25;
           while (remainingTries > 0 && status?.confirmationStatus !== 'finalized') {
-            await new Promise(resolve => setTimeout(resolve, 250));
+            await new Promise(resolve => setTimeout(resolve, 350));
             const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
             status = statuses[0];
             remainingTries--;
