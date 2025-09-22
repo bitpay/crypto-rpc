@@ -17,7 +17,8 @@ const sinon = require('sinon');
 
 describe('SOL Tests', () => {
   // Reusable assertion set
-  const assertValidTransaction = (retVal) => {
+  // IFF isGetTransactionCall, check meta
+  const assertValidTransaction = (retVal, isGetTransactionCall = false) => {
     expect(retVal).to.be.an('object');
     expect(retVal).to.have.property('confirmations');
     if (typeof retVal.confirmations === 'number') {
@@ -50,35 +51,37 @@ describe('SOL Tests', () => {
 
     expect(retVal).to.have.property('staticAccounts').that.is.an('array');
     expect(retVal.staticAccounts.every(acct => typeof acct === 'string')).to.be.true;
-    expect(retVal).to.have.property('meta').that.is.an('object');
-    expect(retVal.meta).to.have.property('preBalances').that.is.an('array');
-    expect(retVal.meta.preBalances.every(bal => typeof bal === 'bigint'));
-    expect(retVal.meta).to.have.property('postBalances').that.is.an('array');
-    expect(retVal.meta.postBalances.every(bal => typeof bal === 'bigint'));
-    expect(retVal.meta).to.have.property('preTokenBalances').that.is.an('array');
-    expect(retVal.meta).to.have.property('postTokenBalances').that.is.an('array');
-    expect(retVal.meta.preTokenBalances.every(bal => {
-      try {
-        return typeof bal.uiTokenAmount.decimals == 'number' && typeof bal.uiTokenAmount.uiAmount == 'number';
-      } catch (err) {
-        return false;
-      }
-    })).to.be.true;
-    expect(retVal.meta.postTokenBalances.every(bal => {
-      try {
-        return typeof bal.uiTokenAmount.decimals == 'number' && typeof bal.uiTokenAmount.uiAmount == 'number';
-      } catch (err) {
-        return false;
-      }
-    })).to.be.true;
-    
-    for (let i = 0; i < retVal.meta.preTokenBalances.length; i++) {
-      try {
-        const preTokenBalanceDecimals = retVal.meta.preTokenBalances[i].decimals;
-        const postTokenBalanceDecimals = retVal.meta.postTokenBalances[i].decimals;
-        expect(preTokenBalanceDecimals).to.equal(postTokenBalanceDecimals);
-      } catch (err) {
-        expect.fail('Pre and post token balances decimals do not align');
+    if (isGetTransactionCall) {
+      expect(retVal).to.have.property('meta').that.is.an('object');
+      expect(retVal.meta).to.have.property('preBalances').that.is.an('array');
+      expect(retVal.meta.preBalances.every(bal => typeof bal === 'bigint'));
+      expect(retVal.meta).to.have.property('postBalances').that.is.an('array');
+      expect(retVal.meta.postBalances.every(bal => typeof bal === 'bigint'));
+      expect(retVal.meta).to.have.property('preTokenBalances').that.is.an('array');
+      expect(retVal.meta).to.have.property('postTokenBalances').that.is.an('array');
+      expect(retVal.meta.preTokenBalances.every(bal => {
+        try {
+          return typeof bal.uiTokenAmount.decimals == 'number' && typeof bal.uiTokenAmount.uiAmount == 'number';
+        } catch (err) {
+          return false;
+        }
+      })).to.be.true;
+      expect(retVal.meta.postTokenBalances.every(bal => {
+        try {
+          return typeof bal.uiTokenAmount.decimals == 'number' && typeof bal.uiTokenAmount.uiAmount == 'number';
+        } catch (err) {
+          return false;
+        }
+      })).to.be.true;
+      
+      for (let i = 0; i < retVal.meta.preTokenBalances.length; i++) {
+        try {
+          const preTokenBalanceDecimals = retVal.meta.preTokenBalances[i].decimals;
+          const postTokenBalanceDecimals = retVal.meta.postTokenBalances[i].decimals;
+          expect(preTokenBalanceDecimals).to.equal(postTokenBalanceDecimals);
+        } catch (err) {
+          expect.fail('Pre and post token balances decimals do not align');
+        }
       }
     }
 
@@ -199,30 +202,6 @@ describe('SOL Tests', () => {
       if (health !== 'ok') {
         throw new Error('Healthcheck failed - rpc connection not correctly established');
       }
-
-      // Airdrop if no money on sender
-      /*
-      const addresses = [senderKeypair.address, receiverKeypair.address];
-      for (const address of addresses) {
-        const { value: balance } = await solRpc.rpc.getBalance(address).send();
-        if (Number(balance) < 1e10) {
-          const airdropSignature = await solRpc.rpc.requestAirdrop(address, 1e10).send();
-          const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
-          let status = statuses[0];
-          let remainingTries = 25;
-          while (remainingTries > 0 && status?.confirmationStatus !== 'finalized') {
-            await new Promise(resolve => setTimeout(resolve, 350));
-            const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
-            status = statuses[0];
-            remainingTries--;
-          }
-
-          if (status !== 'finalized') {
-            throw new Error('Balance top-off was not finalized in the specified time interval');
-          }
-        }
-      }
-      */
 
       // Create nonce account
       nonceAccountKeypair = await SolKit.generateKeyPairSigner();
@@ -421,13 +400,13 @@ describe('SOL Tests', () => {
 
       it('returns a versioned transaction if provided a valid transaction id', async () => {
         const retVal = await solRpc.getTransaction({ txid: versioned_txid });
-        assertValidTransaction(retVal);
+        assertValidTransaction(retVal, true);
       });
 
       it('returns a legacy transaction if provided a valid transaction id', async () => {
         const retVal = await solRpc.getTransaction({ txid: legacy_txid });
         expect(retVal.version).to.equal('legacy');
-        assertValidTransaction(retVal);
+        assertValidTransaction(retVal, true);
       });
 
       describe('lookup table tests', () => {
@@ -441,7 +420,7 @@ describe('SOL Tests', () => {
           const txid = await sendTransactionUsingLookupTables({ solRpc, fromKeypair: senderKeypair, toKeypair: receiverKeypair, version: 0, lookupTableAddress });
 
           const retVal = await solRpc.getTransaction({ txid });
-          assertValidTransaction(retVal);
+          assertValidTransaction(retVal, true);
         });
       });
     });
@@ -462,7 +441,7 @@ describe('SOL Tests', () => {
         const transactions = await solRpc.getTransactions({ address: targetKeypair.address });
         expect(transactions).to.be.an('array');
         transactions.forEach(transaction => {
-          assertValidTransaction(transaction);
+          assertValidTransaction(transaction, true);
         });
       });
     }, 5e3);
@@ -503,7 +482,7 @@ describe('SOL Tests', () => {
       it('returns a decoded raw transaction', async () => {
         const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
         const decodedRawTransaction = await solRpc.decodeRawTransaction({ rawTx });
-        assertValidTransaction(decodedRawTransaction);
+        assertValidTransaction(decodedRawTransaction, false);
       });
     });
 
