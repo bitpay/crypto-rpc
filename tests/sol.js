@@ -73,14 +73,38 @@ describe('SOL Tests', () => {
           return false;
         }
       })).to.be.true;
-      
-      for (let i = 0; i < retVal.meta.preTokenBalances.length; i++) {
-        try {
-          const preTokenBalanceDecimals = retVal.meta.preTokenBalances[i].decimals;
-          const postTokenBalanceDecimals = retVal.meta.postTokenBalances[i].decimals;
-          expect(preTokenBalanceDecimals).to.equal(postTokenBalanceDecimals);
-        } catch (err) {
-          expect.fail('Pre and post token balances decimals do not align');
+
+      for (const preTokenBalance of retVal.meta.preTokenBalances) {
+        expect(preTokenBalance).to.be.an('object');
+        expect(preTokenBalance).to.have.property('accountIndex').that.is.a('number').greaterThanOrEqual(0);
+        expect(preTokenBalance).to.have.property('uiTokenAmount').that.is.an('object');
+        const { uiTokenAmount } = preTokenBalance;
+        expect(uiTokenAmount).to.have.property('decimals').that.is.a('number');
+        expect(uiTokenAmount).to.have.property('uiAmount').that.is.a('bigint');
+
+        const accountIndex = preTokenBalance.accountIndex;
+        const matchingPostTokenBalance = retVal.meta.postTokenBalances.find(bal => bal.accountIndex == accountIndex);
+        // NOTE: Future proofing for potential checks on open/close ATA
+        if (matchingPostTokenBalance) {
+          expect(matchingPostTokenBalance.uiTokenAmount?.decimals).not.to.be.undefined;
+          expect(uiTokenAmount.decimals).to.equal(matchingPostTokenBalance.uiTokenAmount.decimals);
+        }
+      }
+
+      for (const postTokenBalance of retVal.meta.postTokenBalances) {
+        expect(postTokenBalance).to.be.an('object');
+        expect(postTokenBalance).to.have.property('accountIndex').that.is.a('number').greaterThanOrEqual(0);
+        expect(postTokenBalance).to.have.property('uiTokenAmount').that.is.an('object');
+        const { uiTokenAmount } = postTokenBalance;
+        expect(uiTokenAmount).to.have.property('decimals').that.is.a('number');
+        expect(uiTokenAmount).to.have.property('uiAmount').that.is.a('bigint');
+
+        const accountIndex = postTokenBalance.accountIndex;
+        const matchingPreTokenBalance = retVal.meta.preTokenBalances.find(bal => bal.accountIndex == accountIndex);
+        // NOTE: Future proofing for potential checks on open/close ATA
+        if (matchingPreTokenBalance) {
+          expect(matchingPreTokenBalance.uiTokenAmount?.decimals).not.to.be.undefined;
+          expect(uiTokenAmount.decimals).to.equal(matchingPreTokenBalance.uiTokenAmount.decimals);
         }
       }
     }
@@ -201,6 +225,28 @@ describe('SOL Tests', () => {
       const health = await solRpc.rpc.getHealth().send();
       if (health !== 'ok') {
         throw new Error('Healthcheck failed - rpc connection not correctly established');
+      }
+
+      // Airdrop if no money on sender - !! NOTE !! this will fail after 25 seconds worth of checks
+      const addresses = [senderKeypair.address, receiverKeypair.address];
+      for (const address of addresses) {
+        const { value: balance } = await solRpc.rpc.getBalance(address).send();
+        if (Number(balance) < 1e10) {
+          const airdropSignature = await solRpc.rpc.requestAirdrop(address, 1e10).send();
+          const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
+          let status = statuses[0];
+          let remainingTries = 50;
+          while (remainingTries > 0 && status?.confirmationStatus !== 'finalized') {
+            await new Promise(resolve => setTimeout(resolve, 250));
+            const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
+            status = statuses[0];
+            remainingTries--;
+          }
+
+          if (status !== 'finalized') {
+            throw new Error('Balance top-off was not finalized in the specified time interval');
+          }
+        }
       }
 
       // Create nonce account
