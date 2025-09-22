@@ -201,6 +201,7 @@ describe('SOL Tests', () => {
       }
 
       // Airdrop if no money on sender
+      /*
       const addresses = [senderKeypair.address, receiverKeypair.address];
       for (const address of addresses) {
         const { value: balance } = await solRpc.rpc.getBalance(address).send();
@@ -221,6 +222,7 @@ describe('SOL Tests', () => {
           }
         }
       }
+      */
 
       // Create nonce account
       nonceAccountKeypair = await SolKit.generateKeyPairSigner();
