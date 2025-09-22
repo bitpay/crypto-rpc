@@ -54,9 +54,9 @@ describe('SOL Tests', () => {
     if (isGetTransactionCall) {
       expect(retVal).to.have.property('meta').that.is.an('object');
       expect(retVal.meta).to.have.property('preBalances').that.is.an('array');
-      expect(retVal.meta.preBalances.every(bal => typeof bal === 'bigint'));
+      expect(retVal.meta.preBalances.every(bal => typeof bal === 'bigint')).to.be.true;
       expect(retVal.meta).to.have.property('postBalances').that.is.an('array');
-      expect(retVal.meta.postBalances.every(bal => typeof bal === 'bigint'));
+      expect(retVal.meta.postBalances.every(bal => typeof bal === 'bigint')).to.be.true;
       expect(retVal.meta).to.have.property('preTokenBalances').that.is.an('array');
       expect(retVal.meta).to.have.property('postTokenBalances').that.is.an('array');
       expect(retVal.meta.preTokenBalances.every(bal => {
