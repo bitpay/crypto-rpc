@@ -49,8 +49,8 @@ describe('SOL Tests', () => {
       }
     }
 
-    expect(retVal).to.have.property('staticAccounts').that.is.an('array');
-    expect(retVal.staticAccounts.every(acct => typeof acct === 'string')).to.be.true;
+    expect(retVal).to.have.property('accountKeys').that.is.an('array');
+    expect(retVal.accountKeys.every(acct => typeof acct === 'string')).to.be.true;
     if (isGetTransactionCall) {
       expect(retVal).to.have.property('meta').that.is.an('object');
       expect(retVal.meta).to.have.property('preBalances').that.is.an('array');

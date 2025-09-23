@@ -19,10 +19,10 @@ describe('SPL Tests', () => {
 
   const assertBalanceDetails = ({ transaction, txInput }) => {
     expect(transaction).to.be.an('object').that.is.not.null;
-    expect(transaction).to.have.property('staticAccounts').that.is.an('array');
-    expect(transaction.staticAccounts.every(acct => typeof acct === 'string')).to.be.true;
-    expect(transaction.staticAccounts).to.include(txInput.destinationAta);
-    const destinationAtaIndex = transaction.staticAccounts.findIndex(acct => acct == txInput.destinationAta);
+    expect(transaction).to.have.property('accountKeys').that.is.an('array');
+    expect(transaction.accountKeys.every(acct => typeof acct === 'string')).to.be.true;
+    expect(transaction.accountKeys).to.include(txInput.destinationAta);
+    const destinationAtaIndex = transaction.accountKeys.findIndex(acct => acct == txInput.destinationAta);
 
     expect(transaction).to.have.property('meta').that.is.an('object').that.is.not.null;
     expect(transaction.meta).to.have.property('preTokenBalances').that.is.an('array').that.is.not.empty;
