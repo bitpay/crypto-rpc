@@ -17,6 +17,51 @@ describe('SPL Tests', () => {
     decimals: 6, // As for USDC/USDT
   };
 
+  const assertBalanceDetails = ({ transaction, txInput }) => {
+    expect(transaction).to.be.an('object').that.is.not.null;
+    expect(transaction).to.have.property('staticAccounts').that.is.an('array');
+    expect(transaction.staticAccounts.every(acct => typeof acct === 'string')).to.be.true;
+    expect(transaction.staticAccounts).to.include(txInput.destinationAta);
+    const destinationAtaIndex = transaction.staticAccounts.findIndex(acct => acct == txInput.destinationAta);
+
+    expect(transaction).to.have.property('meta').that.is.an('object').that.is.not.null;
+    expect(transaction.meta).to.have.property('preTokenBalances').that.is.an('array').that.is.not.empty;
+    expect(transaction.meta).to.have.property('postTokenBalances').that.is.an('array').that.is.not.empty;
+    expect(transaction.meta.preTokenBalances.some(bal => bal.accountIndex === destinationAtaIndex)).to.be.true;
+    expect(transaction.meta.postTokenBalances.some(bal => bal.accountIndex === destinationAtaIndex)).to.be.true;
+    const destinationPreTokenBalance = transaction.meta.preTokenBalances.find(bal => bal.accountIndex === destinationAtaIndex);
+    const destinationPostTokenBalance = transaction.meta.postTokenBalances.find(bal => bal.accountIndex === destinationAtaIndex);
+    
+    expect(destinationPreTokenBalance).to.be.an('object').that.is.not.null;
+    expect(destinationPreTokenBalance).to.have.property('uiTokenAmount').that.is.an('object').that.is.not.null;
+    expect(destinationPreTokenBalance.uiTokenAmount).to.have.property('uiAmount');
+    let destinationPreTokenBalanceAmt;
+    if (destinationPreTokenBalance.uiTokenAmount.amount === '0') {
+      expect(destinationPreTokenBalance.uiTokenAmount.uiAmount).to.be.null;
+      destinationPreTokenBalanceAmt = 0;
+    } else {
+      expect(destinationPreTokenBalance.uiTokenAmount.uiAmount).to.be.a('number');
+      destinationPreTokenBalanceAmt = destinationPreTokenBalance.uiTokenAmount.uiAmount;
+    }
+    expect(destinationPreTokenBalance.uiTokenAmount).to.have.property('decimals').that.is.a('number').equal(topLevelConfig.decimals);
+
+    expect(destinationPostTokenBalance).to.be.an('object').that.is.not.null;
+    expect(destinationPostTokenBalance).to.have.property('uiTokenAmount').that.is.an('object').that.is.not.null;
+    expect(destinationPostTokenBalance.uiTokenAmount).to.have.property('uiAmount');
+    if (destinationPostTokenBalance.uiTokenAmount.amount === '0') {
+      expect(destinationPostTokenBalance.uiTokenAmount.uiAmount).to.be.null;
+    } else {
+      expect(destinationPostTokenBalance.uiTokenAmount.uiAmount).to.be.a('number').greaterThanOrEqual(0);
+    }
+    expect(destinationPostTokenBalance.uiTokenAmount).to.have.property('decimals').that.is.a('number').equal(destinationPreTokenBalance.uiTokenAmount.decimals); // Explicit equality test on tx meta itself - not expected value
+
+    // In BASE units, not atomic units
+    const difference = (destinationPostTokenBalance.uiTokenAmount.uiAmount * 10 ** destinationPostTokenBalance.uiTokenAmount.decimals) - (destinationPreTokenBalanceAmt * 10 ** destinationPreTokenBalance.uiTokenAmount.decimals); // Pre token balancce was 0, but it's reported as null
+    expect(difference).to.equal(txInput.amount);
+    // Usable for other specific assertions
+    return difference;
+  };
+
   describe('Inheritance tests', () => {
     let splRpc;
     /** @type {SolKit.KeyPairSigner<string>} */
@@ -169,7 +214,7 @@ describe('SPL Tests', () => {
         const airdropSignature = await splRpc.rpc.requestAirdrop(senderKeypair.address, 1e10).send();
         const { value: statuses } = await splRpc.rpc.getSignatureStatuses([airdropSignature]).send();
         let status = statuses[0];
-        let remainingTries = 10;
+        let remainingTries = 100;
         while (remainingTries > 0 && status?.confirmationStatus !== 'finalized') {
           await new Promise(resolve => setTimeout(resolve, 250));
           const { value: statuses } = await splRpc.rpc.getSignatureStatuses([airdropSignature]).send();
@@ -297,7 +342,7 @@ describe('SPL Tests', () => {
       });
     });
     
-    describe('sendToAddress', () => {
+    describe('sendToAddress and getTransaction', () => {
       // this.timeout(10e5);
       let inputBase;
       /** @type {Array<SolKit.KeyPairSigner<string>>} */
@@ -367,7 +412,7 @@ describe('SPL Tests', () => {
         expect(splRpc.getOrCreateAta.callCount).to.equal(2); // b/c destinationAta not included AND sourceAta not included
       });
 
-      describe('faster tests using source and destination atas', function () {
+      describe('faster tests using source and destination atas - includes getTransaction checks', function () {
         let inputBaseWithAtas;
         let destinationAta;
         before(async function () {
@@ -388,6 +433,7 @@ describe('SPL Tests', () => {
         });
 
         it('can send a transaction without calling splRPC.getOrCreateAta if ata params are included', async function () {
+          // sendToAddress tests
           const result = await splRpc.sendToAddress({
             ...inputBaseWithAtas
           });
@@ -396,6 +442,10 @@ describe('SPL Tests', () => {
           expect(result).to.have.property('destinationAta').that.equals(destinationAta);
           expect(result).to.have.property('sourceAta').that.equals(senderAta);
           expect(splRpc.getOrCreateAta.callCount).to.equal(0); // b/c destinationAtaAND sourceAta are included
+
+          // getTransaction tests
+          const transaction = await splRpc.getTransaction({ txid: result.txid });
+          assertBalanceDetails({ transaction, txInput: inputBaseWithAtas });
         });
   
         it('can send a durable nonce transaction', async function () {
@@ -407,6 +457,9 @@ describe('SPL Tests', () => {
           expect(result).to.have.property('txid').that.is.a('string');
           expect(result).to.have.property('destinationAta').that.equals(destinationAta);
           expect(result).to.have.property('sourceAta').that.equals(senderAta);
+
+          const transaction = await splRpc.getTransaction({ txid: result.txid });
+          assertBalanceDetails({ transaction, txInput: inputBaseWithAtas });
         });
   
         it('can send a prioritized transaction', async function () {
@@ -766,3 +819,5 @@ async function mintTokens({ splRpc, payer, mint, mintAuthority, targetAta, decim
   const signature = SolKit.getSignatureFromTransaction(signedTransactionMessage);
   return signature;
 }
+
+async function sendTokens() {}
