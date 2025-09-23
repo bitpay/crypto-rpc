@@ -819,5 +819,3 @@ async function mintTokens({ splRpc, payer, mint, mintAuthority, targetAta, decim
   const signature = SolKit.getSignatureFromTransaction(signedTransactionMessage);
   return signature;
 }
-
-async function sendTokens() {}
