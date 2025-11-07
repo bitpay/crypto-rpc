@@ -9,6 +9,7 @@ const { expect } = require('chai');
 const assert = require('assert');
 const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
 const privateKey2 = require('../blockchain/solana/test/keypair/id2.json');
+const privateKey3 = require('../blockchain/solana/test/keypair/id3.json');
 const SolToken = require('@solana-program/token');
 const SOL_ERROR_MESSAGES = require('../lib/sol/error_messages');
 const { parseInstructions, instructionKeys } = require('../lib/sol/transaction-parser');
@@ -214,11 +215,14 @@ describe('SOL Tests', () => {
     /** @type {SolKit.KeyPairSigner<string>} */
     let receiverKeypair;
     /** @type {SolKit.KeyPairSigner<string>} */
+    let thirdKeypair;
+    /** @type {SolKit.KeyPairSigner<string>} */
     let nonceAccountKeypair;
     before(async function() {
       // For these tests, the nonce authority will be the sender
       senderKeypair = await SolKit.createKeyPairSignerFromBytes(Uint8Array.from(privateKey1));
       receiverKeypair = await SolKit.createKeyPairSignerFromBytes(Uint8Array.from(privateKey2));
+      thirdKeypair = await SolKit.createKeyPairSignerFromBytes(Uint8Array.from(privateKey3));
 
       solRpc = new SolRPC(config);
       // Check health
@@ -228,7 +232,7 @@ describe('SOL Tests', () => {
       }
 
       // Airdrop if no money on sender - !! NOTE !! this will fail after 25 seconds worth of checks
-      const addresses = [senderKeypair.address, receiverKeypair.address];
+      const addresses = [senderKeypair.address, receiverKeypair.address, thirdKeypair.address];
       for (const address of addresses) {
         const { value: balance } = await solRpc.rpc.getBalance(address).send();
         if (Number(balance) < 1e10) {
@@ -456,17 +460,67 @@ describe('SOL Tests', () => {
       });
 
       describe('lookup table tests', () => {
-        let lookupTableAddress;
+        let lookupTableAddress1;
+        let lookupTableAddress2;
 
         before(async function() {
-          lookupTableAddress = await createLookupTable({ solRpc, fromKeypair: senderKeypair, toKeypair: receiverKeypair });
+          [lookupTableAddress1, lookupTableAddress2] = await Promise.all([
+            createLookupTable({ solRpc, fromKeypair: senderKeypair, toKeypair: receiverKeypair }),
+            createLookupTable({ solRpc, fromKeypair: senderKeypair, toKeypair: thirdKeypair }),
+          ]);
         });
 
         it('works with a versioned transaction', async () => {
-          const txid = await sendTransactionUsingLookupTables({ solRpc, fromKeypair: senderKeypair, toKeypair: receiverKeypair, version: 0, lookupTableAddress });
+          const amountInLamports = 1000;
+
+          const txid = await sendTransactionUsingLookupTables({ solRpc, fromKeypair: senderKeypair, toKeypair: receiverKeypair, version: 0, lookupTableAddress: lookupTableAddress1, amountInLamports });
 
           const retVal = await solRpc.getTransaction({ txid });
           assertValidTransaction(retVal, true);
+
+          // Check that receiver has received expected amount
+          const receiverAddress = receiverKeypair.address;
+          const receiverIndex = retVal.accountKeys.findIndex(key => key === receiverAddress);
+          expect(receiverIndex).to.be.greaterThanOrEqual(0);
+          // assertValidTransaction ensures retVal.meta.postBalances and preBalances exist and are bigint[]
+          const receiverPostBalance = retVal.meta.postBalances[receiverIndex];
+          expect(receiverPostBalance).not.to.be.undefined;
+          const receiverPreBalance = retVal.meta.preBalances[receiverIndex];
+          expect(receiverPreBalance).not.to.be.undefined;
+
+          const receiverDifference = Number(receiverPostBalance - receiverPreBalance);
+          expect(receiverDifference).to.equal(amountInLamports);
+        });
+
+        it('works with a noisy transaction', async () => {
+          const amountInLamports = 1000;
+          const otherAmountInLamports = 2.5 * amountInLamports;
+          const txid = await sendNoisyTransactionUsingMultipleLookupTables({
+            solRpc,
+            fromKeypair: senderKeypair,
+            targetKeypair: receiverKeypair,
+            keypair3: thirdKeypair,
+            amountInLamports,
+            otherAmountInLamports,
+            lut1Address: lookupTableAddress1,
+            lut2Address: lookupTableAddress2
+          });
+
+          const retVal = await solRpc.getTransaction({ txid });
+          assertValidTransaction(retVal, true);
+
+          // Check that receiver has received expected amount
+          const receiverAddress = receiverKeypair.address;
+          const receiverIndex = retVal.accountKeys.findIndex(key => key === receiverAddress);
+          expect(receiverIndex).to.be.greaterThanOrEqual(0);
+          // assertValidTransaction ensures retVal.meta.postBalances and preBalances exist and are bigint[]
+          const receiverPostBalance = retVal.meta.postBalances[receiverIndex];
+          expect(receiverPostBalance).not.to.be.undefined;
+          const receiverPreBalance = retVal.meta.preBalances[receiverIndex];
+          expect(receiverPreBalance).not.to.be.undefined;
+          
+          const receiverDifference = Number(receiverPostBalance - receiverPreBalance);
+          expect(receiverDifference).to.equal(amountInLamports);
         });
       });
     });
@@ -1725,9 +1779,9 @@ async function createAta({ solRpc, owner, mint, payer }) {
  * @param {number} amountInLamports 
  * @param {0 | 'legacy'} [version=0]
  */
-async function sendTransactionUsingLookupTables({ solRpc, fromKeypair, toKeypair, version, lookupTableAddress }) {
+async function sendTransactionUsingLookupTables({ solRpc, fromKeypair, toKeypair, version, lookupTableAddress, amountInLamports }) {
   try {
-    const unsignedTransactionMessage = await createUnsignedTransaction(solRpc.rpc, fromKeypair, toKeypair, 1000, version);
+    const unsignedTransactionMessage = await createUnsignedTransaction(solRpc.rpc, fromKeypair, toKeypair, amountInLamports, version);
 
     // Fetch JSON parsed representation of the lookup table from the RPC
     const lookupTableAccount = await SolKit.fetchJsonParsedAccount(solRpc.rpc, lookupTableAddress);
@@ -1748,6 +1802,61 @@ async function sendTransactionUsingLookupTables({ solRpc, fromKeypair, toKeypair
     console.error('err', err);
     throw err;
   }
+}
+
+/**
+ * @param {object} params
+ * @param {SolRPC} params.solRpc
+ * @param {SolKit.KeyPairSigner} params.fromKeypair 
+ * @param {SolKit.KeyPairSigner} params.targetKeypair
+ * @param {SolKit.KeyPairSigner} params.keypair3 
+ * @param {number} params.amountInLamports
+ * @param {number} params.otherAmountInLamports // testing noise
+ * @param {string} params.lut1Address;
+ * @param {string} params.lut2Address}
+ */
+async function sendNoisyTransactionUsingMultipleLookupTables({ solRpc, fromKeypair, targetKeypair, keypair3, amountInLamports, otherAmountInLamports, lut1Address, lut2Address }) {
+  const { rpc, rpcSubscriptions } = solRpc;
+  // This should set up a transaction in which targetKeypair's balance difference is 1000, and there are other transfers to create noise
+
+  // Fetch JSON parsed representation of the lookup table from the RPC
+  // const [lutAcct1, lutAcct2] = 
+  const [lutAcct1, lutAcct2] = await SolKit.fetchJsonParsedAccounts(solRpc.rpc, [lut1Address, lut2Address]);
+  for (const lutAcct of [lutAcct1, lutAcct2]) {
+    SolKit.assertAccountDecoded(lutAcct);
+    SolKit.assertAccountExists(lutAcct);
+  }
+
+  // Compose instructions and transaction message
+  const transferInstruction1 = SolSystem.getTransferSolInstruction({
+    amount: amountInLamports,
+    destination: targetKeypair.address,
+    source: fromKeypair
+  });
+  const transactionInstruction2 = SolSystem.getTransferSolInstruction({
+    amount: otherAmountInLamports,
+    destination: keypair3.address,
+    source: fromKeypair
+  });
+  
+  const { value: recentBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
+  const unsignedTransactionMessage = pipe(
+    SolKit.createTransactionMessage({ version: 0 }),
+    (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeypair, tx),
+    (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
+    (tx) => SolKit.appendTransactionMessageInstructions([transferInstruction1, transactionInstruction2], tx)
+  );
+
+  // Compress unsigned transaction mesage with LUTs
+  const transactionMessageWithLookupTables = SolKit.compressTransactionMessageUsingAddressLookupTables(unsignedTransactionMessage, {
+    [lut1Address]: lutAcct1.data.addresses,
+    [lut2Address]: lutAcct2.data.addresses,
+  });
+
+  const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessageWithLookupTables);
+  await SolKit.sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })(signedTransactionMessage, { commitment: 'confirmed' });
+  const signature = SolKit.getSignatureFromTransaction(signedTransactionMessage);
+  return signature;
 }
 
 /**
