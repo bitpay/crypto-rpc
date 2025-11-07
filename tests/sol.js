@@ -466,7 +466,7 @@ describe('SOL Tests', () => {
         before(async function() {
           [lookupTableAddress1, lookupTableAddress2] = await Promise.all([
             createLookupTable({ solRpc, fromKeypair: senderKeypair, toKeypair: receiverKeypair }),
-            createLookupTable({ solRpc, fromKeypair: senderKeypair, toKeypair: thirdKeypair }),
+            createLookupTable({ solRpc, fromKeypair: thirdKeypair, toKeypair: senderKeypair }),
           ]);
         });
 
@@ -1835,8 +1835,8 @@ async function sendNoisyTransactionUsingMultipleLookupTables({ solRpc, fromKeypa
   });
   const transactionInstruction2 = SolSystem.getTransferSolInstruction({
     amount: otherAmountInLamports,
-    destination: keypair3.address,
-    source: fromKeypair
+    destination: fromKeypair.address,
+    source: keypair3,
   });
   
   const { value: recentBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
@@ -1844,7 +1844,8 @@ async function sendNoisyTransactionUsingMultipleLookupTables({ solRpc, fromKeypa
     SolKit.createTransactionMessage({ version: 0 }),
     (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeypair, tx),
     (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
-    (tx) => SolKit.appendTransactionMessageInstructions([transferInstruction1, transactionInstruction2], tx)
+    (tx) => SolKit.appendTransactionMessageInstructions([transferInstruction1, transactionInstruction2], tx),
+    (tx) => SolKit.addSignersToTransactionMessage([keypair3], tx)
   );
 
   // Compress unsigned transaction mesage with LUTs
@@ -1854,6 +1855,7 @@ async function sendNoisyTransactionUsingMultipleLookupTables({ solRpc, fromKeypa
   });
 
   const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessageWithLookupTables);
+  // const signedTransactionMessage = await SolKit.signTransaction([fromKeypair.keyPair, keypair3.keyPair], transactionMessageWithLookupTables);
   await SolKit.sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })(signedTransactionMessage, { commitment: 'confirmed' });
   const signature = SolKit.getSignatureFromTransaction(signedTransactionMessage);
   return signature;
