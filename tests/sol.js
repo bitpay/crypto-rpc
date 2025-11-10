@@ -231,7 +231,7 @@ describe('SOL Tests', () => {
         throw new Error('Healthcheck failed - rpc connection not correctly established');
       }
 
-      // Airdrop if no money on sender - !! NOTE !! this will fail after 12.5 seconds worth of checks
+      // Airdrop if no money on sender - !! NOTE !! this will fail after 25 seconds worth of checks
       const addresses = [senderKeypair.address, receiverKeypair.address, thirdKeypair.address];
       for (const address of addresses) {
         const { value: balance } = await solRpc.rpc.getBalance(address).send();
@@ -239,16 +239,31 @@ describe('SOL Tests', () => {
           const airdropSignature = await solRpc.rpc.requestAirdrop(address, 1e10).send();
           const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
           let status = statuses[0];
-          let remainingTries = 50;
+          let remainingTries = 100;
+
+          let exitReason = 'unknown';
           while (remainingTries > 0 && status?.confirmationStatus !== 'finalized') {
             await new Promise(resolve => setTimeout(resolve, 250));
             const { value: statuses } = await solRpc.rpc.getSignatureStatuses([airdropSignature]).send();
-            status = statuses[0];
+            status = statuses[0] ?? null;
+            if (status == null) {
+              // Tx failed and will never change
+              exitReason = 'airdrop_tx_failed';
+            }
+
             remainingTries--;
           }
 
+          if (status?.confirmationStatus === 'finalized') {
+            // should NOT ever throw error below if exitReason is finalized
+            exitReason = 'finalized';
+          } else if (remainingTries === 0) {
+            exitReason = 'exhausted';
+          }
+
           if (status?.confirmationStatus !== 'finalized') {
-            throw new Error('Balance top-off was not finalized in the specified time interval');
+            // If 'finalized' here, something's wrong
+            throw new Error(`Balance top-off was not finalized. reason=${exitReason}`);
           }
         }
       }
