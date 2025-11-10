@@ -231,7 +231,7 @@ describe('SOL Tests', () => {
         throw new Error('Healthcheck failed - rpc connection not correctly established');
       }
 
-      // Airdrop if no money on sender - !! NOTE !! this will fail after 25 seconds worth of checks
+      // Airdrop if no money on sender - !! NOTE !! this will fail after 12.5 seconds worth of checks
       const addresses = [senderKeypair.address, receiverKeypair.address, thirdKeypair.address];
       for (const address of addresses) {
         const { value: balance } = await solRpc.rpc.getBalance(address).send();
@@ -247,7 +247,7 @@ describe('SOL Tests', () => {
             remainingTries--;
           }
 
-          if (status !== 'finalized') {
+          if (status?.confirmationStatus !== 'finalized') {
             throw new Error('Balance top-off was not finalized in the specified time interval');
           }
         }
