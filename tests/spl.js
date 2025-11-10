@@ -222,7 +222,7 @@ describe('SPL Tests', () => {
           remainingTries--;
         }
 
-        if (status !== 'finalized') {
+        if (status.confirmationStatus !== 'finalized') {
           throw new Error('Sender balance top-off was not finalized in the specified time interval');
         }
       }
