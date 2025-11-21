@@ -26,7 +26,7 @@ const configs = [
   },
   {
     chain: 'ARB',
-    host: process.env.ARB_HOST || 'geth',
+    host: process.env.HOST_ARB || 'ganache',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -42,7 +42,7 @@ const configs = [
   },
   {
     chain: 'OP',
-    host: process.env.OP_HOST || 'geth',
+    host: process.env.HOST_OP || 'ganache',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -58,7 +58,7 @@ const configs = [
   },
   {
     chain: 'BASE',
-    host: process.env.BASE_HOST || 'geth',
+    host: process.env.HOST_BASE || 'ganache',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -74,7 +74,7 @@ const configs = [
   },
   {
     chain: 'MATIC',
-    host: process.env.MATIC_HOST || 'geth',
+    host: process.env.HOST_MATIC || 'ganache',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',

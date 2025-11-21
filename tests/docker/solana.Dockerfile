@@ -1,9 +1,9 @@
 FROM node:lts-bullseye
 WORKDIR /crypto-rpc
-RUN  npm install @solana/web3.js @solana/spl-token
+RUN  npm install @solana/kit
 
 # Use the official Solana image
-FROM solanalabs/solana:v1.10.32
+FROM solanalabs/solana:v1.18.26
 
 # Copy keypair files to the container
 COPY ./blockchain/solana/test/keypair/id.json /solana/keypair/id.json

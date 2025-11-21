@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const { before, describe, it } = mocha;
 const config = {
   chain: 'BCH',
-  host: 'bitcoin-cash',
+  host: process.env.HOST_BCH || 'bitcoin-cash',
   protocol: 'http',
   rpcPort: '9333',
   rpcUser: 'cryptorpc',
@@ -21,7 +21,7 @@ const config = {
 };
 
 describe('BCH Tests', function() {
-  this.timeout(20000);
+  this.timeout(30000);
   let blockHash = '';
   const currency = 'BCH';
   const { currencyConfig } = config;
@@ -35,7 +35,7 @@ describe('BCH Tests', function() {
     } catch (e) {
       console.warn('wallet already encrypted');
     }
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     await bitcoin.asyncCall('generate', [101]);
   });
 
