@@ -26,7 +26,7 @@ const configs = [
   },
   {
     chain: 'ARB',
-    host: process.env.HOST_ARB || 'ganache',
+    host: process.env.HOST_ARB || 'geth',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -42,7 +42,7 @@ const configs = [
   },
   {
     chain: 'OP',
-    host: process.env.HOST_OP || 'ganache',
+    host: process.env.HOST_OP || 'geth',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -58,7 +58,7 @@ const configs = [
   },
   {
     chain: 'BASE',
-    host: process.env.HOST_BASE || 'ganache',
+    host: process.env.HOST_BASE || 'geth',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -74,7 +74,7 @@ const configs = [
   },
   {
     chain: 'MATIC',
-    host: process.env.HOST_MATIC || 'ganache',
+    host: process.env.HOST_MATIC || 'geth',
     protocol: 'http',
     port: '8545',
     rpcPort: '8545',
@@ -145,7 +145,7 @@ describe('EVM', function() {
     
       it('should estimate fee', async () => {
         const fee = await rpcs.estimateFee({ currency, nBlocks: 4 });
-        expect(fee).to.be.gte(20000000000);
+        expect(fee).to.be.gte(400000000);
       });
 
       it('should send raw transaction', async () => {
@@ -207,7 +207,7 @@ describe('EVM', function() {
     
       it('should estimate gas price', async () => {
         const gasPrice = await evmRPC.estimateGasPrice();
-        expect(gasPrice).to.be.gte(20000000000);
+        expect(gasPrice).to.be.gte(500000000);
       });
 
       it('should be able to get a block hash', async () => {
