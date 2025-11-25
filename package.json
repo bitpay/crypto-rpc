@@ -3,21 +3,24 @@
   "version": "1.1.0",
   "description": "rpc wrapper for multiple rpcs",
   "main": "index.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "docker compose build",
     "start": "npm run stop && npm run build && docker compose run start",
     "restart": "npm run stop && docker compose run start",
     "stop": "docker compose down",
-    "compile": "npm run lint && npm run truffle:compile",
-    "migrate": "npm run compile && npm run truffle:migrate",
+    "compile": "npm run lint && npm run hardhat:compile",
+    "deploy": "npm run compile && npm run hardhat:deploy",
     "lint": "npx eslint .",
     "test": "npm run test:ci",
     "test:ci": "docker-compose down && docker-compose build && docker-compose run test_runner",
     "test:local": "npm run stop && npm run build && docker compose run test_runner",
-    "docker:test": "npm run migrate && npm run truffle:test && mocha --recursive ./tests",
-    "truffle:compile": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle compile --network development_geth && ../../node_modules/.bin/truffle compile --network development_matic",
-    "truffle:test": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle test --network development_geth && ../../node_modules/.bin/truffle test --network development_matic",
-    "truffle:migrate": "cd blockchain/EVM/ && ../../node_modules/.bin/truffle migrate --network development_geth && ../../node_modules/.bin/truffle migrate --network development_matic"
+    "docker:test": "npm run deploy && npm run hardhat:test && mocha --recursive ./tests",
+    "hardhat:compile": "cd blockchain/EVM/ && npx hardhat compile",
+    "hardhat:test": "cd blockchain/EVM/ && npx hardhat test",
+    "hardhat:deploy": "cd blockchain/EVM/ && export HARDHAT_IGNITION_CONFIRM_DEPLOYMENT=false && export HARDHAT_IGNITION_CONFIRM_RESET=false && npx hardhat --network geth ignition deploy ./ignition/modules/all.js --reset"
   },
   "author": "Micah Riggan",
   "license": "ISC",
@@ -31,23 +34,24 @@
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
     "dogecoind-rpc": "0.8.1",
-    "ethers": "5.7.2",
+    "ethers": "6.15.0",
     "lightning": "10.0.1",
     "promptly": "0.2.0",
-    "web3": "1.7.1",
+    "web3": "4.16.0",
     "xrpl": "^2.6.0"
   },
   "devDependencies": {
-    "assert": "^1.4.1",
-    "chai": "^4.2.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.9",
+    "chai": "^5.1.2",
     "eslint": "^8.57.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.6.0",
     "eslint-plugin-standard": "^5.0.0",
-    "mocha": "^5.2.0",
-    "sinon": "^7.3.1",
-    "truffle": "5.1.0"
+    "hardhat": "^2.22.18",
+    "mocha": "^11.1.0",
+    "sinon": "^7.3.1"
   }
 }
