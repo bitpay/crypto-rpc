@@ -1,3 +1,6 @@
+> This repository is deprecated and no longer maintained.\
+> Please use https://github.com/bitpay/bitcore/tree/master/packages/crypto-rpc instead.
+
 # Commands
 
 ```
